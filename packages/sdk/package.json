@@ -1,0 +1,62 @@
+{
+  "name": "@reinkey/sdk",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Reinkey Reins — agent SDK: on-chain spending authority, payment channels, x402 fetch and metered streams on Stellar",
+  "license": "MIT",
+  "keywords": [
+    "reinkey",
+    "reinkey-reins",
+    "x402",
+    "stellar",
+    "soroban",
+    "ai-agents",
+    "payment-channel",
+    "micropayments",
+    "spending-limits"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reinkey/reinkey.git",
+    "directory": "packages/sdk"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./package.json": "./package.json"
+    }
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepack": "pnpm --filter @reinkey/core build && pnpm run build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@reinkey/core": "workspace:*",
+    "@stellar/stellar-sdk": "^17.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}

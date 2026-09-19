@@ -1,0 +1,81 @@
+export const metadata = { title: "Meter reference" };
+
+# Meter reference
+
+## `reinkey(options)`
+
+Creates a client bound to one facilitator and one payee. Returns `{ meter }`.
+
+| Option | Type | |
+|---|---|---|
+| `facilitator` | `string` | Base URL of the facilitator that verifies and settles vouchers. |
+| `payTo` | `string` | Your Stellar address. Channels must name it as payee or payment is rejected with `WRONG_PAYEE`. |
+| `publicUrl` | `string?` | Public origin of your server, used as the `resource` in payment terms. Derived from the request when omitted; set it when you sit behind a proxy. |
+
+## `rk.meter(options)`
+
+Express-compatible middleware (`(req, res, next)`), so it also works in Nest and Connect.
+
+| Option | Type | |
+|---|---|---|
+| `price` | `bigint` | Price of one unit, in the asset's base unit. |
+| `unit` | `"request" \| "token" \| "second"` | What one unit is. |
+| `description` | `string?` | Shown to buyers in the 402 body. |
+| `sliceTokens` | `number?` | For `token`: tokens paid per voucher. |
+| `sliceSeconds` | `number?` | For `second`: seconds paid per voucher. |
+
+On success the middleware sets `req.payment` to the receipt, sets the `PAYMENT-RESPONSE` header and calls `next()`.
+
+## The 402 response
+
+```json
+{
+  "x402Version": 2,
+  "error": "PAYMENT_REQUIRED",
+  "source": "gateway",
+  "message": "This resource is paid. Send a payment in the PAYMENT-SIGNATURE header.",
+  "resource": { "url": "https://api.example.com/book", "description": "Order book" },
+  "accepts": [
+    {
+      "scheme": "channel",
+      "network": "stellar:testnet",
+      "asset": "C…USDC",
+      "payTo": "G…SELLER",
+      "amount": "5000",
+      "unit": "request",
+      "maxTimeoutSeconds": 60,
+      "extra": {
+        "channelContract": "C…CHANNEL",
+        "minDeposit": "5000000",
+        "facilitator": "https://…",
+        "areFeesSponsored": true
+      }
+    }
+  ]
+}
+```
+
+The same object is base64-encoded in the `PAYMENT-REQUIRED` header. For `token` and `second` units, `extra` also carries `sliceTokens` / `sliceSeconds` and `sliceAmount` (the price of one slice).
+
+A payment that is present but rejected also returns 402, with `error` set to the [reason code](/docs/reason-codes) and the same `accepts`, so the buyer can correct and retry.
+
+## Headers
+
+| Header | Direction | |
+|---|---|---|
+| `PAYMENT-REQUIRED` | response, on 402 | base64 JSON of the body above |
+| `PAYMENT-SIGNATURE` | request | base64 JSON payment payload (x402 v2) |
+| `PAYMENT-RESPONSE` | response, on success | base64 JSON receipt |
+| `X-PAYMENT` / `X-PAYMENT-RESPONSE` | both | accepted and mirrored for x402 v1 clients |
+
+Expose the response headers in CORS if browsers call your API.
+
+## Streaming units
+
+> **Not yet available to external sellers.** Per-token and per-second streams run on the facilitator's own demo seller today. The slice loop needs a stream session on the verifying side, and that API is not open to third-party servers yet. Per-request metering is complete.
+
+How it works on the demo seller, and how it will work in the package: with `unit: "token"` or `"second"`, the first voucher pays for the first slice and opens the stream. When a slice is used up, the server emits a `payment-required` event with the next `requiredCumulative`, and the buyer sends the next voucher. `@reinkey/sdk`'s `streamPaid()` runs this loop on the buyer side.
+
+A stream ends with one of: `done`, `CHANNEL_EXHAUSTED`, `TIMEOUT` (no voucher within the window) or `ACCOUNT_FROZEN`.
+
+If you want to experiment now, `rk.acceptVoucher()` sends a bare voucher to the facilitator so you can build the slice loop yourself; see the package README.

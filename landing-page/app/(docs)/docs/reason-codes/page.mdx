@@ -1,0 +1,60 @@
+export const metadata = { title: "Reason codes" };
+
+# Reason codes
+
+Every rejection carries a stable, upper-case code. Error bodies have one shape:
+
+```json
+{ "error": "CHANNEL_EXHAUSTED", "source": "facilitator", "message": "…", "tx": "…" }
+```
+
+`source` tells you who said no: `chain` (a contract on Stellar), `facilitator` (voucher verification) or `gateway` (the seller's middleware). `tx` is present when there is a transaction to look at.
+
+## From the account contract
+
+Enforced by `reinkey-account` in `__check_auth`.
+
+| # | Code | Meaning |
+|---|---|---|
+| 1 | `BAD_SIGNATURE` | The signature doesn't match the agent or owner key. |
+| 2 | `POLICY_EXPIRED` | The ledger is past `expires_ledger`. |
+| 3 | `ACCOUNT_FROZEN` | The owner froze the account. |
+| 4 | `CONTEXT_NOT_ALLOWED` | The agent tried to call something the policy doesn't cover. |
+| 5 | `PAYEE_NOT_ALLOWED` | The recipient is not in `payees`. |
+| 6 | `PER_TX_CAP_EXCEEDED` | The amount is above `per_tx_cap`. |
+| 7 | `DAILY_CAP_EXCEEDED` | The amount would take today's total above `daily_cap`. |
+| 8 | `PAIR_NOT_ALLOWED` | The swap's asset pair is not in `pairs`. |
+| 9 | `SLIPPAGE_UNBOUNDED` | The swap has no minimum output. |
+
+## From the channel contract
+
+| # | Code | Meaning |
+|---|---|---|
+| 20 | `CHANNEL_NOT_FOUND` | No channel with that id. |
+| 21 | `CHANNEL_CLOSED` | The channel was closed. |
+| 22 | `VOUCHER_BAD_SIGNATURE` | The voucher isn't signed by the channel's voucher key. |
+| 23 | `VOUCHER_NOT_INCREASING` | The cumulative amount is not above what was already claimed. |
+| 24 | `EXCEEDS_DEPOSIT` | The cumulative amount is above the deposit. |
+| 25 | `NOT_EXPIRED` | The buyer tried to close before expiry. |
+| 26 | `NOT_AUTHORIZED` | The caller may not perform this action. |
+| 27 | `INVALID_ARGUMENT` | A parameter is out of range. |
+
+## Off-chain
+
+Returned by the facilitator or the seller's middleware, always with HTTP 402 unless noted.
+
+| Code | Meaning | What the buyer should do |
+|---|---|---|
+| `PAYMENT_REQUIRED` | No payment header. | Read `accepts`, pay, retry. |
+| `PAYMENT_MALFORMED` (400) | The header isn't base64 JSON, or fields are missing. | Fix the payload. |
+| `CHANNEL_NOT_FOUND` | The facilitator can't find the channel on-chain. | Open a channel. |
+| `CHANNEL_CLOSED` | The channel is closed. | Open a new one. |
+| `CHANNEL_EXPIRING` | Too close to expiry to be claimed safely. | Open a new channel. |
+| `WRONG_PAYEE` | The channel pays someone other than this seller. | Open a channel to this seller. |
+| `WRONG_ASSET` | The channel holds a different asset. | Use the asset in `accepts`. |
+| `VOUCHER_BAD_SIGNATURE` | Signature check failed. | Sign with the channel's voucher key. |
+| `VOUCHER_NOT_INCREASING` | Cumulative is not above the last accepted voucher. | Sign a higher cumulative. |
+| `VOUCHER_UNDERPAID` | The increase is smaller than the price. | Pay at least `amount`. |
+| `CHANNEL_EXHAUSTED` | The deposit can't cover the price. | Top up, or open a new channel. |
+| `RATE_LIMITED` (429) | Too many requests. | Back off. |
+| `TIMEOUT` | On a stream: the next voucher didn't arrive in time. | Reconnect. |

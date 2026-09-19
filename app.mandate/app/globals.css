@@ -1,0 +1,204 @@
+@import "tailwindcss";
+
+/* ============================================================
+   TASARIM TOKEN'LARI
+
+   Değerler tanıtım sitesinin (landing-page/app/globals.css) KOYU
+   temasından birebir alındı: panel ile site aynı markanın iki yüzü.
+   Panel yalnızca koyu temada çalışır; sahnede projeksiyonda koyu
+   zemin daha iyi okunur ve tema geçişi burada bir kazanç sağlamaz.
+
+   Bileşenlerde sabit renk yazılmaz; hepsi buradan gelir.
+   ============================================================ */
+
+:root {
+  color-scheme: dark;
+
+  --brand-sky: #74b1f9;
+  --brand-blue: #5466fd;
+  --brand-indigo: #4c2ff9;
+  --brand-lavender: #a594ff;
+
+  --bg: #05060f;
+  --bg-alt: #080a18;
+  --surface: #0c0e1f;
+  --surface-2: #121530;
+  --surface-3: #1b1f40;
+
+  --fg: #eef0ff;
+  --fg-muted: rgb(238 240 255 / 0.68);
+  --fg-subtle: rgb(238 240 255 / 0.46);
+
+  --line: rgb(238 240 255 / 0.1);
+  --line-strong: rgb(238 240 255 / 0.2);
+
+  --accent: #74b1f9;
+  --accent-contrast: #05060f;
+  --accent-gradient: linear-gradient(100deg, var(--brand-sky) 0%, var(--brand-lavender) 100%);
+
+  --success: #5ee39a;
+  --success-bg: rgb(94 227 154 / 0.12);
+  --warning: #fbbf24;
+  --warning-bg: rgb(251 191 36 / 0.12);
+  --danger: #ff6b60;
+  --danger-bg: rgb(255 107 96 / 0.12);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-alt: var(--bg-alt);
+  --color-surface-1: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-brand-sky: var(--brand-sky);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-indigo: var(--brand-indigo);
+  --color-brand-lavender: var(--brand-lavender);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* Sayılar değişirken genişlik oynamasın. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.text-gradient {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Yeni satır girişi: kısa bir parlama, sonra sakinleşir. */
+@keyframes row-in {
+  from {
+    background-color: rgb(116 177 249 / 0.14);
+    transform: translateY(-4px);
+    opacity: 0;
+  }
+  to {
+    background-color: transparent;
+    transform: none;
+    opacity: 1;
+  }
+}
+.row-in {
+  animation: row-in 700ms var(--ease-out-expo);
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 1.6s ease-in-out infinite;
+}
+
+@keyframes flash-danger {
+  0% {
+    box-shadow: 0 0 0 0 rgb(255 107 96 / 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgb(255 107 96 / 0);
+  }
+}
+.flash-danger {
+  animation: flash-danger 900ms ease-out;
+}
+
+/* Paranın yolu: bağlayıcı üzerinde bir uçtan ötekine giden nokta. */
+@keyframes flow-dot {
+  0% {
+    left: 0;
+    opacity: 0;
+  }
+  15%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    left: calc(100% - 8px);
+    opacity: 0;
+  }
+}
+.flow-dot {
+  animation: flow-dot 900ms var(--ease-out-expo) both;
+}
+
+@keyframes flow-ping {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 60%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+.flow-ping {
+  animation: flow-ping 800ms ease-out;
+}
+
+/* Sunum modu: projeksiyonda arka sıradan okunsun diye tüm panel büyür. */
+.present {
+  zoom: 1.25;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row-in,
+  .pulse-dot,
+  .flash-danger,
+  .flow-dot,
+  .flow-ping {
+    animation: none;
+  }
+  .flow-dot {
+    opacity: 0;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

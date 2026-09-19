@@ -1,0 +1,52 @@
+export const metadata = { title: "How it works" };
+
+# How it works
+
+## The problem with one transaction per payment
+
+With the x402 `exact` scheme every payment is its own Stellar transaction. A ledger closes roughly every five seconds, so 1,000 API calls mean 1,000 transactions and well over an hour of settlement latency. Per-token or per-second pricing is not practical.
+
+## The channel scheme
+
+Reinkey adds a second x402 scheme, `channel`:
+
+1. **Open.** The buyer locks a deposit in the `channel` contract, naming the seller and a one-off *voucher key*. One transaction.
+2. **Pay.** For each call the buyer signs a voucher: *"channel 7, cumulative total 145000"*. The total only ever increases. The seller's middleware forwards it to the facilitator, which checks the signature, the deposit and the price, and records it. No chain involved; median verification is under a millisecond.
+3. **Claim.** The seller (or anyone, on the seller's behalf) submits the latest voucher to the contract. The contract pays the seller the difference since the last claim. One transaction, however many payments it covers.
+4. **Close.** After expiry the buyer closes the channel and the unused deposit is refunded.
+
+A thousand payments cost two or three transactions.
+
+### Why the facilitator can't steal
+
+The voucher is signed by the buyer and names the channel; the channel names the payee. `claim` can be called by anyone but only ever pays the channel's payee, and only up to the signed cumulative amount. A compromised facilitator can refuse service. It cannot move money anywhere else.
+
+## Units
+
+A seller prices an endpoint in one of three units:
+
+| Unit | Charged | Typical use |
+|---|---|---|
+| `request` | once per call | REST endpoints, order books, search |
+| `token` | per slice of N tokens on a streamed response | LLM inference |
+| `second` | per slice of N seconds on a live stream | market data feeds |
+
+Streams are paid slice by slice: when the paid-for slice runs out the server asks for the next voucher. If the connection drops, payment stops. If the deposit runs out, the stream stops with `CHANNEL_EXHAUSTED`.
+
+## The agent account
+
+An agent shouldn't hold an unrestricted wallet. A **Reinkey account** is a Soroban smart account whose `__check_auth` enforces a policy:
+
+- a per-transaction cap and a daily cap,
+- an allow-list of payees,
+- the one channel contract it may open channels on,
+- optionally a DEX router and the asset pairs it may trade,
+- an expiry ledger.
+
+The agent signs with its own key, but the network rejects anything outside the policy, with a transaction hash and a [reason code](/docs/reason-codes). The owner can `freeze` the account or `recall` its funds in a single transaction.
+
+Because opening a channel is itself a payment from the account, the policy bounds the most an agent can ever commit to a seller.
+
+## Amounts
+
+All amounts are integers in the asset's base unit, sent as decimal strings. USDC on Stellar has 7 decimals: `5000` is 0.0005 USDC. Use `bigint` in code; never floats.

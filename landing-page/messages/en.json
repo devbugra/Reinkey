@@ -1,0 +1,508 @@
+{
+  "meta": {
+    "title": "{name} — Metered x402 payments on Stellar",
+    "description": "Agents open a payment channel in one transaction and pay thousands of times in milliseconds, while the chain enforces how much they can spend. Live on Stellar testnet.",
+    "ogTitle": "Give your agent the keys. Keep the reins.",
+    "ogSubtitle": "Open in one transaction, pay in milliseconds, settle in one transaction."
+  },
+  "common": {
+    "languageSwitcher": "Language",
+    "skipToContent": "Skip to content",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "mainMenu": "Main menu"
+  },
+  "nav": {
+    "demo": "Demo",
+    "howItWorks": "How it works",
+    "architecture": "Architecture",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "panel": "Console",
+    "cta": "Start building",
+    "meter": "Meter",
+    "reins": "Reins",
+    "docs": "Docs",
+    "products": "Products"
+  },
+  "hero": {
+    "eyebrow": "Metered x402 · Stellar",
+    "titleLead": "Give your agent the keys.",
+    "titleAccent": "Keep the reins.",
+    "subtitle": "Your agent opens a payment channel and pays for every call, every token, in milliseconds, without touching the chain. The seller settles thousands of payments in a single transaction. How much the agent can spend, and with whom, is decided by its account on Stellar, not by a server.",
+    "ctaPrimary": "Try the demo",
+    "ctaSecondary": "Read the docs",
+    "note": "Live on Stellar testnet. No custody, no sign-up, no API keys.",
+    "trust": [
+      "1,000 payments, 2 transactions",
+      "Limits enforced on-chain",
+      "One line for sellers"
+    ]
+  },
+  "playground": {
+    "eyebrow": "Try it yourself",
+    "title": "Be the agent. Pay first, then hit the limit.",
+    "lead": "Open a channel, make calls, stream a response token by token. Watch the voucher count climb while the transaction count barely moves. Then push the cap: the rejection comes from the account, not from a server.",
+    "agent": "agent-01",
+    "policyTitle": "Account rules",
+    "policy": {
+      "daily": "Daily cap",
+      "perTx": "Per-transaction cap",
+      "payees": "Allowed payee"
+    },
+    "groups": {
+      "chain": "On-chain",
+      "seller": "Pay the seller"
+    },
+    "actions": {
+      "open": "Open channel (1 USDC)",
+      "topUp": "Top up (1 USDC)",
+      "claim": "Settle (seller)",
+      "big": "Open a 2 USDC channel",
+      "drain": "Send funds to self (compromised agent)",
+      "book": "One call",
+      "book100": "100 calls",
+      "chat": "Stream a response"
+    },
+    "counters": {
+      "vouchers": "Vouchers",
+      "txs": "Transactions",
+      "paid": "Paid",
+      "exact": "Same work with exact",
+      "exactValue": "{count} tx · {time}",
+      "seconds": "~{n}s",
+      "minutes": "~{n} min"
+    },
+    "meters": {
+      "daily": "Daily cap",
+      "channel": "Channel: spent / deposit"
+    },
+    "noChannel": "No channel",
+    "stream": {
+      "title": "Stream",
+      "idle": "The response will stream here token by token. One voucher every 50 tokens.",
+      "done": "Complete",
+      "cut": "Deposit exhausted, stream cut"
+    },
+    "trace": {
+      "title": "Request and response trace",
+      "empty": "No requests yet. Pick an action and each line shows up here with its source and timing.",
+      "voucher": "voucher",
+      "chainTime": "≈5 s",
+      "voucherTime": "~2 ms",
+      "voucherTimeEach": "~2 ms / voucher",
+      "pending": "waiting for ledger",
+      "deposit": "deposit {amount}",
+      "claim": "{count} vouchers → 1 tx · {amount}",
+      "nothingToClaim": "Nothing to settle",
+      "tokens": "{count} tokens"
+    },
+    "reset": "Reset",
+    "disclaimer": "Simulation: runs in your browser and makes no network requests. Rules, prices and reason codes match the product; on-chain steps are shown as ≈5 s instead of actually waiting.",
+    "chatText": "Every ledger on Stellar closes in about five seconds. That is quick for a single payment, but far too slow if you want to pay for every call or every token on its own. That is why payment channels exist. The agent opens a channel once and locks a deposit in the contract. From then on, each request carries a signed, cumulative voucher that never touches the chain. The seller checks it in milliseconds, answers right away, and settles whatever has built up in one transaction whenever it likes. Because vouchers are cumulative, the seller only keeps the latest one; an old voucher can never be worth more. When the deposit runs out, the stream stops, even in the middle of a sentence. The spending limit lives in the agent's account. The chain, not a server, enforces the daily cap, the per-transaction cap and the list of allowed payees. Even a compromised agent cannot send funds to its own wallet, because that address is not on the list. The facilitator pays network fees, verifies vouchers and triggers settlement on time, but it cannot touch the money. Anyone can verify a voucher, and funds only ever go to the channel's seller. So a thousand payments fit into two transactions: one to open the channel and one to settle it. You give your agent the keys. You keep the reins."
+  },
+  "compare": {
+    "eyebrow": "The difference",
+    "title": "A payment doesn't have to be a transaction.",
+    "todayTitle": "Today · x402 exact",
+    "todaySteps": [
+      "Sign for every call",
+      "Submit the transaction",
+      "Wait for the ledger (~5 s)",
+      "Repeat on the next call",
+      "1,000 calls = 1,000 tx ≈ 83 min"
+    ],
+    "todayNote": "Paying per token isn't practical. The agent's spending limit is either missing or lives on a server.",
+    "withTitle": "{name} · x402 channel",
+    "withSteps": [
+      "Open the channel once",
+      "Sign a voucher per call (milliseconds)",
+      "The seller settles in one transaction",
+      "1,000 calls = 2 tx"
+    ],
+    "withNote": "Pay per token or per second. The limit lives on-chain.",
+    "measureNote": "Measured on testnet; ledger ~5 s."
+  },
+  "problem": {
+    "eyebrow": "The problem",
+    "title": "Agents are spending money. The rails aren't ready.",
+    "subtitle": "Today's x402 flow turns every payment into its own transaction. Too slow for fast calls, too costly for tiny amounts, too blunt for permissions.",
+    "items": [
+      {
+        "title": "Every payment is a transaction",
+        "body": "A ledger closes in about 5 seconds. Pay per call, and every request waits those 5 seconds."
+      },
+      {
+        "title": "Micropayments don't pencil out",
+        "body": "Sending a separate transaction for a 0.00002 USDC per-token fee makes no sense."
+      },
+      {
+        "title": "Keys are all or nothing",
+        "body": "Hand the agent your wallet and it can spend everything. Don't, and it can't do anything."
+      }
+    ]
+  },
+  "statement": {
+    "text": "Payments move at the speed of the response. The limit stays on-chain."
+  },
+  "howItWorks": {
+    "eyebrow": "How it works",
+    "title": "Reins, channel, voucher.",
+    "subtitle": "Speed happens off-chain. Trust stays on-chain.",
+    "steps": [
+      {
+        "step": "01",
+        "title": "Put on the reins",
+        "body": "The owner sets up a {name} Account: a daily cap, a per-transaction cap and a list of allowed sellers. The rules are written on-chain."
+      },
+      {
+        "step": "02",
+        "title": "Open the channel",
+        "body": "The agent opens a channel with the seller in one transaction and locks a deposit. The deposit counts against the daily cap, so a channel can't break the limit."
+      },
+      {
+        "step": "03",
+        "title": "Pay, stream, settle",
+        "body": "Every request carries a signed, cumulative voucher that the seller checks in milliseconds. It all settles in one transaction, and whatever is left goes back to the agent."
+      }
+    ]
+  },
+  "architecture": {
+    "eyebrow": "Architecture",
+    "title": "The facilitator can't touch the money.",
+    "subtitle": "Anyone can verify a voucher, and anyone can trigger settlement. Funds only ever go to the channel's seller.",
+    "items": [
+      {
+        "name": "{name} Account",
+        "summary": "Soroban smart account, __check_auth",
+        "body": "Holds the funds and enforces the daily cap, the per-transaction cap and the allowed payees. A transfer that breaks the rules is rejected on-chain.",
+        "note": "The agent can't send funds to itself or to an unapproved address"
+      },
+      {
+        "name": "Channel contract",
+        "summary": "Deposit, vouchers, settlement",
+        "body": "Locks the deposit, verifies the cumulative voucher, settles and refunds. Because vouchers are cumulative, double spending is structurally impossible.",
+        "note": "open · top_up · claim · close"
+      },
+      {
+        "name": "Facilitator",
+        "summary": "x402 channel and exact schemes",
+        "body": "Verifies vouchers, triggers settlement automatically before the channel expires, and pays network fees. It has no authority to withdraw funds.",
+        "note": "exact is supported as a fallback"
+      },
+      {
+        "name": "meter() middleware",
+        "summary": "One line in the seller's API",
+        "body": "Prices an endpoint per call, per token or per second. Without payment it answers 402; with a valid voucher the request goes through.",
+        "note": "app.get(\"/api\", meter({ price, unit }), handler)"
+      }
+    ],
+    "whyStellar": "Why Stellar: custom account auth (__check_auth), fee sponsorship, and transactions that cost a fraction of a cent."
+  },
+  "features": {
+    "eyebrow": "Product",
+    "title": "One line for the seller. Reins for the agent.",
+    "items": [
+      {
+        "title": "One-line integration",
+        "body": "Add meter() to an endpoint and 402 responses, voucher checks and settlement come built in. No subscriptions, invoices or dashboard setup."
+      },
+      {
+        "title": "Per token, second or call",
+        "body": "The seller picks the unit. Payment keeps up mid-stream."
+      },
+      {
+        "title": "Non-custodial",
+        "body": "Funds sit either in the agent's account or in the channel contract. The facilitator never holds them."
+      },
+      {
+        "title": "Caps enforced on-chain",
+        "body": "The daily cap, per-transaction cap and allowed payees are written into the {name} Account and enforced by __check_auth. The limit holds even if a server goes down or gets compromised."
+      },
+      {
+        "title": "No XLM needed",
+        "body": "The facilitator pays network fees. The agent only holds USDC."
+      },
+      {
+        "title": "Self-describing service",
+        "body": "OpenAPI, llms.txt and MCP: an agent can discover and call the service without reading the docs."
+      }
+    ]
+  },
+  "limits": {
+    "eyebrow": "Honest limits",
+    "title": "What this isn't, up front.",
+    "body": "Channels take the payments in between off the chain; they don't make the chain itself faster. Opening a channel and settling it are still transactions, and a ledger still closes in about 5 seconds.",
+    "points": [
+      "Opening and settling are on-chain transactions (~5 s); the payments in between are not",
+      "Channels are one-way: from agent to seller",
+      "The seller must settle before the channel expires; the facilitator does this automatically",
+      "Runs on Stellar testnet, not mainnet",
+      "The contracts haven't been audited yet"
+    ]
+  },
+  "audience": {
+    "eyebrow": "Who it's for",
+    "title": "Anyone selling calls, tokens or seconds.",
+    "items": [
+      {
+        "title": "API and data sellers",
+        "body": "Charge per call or per token, without subscriptions or invoices."
+      },
+      {
+        "title": "LLM and inference providers",
+        "body": "Get paid for exactly the tokens you generate, with a budget that can stop mid-stream."
+      },
+      {
+        "title": "Agent developers",
+        "body": "Give an agent spending power without handing over the wallet. The cap lives on-chain."
+      },
+      {
+        "title": "Platforms",
+        "body": "Products that want to set a separate limit for each of their users' agents."
+      }
+    ]
+  },
+  "pricing": {
+    "eyebrow": "Pricing",
+    "title": "Free on testnet. Volume-based after that.",
+    "subtitle": "Everything runs on testnet today, at no cost. Pricing for the hosted service isn't set yet; the contracts and middleware are open source.",
+    "plans": [
+      {
+        "name": "Testnet",
+        "badge": "Live now",
+        "price": "Free",
+        "period": "",
+        "description": "Try it now with the hosted facilitator.",
+        "cta": "Integrate",
+        "trial": "No sign-up, no API keys.",
+        "features": [
+          "Hosted facilitator",
+          "Live dashboard",
+          "Unlimited channels"
+        ]
+      },
+      {
+        "name": "Seller",
+        "price": "Soon",
+        "period": "",
+        "description": "A monthly base plus a small share of settled volume.",
+        "cta": "See the live dashboard",
+        "trial": "Pricing will be announced with mainnet.",
+        "features": [
+          "Fee sponsorship",
+          "Audit trail",
+          "Automatic settlement"
+        ]
+      },
+      {
+        "name": "Your own facilitator",
+        "price": "Open source",
+        "period": "",
+        "description": "The contracts and middleware, on your own server.",
+        "cta": "OpenAPI schema",
+        "trial": "Nothing to pay us.",
+        "features": [
+          "Channel and {name} Account contracts",
+          "meter() middleware",
+          "Facilitator server"
+        ]
+      }
+    ],
+    "note": "No made-up numbers here: prices will show up once they're set.",
+    "endpoints": {
+      "title": "Demo seller prices",
+      "lead": "The endpoints in the live demo are protected by meter(): the first request returns 402 with the terms, and a request carrying a voucher gets the response.",
+      "note": "Testnet USDC. The facilitator pays network fees."
+    }
+  },
+  "faq": {
+    "eyebrow": "FAQ",
+    "title": "Frequently asked",
+    "items": [
+      {
+        "q": "Do I have to trust the facilitator?",
+        "a": "No. Vouchers are verified by the channel contract, and funds only go to the channel's seller. The facilitator verifies, triggers settlement and pays network fees; it can't withdraw anything."
+      },
+      {
+        "q": "What if the channel closes before the seller settles?",
+        "a": "The agent can only close the channel after it expires and a grace period passes. The facilitator settles automatically before that happens."
+      },
+      {
+        "q": "Can the agent spend more than its deposit?",
+        "a": "No. A voucher above the deposit is rejected by both the facilitator and the chain (CHANNEL_EXHAUSTED), and the stream stops mid-sentence."
+      },
+      {
+        "q": "Can the agent move funds to its own wallet?",
+        "a": "No. The {name} Account only pays allowed payees, and the chain enforces it (PAYEE_NOT_ALLOWED)."
+      },
+      {
+        "q": "Does the agent need to hold XLM?",
+        "a": "No. The facilitator pays network fees."
+      },
+      {
+        "q": "Why Stellar?",
+        "a": "Custom account auth (__check_auth), fee sponsorship and very low transaction costs. Together they make on-chain spending limits and cheap channel opens and settlements possible."
+      },
+      {
+        "q": "Is this a DEX?",
+        "a": "No. It's a payment rail with spending permissions. Agents use it to pay whatever service they need."
+      },
+      {
+        "q": "Which version of x402?",
+        "a": "channel is a new scheme; exact is supported as a fallback."
+      }
+    ]
+  },
+  "closing": {
+    "title": "This isn't a video. It's a live URL.",
+    "subtitle": "Call it with your own agent. The first request returns 402 with the terms; sign a voucher if you have a channel, or open one if you don't.",
+    "cta": "llms.txt",
+    "ctaSecondary": "OpenAPI schema"
+  },
+  "footer": {
+    "tagline": "Metered x402 on Stellar. Give your agent the keys, keep the reins.",
+    "product": "Product",
+    "developers": "Developers",
+    "resources": "Resources",
+    "links": {
+      "demo": "Demo",
+      "howItWorks": "How it works",
+      "architecture": "Architecture",
+      "pricing": "Pricing",
+      "openapi": "OpenAPI",
+      "llms": "llms.txt",
+      "panel": "Console",
+      "stellar": "Stellar docs",
+      "x402": "x402 protocol",
+      "x402Stellar": "@x402/stellar",
+      "networkLimits": "Network limits",
+      "scfRfp": "SCF RFP track",
+      "docs": "Docs"
+    },
+    "disclaimer": "A non-custodial payment protocol running on Stellar testnet. The contracts haven't been audited yet.",
+    "event": "Stellar Pro Hackathon · Istanbul · 2026",
+    "products": "Products"
+  },
+  "productsSection": {
+    "eyebrow": "Products",
+    "title": "One rail, two products.",
+    "lead": "{name} solves both sides: the seller charges for exactly what was used, the agent spends from an account whose limits are written on-chain. Use one, or both.",
+    "learnMore": "Explore {product}",
+    "docs": "Quickstart",
+    "for": {
+      "meter": "For sellers",
+      "reins": "For agent owners"
+    }
+  },
+  "products": {
+    "meter": {
+      "meta": {
+        "title": "Meter: usage-based billing",
+        "description": "Sell any API per request, per token or per second. One line of middleware, over x402, on Stellar. No subscriptions, invoices or API keys."
+      },
+      "eyebrow": "Reinkey Meter",
+      "title": "Charge for exactly what was used.",
+      "tagline": "Bill per request, per token or per second. One line.",
+      "subtitle": "Add meter() to an endpoint. Unpaid requests get the terms in a 402, paid requests are verified in milliseconds, and thousands of payments land in your wallet in a single on-chain transaction.",
+      "bullets": [
+        "Request, token or second: you pick the unit",
+        "Vouchers verify off-chain: median under 1 ms",
+        "Thousands of payments settle in one transaction"
+      ],
+      "codeTitle": "Your first paid endpoint in 60 seconds",
+      "codeLead": "Install the package, pass the facilitator URL and your Stellar address, set a price. The 402 response, voucher verification and settlement come built in.",
+      "responseTitle": "Unpaid requests get the terms",
+      "responseLead": "Agents don't read docs. The 402 body states the price, unit, network and pay-to address in a machine-readable shape; @reinkey/sdk handles the rest.",
+      "features": [
+        {
+          "title": "Three units",
+          "body": "request: per call. token: slice by slice on a streamed response. second: for exactly as long as a live feed is listened to. Payment stops when the connection drops; the stream stops when the deposit runs out. Streaming units run on the demo seller today; per-request billing is ready in the package."
+        },
+        {
+          "title": "Non-custodial",
+          "body": "Funds sit either in the buyer's account or in the channel contract. The facilitator can't touch them: anyone can verify a voucher, anyone can trigger settlement, and the money only goes to you."
+        },
+        {
+          "title": "Automatic settlement",
+          "body": "Once accumulated vouchers pass a threshold, or the channel nears expiry, the facilitator settles with a single claim transaction. Don't want to wait? Trigger it yourself: anyone can call claim."
+        },
+        {
+          "title": "Standard x402",
+          "body": "PAYMENT-REQUIRED, PAYMENT-SIGNATURE and PAYMENT-RESPONSE are the same headers as x402 v2. The channel scheme is offered next to exact as a second option."
+        },
+        {
+          "title": "No network fees",
+          "body": "Buyers don't need to hold XLM; the facilitator pays transaction fees. You only ever receive USDC."
+        },
+        {
+          "title": "Explainable rejections",
+          "body": "Every rejected payment returns a reason code: CHANNEL_EXHAUSTED, VOUCHER_UNDERPAID, WRONG_PAYEE, CHANNEL_EXPIRING. The agent reads what to fix from the body; nobody opens a support ticket."
+        }
+      ],
+      "limitsTitle": "What exists today, and what doesn't",
+      "limits": [
+        "Runs on Stellar testnet; the contracts haven't been audited yet.",
+        "The package targets Express and compatible servers (Nest, Connect).",
+        "Per-request billing is complete in the package. Per-token and per-second streams run only on the demo seller today: stream sessions live inside the facilitator and aren't open to external sellers yet."
+      ],
+      "ctaTitle": "Open your first paid endpoint today.",
+      "ctaPrimary": "Meter quickstart",
+      "ctaSecondary": "Watch the live demo"
+    },
+    "reins": {
+      "meta": {
+        "title": "Reins: on-chain spending authority for agents",
+        "description": "Give your agent the keys, keep the reins. Daily cap, per-transaction cap, allowed payees and trading pairs are written on Stellar and enforced by the network."
+      },
+      "eyebrow": "Reinkey Reins",
+      "title": "The agent holds the key. You hold the reins.",
+      "tagline": "An agent account whose limits are enforced by the chain, not a server.",
+      "subtitle": "Reins is a smart account with its policy written on-chain. The agent pays and trades with its own key; Stellar enforces the cap, the allowed payees and the allowed pairs. Even a stolen key can't step outside the limit.",
+      "bullets": [
+        "Daily and per-transaction caps",
+        "Allowed payees and trading pairs only",
+        "Freeze in one transaction, recall in one transaction"
+      ],
+      "codeTitle": "The agent pays. You sleep.",
+      "codeLead": "The agent opens a channel in one transaction, then pays for every call with a signed voucher. No sign-up, no API key, no credit card.",
+      "responseTitle": "Over-limit transactions fail on-chain",
+      "responseLead": "The rejection comes from __check_auth, not from a server: with a transaction hash and a reason code anyone can verify.",
+      "features": [
+        {
+          "title": "Policy on-chain",
+          "body": "Daily cap, per-transaction cap, allowed payees, allowed DEX pairs and an expiry are written inside the account. The limit holds even if a server goes down or gets compromised."
+        },
+        {
+          "title": "Freeze and recall",
+          "body": "The owner freezes the account in one transaction: from that moment the agent key can't sign anything. recall pulls the balance back whenever you want."
+        },
+        {
+          "title": "Bounded trading",
+          "body": "The agent can trade on the Stellar DEX (Soroswap); which pair, how much per trade and per day is in the policy. Trades without slippage protection are rejected."
+        },
+        {
+          "title": "No XLM for the agent",
+          "body": "A relayer submits the transaction and pays the fee; the agent only signs the authorization entry. The only asset in the agent's wallet is USDC."
+        },
+        {
+          "title": "Explainable rejections",
+          "body": "Every rejection carries a reason code: PER_TX_CAP_EXCEEDED, PAYEE_NOT_ALLOWED, DAILY_CAP_EXCEEDED, ACCOUNT_FROZEN. Policy rejections also surface in simulation, before anything hits the chain."
+        },
+        {
+          "title": "Live audit",
+          "body": "The console shows every payment, every on-chain transaction and every rejection live; the permanent ledger is paginated and complete."
+        }
+      ],
+      "limitsTitle": "What exists today, and what doesn't",
+      "limits": [
+        "Runs on Stellar testnet; the contracts haven't been audited yet.",
+        "Accounts are deployed with a script today; one-click setup from the console is on the roadmap.",
+        "On-chain trade limits apply on the DEX side. The chain can't see trades inside a centralized exchange's internal ledger."
+      ],
+      "ctaTitle": "Give your agent spending power, safely.",
+      "ctaPrimary": "Reins quickstart",
+      "ctaSecondary": "Watch a rejection live"
+    }
+  }
+}

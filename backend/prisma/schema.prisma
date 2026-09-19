@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Channel {
+  id                 BigInt   @id
+  payer              String
+  payee              String
+  asset              String
+  deposit            BigInt
+  claimed            BigInt
+  lastAccepted       BigInt   @default(0)
+  lastSig            String?
+  voucherKey         String
+  expiryLedger       Int
+  open               Boolean
+  vouchersSinceClaim Int      @default(0)
+  updatedAt          DateTime @updatedAt
+  createdAt          DateTime @default(now())
+}
+
+model Event {
+  id        BigInt   @id @default(autoincrement())
+  type      String
+  source    String
+  channelId BigInt?
+  account   String?
+  code      String?
+  tx        String?
+  data      Json
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([account])
+  @@index([channelId])
+}

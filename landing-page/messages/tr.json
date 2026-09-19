@@ -1,0 +1,508 @@
+{
+  "meta": {
+    "title": "{name} — Stellar'da sayaçlı x402 ödemeleri",
+    "description": "Ajanlar tek işlemle bir ödeme kanalı açar, milisaniyede binlerce kez öder; harcama sınırını zincir uygular. Stellar testnet üzerinde canlı.",
+    "ogTitle": "Anahtarı ajana ver. Dizgin sende kalsın.",
+    "ogSubtitle": "Tek işlemle aç, milisaniyede öde, tek işlemle tahsil et."
+  },
+  "common": {
+    "languageSwitcher": "Dil",
+    "skipToContent": "İçeriğe geç",
+    "openMenu": "Menüyü aç",
+    "closeMenu": "Menüyü kapat",
+    "mainMenu": "Ana menü"
+  },
+  "nav": {
+    "demo": "Demo",
+    "howItWorks": "Nasıl çalışır",
+    "architecture": "Mimari",
+    "pricing": "Ücretler",
+    "faq": "SSS",
+    "panel": "Konsol",
+    "cta": "Geliştirmeye başla",
+    "meter": "Meter",
+    "reins": "Reins",
+    "docs": "Belgeler",
+    "products": "Ürünler"
+  },
+  "hero": {
+    "eyebrow": "Sayaçlı x402 · Stellar",
+    "titleLead": "Anahtarı ajana ver.",
+    "titleAccent": "Dizgin sende kalsın.",
+    "subtitle": "Ajanınız bir ödeme kanalı açar ve her çağrıyı, her token'ı zincire gitmeden milisaniyede öder. Satıcı binlerce ödemeyi tek işlemle tahsil eder. Ajanın ne kadar ve kime harcayabileceğine ise sunucu değil, Stellar'daki hesabı karar verir.",
+    "ctaPrimary": "Demoyu dene",
+    "ctaSecondary": "Belgeleri oku",
+    "note": "Stellar testnet üzerinde canlı. Emanet yok, kayıt yok, API anahtarı yok.",
+    "trust": [
+      "1000 ödeme, 2 zincir işlemi",
+      "Sınırı zincir uygular",
+      "Satıcıya tek satır"
+    ]
+  },
+  "playground": {
+    "eyebrow": "Kendiniz deneyin",
+    "title": "Bir ajan olun. Önce ödeyin, sonra sınıra çarpın.",
+    "lead": "Kanalı açın, çağrı yapın, yanıtı token token akıtın. Kupon sayısı artarken zincir işlemi sayısının neredeyse hiç değişmediğine bakın. Sonra tavanı zorlayın: red sunucudan değil, hesaptan gelir.",
+    "agent": "ajan-01",
+    "policyTitle": "Hesabın kuralları",
+    "policy": {
+      "daily": "Günlük tavan",
+      "perTx": "Tek işlem tavanı",
+      "payees": "İzinli alıcı"
+    },
+    "groups": {
+      "chain": "Zincir işlemleri",
+      "seller": "Satıcıya ödeme"
+    },
+    "actions": {
+      "open": "Kanal aç (1 USDC)",
+      "topUp": "Depozito ekle (1 USDC)",
+      "claim": "Tahsil et (satıcı)",
+      "big": "2 USDC'lik kanal aç",
+      "drain": "Parayı kendine gönder (ele geçirilmiş ajan)",
+      "book": "Tek çağrı",
+      "book100": "100 çağrı",
+      "chat": "Yanıtı token token akıt"
+    },
+    "counters": {
+      "vouchers": "Kupon",
+      "txs": "Zincir işlemi",
+      "paid": "Ödenen",
+      "exact": "Aynı iş exact ile",
+      "exactValue": "{count} işlem · {time}",
+      "seconds": "~{n} sn",
+      "minutes": "~{n} dk"
+    },
+    "meters": {
+      "daily": "Günlük tavan",
+      "channel": "Kanal: harcanan / depozito"
+    },
+    "noChannel": "Kanal yok",
+    "stream": {
+      "title": "Akış",
+      "idle": "Yanıt burada token token akacak. Her 50 token bir kupon.",
+      "done": "Tamamlandı",
+      "cut": "Depozito bitti, akış kesildi"
+    },
+    "trace": {
+      "title": "İstek ve yanıt izi",
+      "empty": "Henüz istek yok. Bir eylem seçtiğinizde her satır kaynağı ve süresiyle burada belirir.",
+      "voucher": "kupon",
+      "chainTime": "≈5 sn",
+      "voucherTime": "~2 ms",
+      "voucherTimeEach": "~2 ms / kupon",
+      "pending": "ledger bekleniyor",
+      "deposit": "depozito {amount}",
+      "claim": "{count} kupon → 1 işlem · {amount}",
+      "nothingToClaim": "Tahsil edilecek kupon yok",
+      "tokens": "{count} token"
+    },
+    "reset": "Sıfırla",
+    "disclaimer": "Simülasyon: tarayıcıda çalışır, ağa istek atmaz. Kurallar, fiyatlar ve sebep kodları ürünle aynıdır; zincir işlemleri beklenmez, ≈5 sn olarak gösterilir.",
+    "chatText": "Stellar'da her ledger yaklaşık beş saniyede kapanır. Bu, tek bir ödeme için kısa bir süredir ama her çağrıyı ya da her token'ı ayrı ayrı ödemek için çok uzundur. Ödeme kanalı bu yüzden var. Ajan kanalı bir kez açar ve depozitoyu kontrata kilitler. Sonrasında her istekte zincire hiç gitmeden imzalı ve kümülatif bir kupon gönderir. Satıcı kuponu milisaniyeler içinde doğrular, yanıtı hemen döner ve biriken tutarı istediği zaman tek bir işlemle tahsil eder. Kupon kümülatif olduğu için satıcı yalnızca sonuncusunu saklar; eski bir kupon hiçbir zaman daha fazla para getirmez. Depozito biterse akış da biter, cümlenin tam ortasında bile. Harcama sınırı ise ajanın hesabında yazılıdır. Günlük tavanı, tek işlem tavanını ve izinli alıcıları sunucu değil zincir uygular. Ajan ele geçirilse bile parayı kendi cüzdanına gönderemez, çünkü o adres izinli listede değildir. Facilitator ağ ücretlerini öder, kuponları doğrular ve tahsilatı zamanında tetikler, ama paraya dokunamaz. Kuponu herkes doğrulayabilir; para yalnızca kanalın satıcısına gider. Böylece bin ödeme iki zincir işlemine sığar: biri kanalı açmak, biri tahsil etmek için. Anahtarı ajana verirsiniz, dizgin sizde kalır."
+  },
+  "compare": {
+    "eyebrow": "Fark",
+    "title": "Her ödeme bir işlem olmak zorunda değil.",
+    "todayTitle": "Bugün · x402 exact",
+    "todaySteps": [
+      "Her çağrı için imzala",
+      "İşlemi gönder",
+      "Ledger'ı bekle (~5 sn)",
+      "Sonraki çağrıda tekrarla",
+      "1000 çağrı = 1000 işlem ≈ 83 dk"
+    ],
+    "todayNote": "Token başına ödeme pratik değil. Ajanın harcama sınırı ya yok ya da sunucuda.",
+    "withTitle": "{name} · x402 channel",
+    "withSteps": [
+      "Kanalı bir kez aç",
+      "Her çağrıda kupon imzala (milisaniye)",
+      "Satıcı tek işlemle tahsil eder",
+      "1000 çağrı = 2 işlem"
+    ],
+    "withNote": "Token ve saniye başına ödeme mümkün. Sınır zincirde.",
+    "measureNote": "Testnet ölçümü; ledger ~5 sn."
+  },
+  "problem": {
+    "eyebrow": "Sorun",
+    "title": "Ajanlar para harcamaya başladı. Ray buna hazır değil.",
+    "subtitle": "Bugünkü x402 akışı her ödemeyi ayrı bir zincir işlemine çeviriyor. Hızlı çağrılar için yavaş, küçük tutarlar için pahalı, yetki için kaba.",
+    "items": [
+      {
+        "title": "Her ödeme bir işlem",
+        "body": "Ledger yaklaşık 5 saniyede kapanır. Çağrı başına ödemede her istek bu 5 saniyeyi bekler."
+      },
+      {
+        "title": "Mikro ödeme ekonomik değil",
+        "body": "Token başına 0,00002 USDC'lik bir ücret için ayrı bir işlem göndermek anlamsız."
+      },
+      {
+        "title": "Anahtar ya hep ya hiç",
+        "body": "Ajana cüzdanı verirseniz her şeyi harcayabilir. Vermezseniz hiçbir şey yapamaz."
+      }
+    ]
+  },
+  "statement": {
+    "text": "Ödeme yanıtın hızında akar. Sınır zincirde durur."
+  },
+  "howItWorks": {
+    "eyebrow": "Nasıl çalışır",
+    "title": "Dizgin, kanal, kupon.",
+    "subtitle": "Hız gereken yer zincir dışında, güven gereken yer zincirde.",
+    "steps": [
+      {
+        "step": "01",
+        "title": "Dizgini tak",
+        "body": "Sahip bir {name} Account kurar: günlük tavan, tek işlem tavanı, izinli satıcılar. Kurallar zincirde yazılıdır."
+      },
+      {
+        "step": "02",
+        "title": "Kanalı aç",
+        "body": "Ajan satıcıyla tek işlemde bir kanal açar ve depozitoyu kilitler. Depozito günlük tavandan düşer; kanal sınırı delemez."
+      },
+      {
+        "step": "03",
+        "title": "Öde, akıt, tahsil et",
+        "body": "Her istekte imzalı, kümülatif bir kupon; satıcı milisaniyede doğrular. Birikenler tek işlemle tahsil edilir, kalan depozito ajana döner."
+      }
+    ]
+  },
+  "architecture": {
+    "eyebrow": "Mimari",
+    "title": "Facilitator paraya dokunamaz.",
+    "subtitle": "Kuponu herkes doğrulayabilir, tahsilatı herkes tetikleyebilir. Para yalnızca kanalın satıcısına gider.",
+    "items": [
+      {
+        "name": "{name} Account",
+        "summary": "Soroban akıllı hesabı, __check_auth",
+        "body": "Fonu tutar; günlük tavanı, tek işlem tavanını ve izinli alıcıları uygular. Kurala uymayan transfer zincirde reddedilir.",
+        "note": "Ajan parayı kendine ya da izinsiz bir adrese gönderemez"
+      },
+      {
+        "name": "Channel kontratı",
+        "summary": "Depozito, kupon, tahsilat",
+        "body": "Depozitoyu kilitler, kümülatif kuponu doğrular, tahsilat ve iade yapar. Kupon kümülatif olduğu için çift harcama yapısal olarak imkânsız.",
+        "note": "open · top_up · claim · close"
+      },
+      {
+        "name": "Facilitator",
+        "summary": "x402 channel ve exact şemaları",
+        "body": "Kuponu doğrular, tahsilatı süre dolmadan otomatik tetikler ve ağ ücretlerini öder. Fonları çekme yetkisi yoktur.",
+        "note": "exact şeması yedek olarak desteklenir"
+      },
+      {
+        "name": "meter() middleware'i",
+        "summary": "Satıcının API'sine tek satır",
+        "body": "Uç noktayı fiyatlandırır: çağrı, token ya da saniye başına. Ödeme yoksa 402 döner, geçerli kupon gelince isteği geçirir.",
+        "note": "app.get(\"/api\", meter({ price, unit }), handler)"
+      }
+    ],
+    "whyStellar": "Neden Stellar: özel hesap auth'u (__check_auth), ücret sponsorluğu ve sentin kesri kadar işlem maliyeti."
+  },
+  "features": {
+    "eyebrow": "Ürün",
+    "title": "Satıcı için bir satır, ajan için bir dizgin.",
+    "items": [
+      {
+        "title": "Tek satır entegrasyon",
+        "body": "Satıcı uç noktasına meter() ekler; 402, kupon doğrulama ve tahsilat hazır gelir. Abonelik, fatura ya da panel kurulumu yok."
+      },
+      {
+        "title": "Token, saniye ya da çağrı",
+        "body": "Fiyat birimi satıcının seçimi. Akış ortasında da ödenir."
+      },
+      {
+        "title": "Emanetsiz",
+        "body": "Fon ya ajanın hesabında ya kanal kontratında durur. Facilitator tutmaz."
+      },
+      {
+        "title": "Tavan zincirde",
+        "body": "Günlük tavan, tek işlem tavanı ve izinli alıcılar {name} Account'ta yazılıdır ve __check_auth ile uygulanır. Sunucu kapansa ya da ele geçirilse de sınır yerinde kalır."
+      },
+      {
+        "title": "Ajan XLM tutmaz",
+        "body": "Ağ ücretlerini facilitator öder. Ajanın elinde yalnızca USDC olur."
+      },
+      {
+        "title": "Kendini tanıtan servis",
+        "body": "OpenAPI, llms.txt ve MCP: ajan servisi dokümana bakmadan keşfeder ve çağırır."
+      }
+    ]
+  },
+  "limits": {
+    "eyebrow": "Dürüst sınırlar",
+    "title": "Neyin ne olmadığını baştan söylüyoruz.",
+    "body": "Kanal ara ödemeleri zincirden çıkarır, zincirin kendisini hızlandırmaz. Kanalı açmak ve tahsil etmek hâlâ birer zincir işlemidir ve ledger yaklaşık 5 saniyede kapanır.",
+    "points": [
+      "Kanal açmak ve tahsil etmek zincir işlemidir (~5 sn); ara ödemeler değildir",
+      "Kanal tek yönlüdür: ajandan satıcıya",
+      "Satıcı, kanalın süresi dolmadan tahsil etmelidir; facilitator bunu otomatik yapar",
+      "Stellar testnet üzerinde çalışır, mainnet'te değil",
+      "Kontratlar henüz denetlenmedi"
+    ]
+  },
+  "audience": {
+    "eyebrow": "Kimin için",
+    "title": "Çağrı, token ya da saniye satan herkes.",
+    "items": [
+      {
+        "title": "API ve veri satıcıları",
+        "body": "Çağrı ya da token başına fiyat; abonelik ve fatura derdi olmadan."
+      },
+      {
+        "title": "LLM ve çıkarım sağlayıcıları",
+        "body": "Üretilen token kadar ödeme; akış ortasında kesilebilen bütçe."
+      },
+      {
+        "title": "Ajan geliştiricileri",
+        "body": "Ajana cüzdanı vermeden harcama yetkisi. Tavan zincirde."
+      },
+      {
+        "title": "Platformlar",
+        "body": "Kullanıcılarının ajanlarına ayrı ayrı sınır koymak isteyen ürünler."
+      }
+    ]
+  },
+  "pricing": {
+    "eyebrow": "Ücretler",
+    "title": "Testnet'te ücretsiz. Sonra hacimle.",
+    "subtitle": "Bugün her şey testnet'te ve ücretsiz. Barındırılan servisin fiyatı henüz belli değil; kontratlar ve middleware açık kaynak.",
+    "plans": [
+      {
+        "name": "Testnet",
+        "badge": "Şu an canlı",
+        "price": "Ücretsiz",
+        "period": "",
+        "description": "Barındırılan facilitator ile hemen deneyin.",
+        "cta": "Entegre et",
+        "trial": "Kayıt yok, API anahtarı yok.",
+        "features": [
+          "Barındırılan facilitator",
+          "Canlı panel",
+          "Sınırsız kanal"
+        ]
+      },
+      {
+        "name": "Satıcı",
+        "price": "Yakında",
+        "period": "",
+        "description": "Aylık taban + tahsil edilen hacimden küçük bir pay.",
+        "cta": "Canlı paneli gör",
+        "trial": "Fiyat mainnet ile birlikte açıklanacak.",
+        "features": [
+          "Ücret sponsorluğu",
+          "Denetim defteri",
+          "Otomatik tahsilat"
+        ]
+      },
+      {
+        "name": "Kendi facilitator'ın",
+        "price": "Açık kaynak",
+        "period": "",
+        "description": "Kontratlar ve middleware, kendi sunucunuzda.",
+        "cta": "OpenAPI şeması",
+        "trial": "Bize ödeme yok.",
+        "features": [
+          "Channel ve {name} Account kontratları",
+          "meter() middleware'i",
+          "Facilitator sunucusu"
+        ]
+      }
+    ],
+    "note": "Tabloda uydurma bir rakam yok: fiyat belli olduğunda buraya yazılacak.",
+    "endpoints": {
+      "title": "Demo satıcının fiyatları",
+      "lead": "Canlı demodaki uçlar meter() ile korunur: ilk istek 402 ile şartları döner, kuponlu istek yanıtı getirir.",
+      "note": "Testnet USDC. Ağ ücretlerini facilitator öder."
+    }
+  },
+  "faq": {
+    "eyebrow": "SSS",
+    "title": "Sık sorulanlar",
+    "items": [
+      {
+        "q": "Facilitator'a güvenmem gerekiyor mu?",
+        "a": "Hayır. Kupon kanal kontratında doğrulanır ve para yalnızca kanalın satıcısına gider. Facilitator yalnızca doğrular, tahsilatı tetikler ve ağ ücretini öder; fonları çekemez."
+      },
+      {
+        "q": "Satıcı kuponu tahsil etmeden kanal kapanırsa ne olur?",
+        "a": "Ajan kanalı ancak süre ve bekleme payı dolduktan sonra kapatabilir. Facilitator, süre dolmadan tahsilatı otomatik yapar."
+      },
+      {
+        "q": "Ajan depozitodan fazlasını harcayabilir mi?",
+        "a": "Hayır. Kupon depozitoyu aşarsa hem facilitator hem zincir reddeder (CHANNEL_EXHAUSTED); akış cümlenin ortasında kesilir."
+      },
+      {
+        "q": "Ajan parayı kendi cüzdanına çekebilir mi?",
+        "a": "Hayır. {name} Account yalnızca izinli alıcılara öder ve bunu zincir uygular (PAYEE_NOT_ALLOWED)."
+      },
+      {
+        "q": "Ajanın XLM tutması gerekiyor mu?",
+        "a": "Hayır. Ağ ücretlerini facilitator öder."
+      },
+      {
+        "q": "Neden Stellar?",
+        "a": "Özel hesap auth'u (__check_auth), ücret sponsorluğu ve çok düşük işlem maliyeti. Üçü birlikte zincirde uygulanan harcama sınırını ve ucuz kanal açıp kapamayı mümkün kılıyor."
+      },
+      {
+        "q": "Bu bir DEX mi?",
+        "a": "Hayır. Bir ödeme rayı ve harcama yetkisi. Ajan bununla istediği serviste harcar."
+      },
+      {
+        "q": "Hangi x402 sürümü?",
+        "a": "channel yeni bir şema; exact yedek olarak desteklenir."
+      }
+    ]
+  },
+  "closing": {
+    "title": "Bu bir video değil. Canlı bir URL.",
+    "subtitle": "Kendi ajanınızla çağırın. İlk istek 402 ile şartları döner; kanalınız varsa kupon imzalayın, yoksa bir tane açın.",
+    "cta": "llms.txt",
+    "ctaSecondary": "OpenAPI şeması"
+  },
+  "footer": {
+    "tagline": "Stellar'da sayaçlı x402. Anahtarı ajana ver, dizgin sende kalsın.",
+    "product": "Ürün",
+    "developers": "Geliştirici",
+    "resources": "Kaynaklar",
+    "links": {
+      "demo": "Demo",
+      "howItWorks": "Nasıl çalışır",
+      "architecture": "Mimari",
+      "pricing": "Ücretler",
+      "openapi": "OpenAPI",
+      "llms": "llms.txt",
+      "panel": "Konsol",
+      "stellar": "Stellar dokümanı",
+      "x402": "x402 protokolü",
+      "x402Stellar": "@x402/stellar",
+      "networkLimits": "Ağ limitleri",
+      "scfRfp": "SCF RFP track",
+      "docs": "Belgeler"
+    },
+    "disclaimer": "Stellar testnet üzerinde çalışan emanetsiz bir ödeme protokolü. Kontratlar henüz denetlenmedi.",
+    "event": "Stellar Pro Hackathon · İstanbul · 2026",
+    "products": "Ürünler"
+  },
+  "productsSection": {
+    "eyebrow": "Ürünler",
+    "title": "Tek ray, iki ürün.",
+    "lead": "{name} iki tarafı da çözer: satıcı kullanım kadar tahsil eder, ajan sınırı zincirde yazılı bir hesapla harcar. Birini ya da ikisini birden kullanın.",
+    "learnMore": "{product} sayfası",
+    "docs": "Hızlı başlangıç",
+    "for": {
+      "meter": "Satıcılar için",
+      "reins": "Ajan sahipleri için"
+    }
+  },
+  "products": {
+    "meter": {
+      "meta": {
+        "title": "Meter: kullanım bazlı tahsilat",
+        "description": "Herhangi bir API'yi çağrı, token ya da saniye başına satın. Tek satır middleware, x402 üzerinden, Stellar'da. Abonelik, fatura ve API anahtarı yok."
+      },
+      "eyebrow": "Reinkey Meter",
+      "title": "API'nizi kullanım kadar satın.",
+      "tagline": "Çağrı, token ya da saniye başına tahsilat. Tek satır.",
+      "subtitle": "Bir uca meter() ekleyin. Ödemeyen istek 402 ile şartları alır, ödeyen istek milisaniyede doğrulanır, biriken binlerce ödeme tek zincir işlemiyle cüzdanınıza gelir.",
+      "bullets": [
+        "Çağrı, token ya da saniye: birimi siz seçersiniz",
+        "Kupon zincire gitmeden doğrulanır: ortanca 1 ms'nin altında",
+        "Binlerce ödeme tek işlemle tahsil edilir"
+      ],
+      "codeTitle": "60 saniyede ilk ücretli uç",
+      "codeLead": "Paketi kurun, facilitator adresini ve Stellar adresinizi verin, fiyatı yazın. 402 yanıtı, kupon doğrulaması ve tahsilat hazır gelir.",
+      "responseTitle": "Ödemeyen istek şartları alır",
+      "responseLead": "Ajanlar belge okumaz. 402 gövdesi fiyatı, birimi, ağı ve ödeme adresini makinenin okuyacağı biçimde söyler; @reinkey/sdk gerisini halleder.",
+      "features": [
+        {
+          "title": "Üç birim",
+          "body": "request: çağrı başına. token: akışlı yanıtta dilim dilim. second: canlı veri akışında dinlenen saniye kadar. Bağlantı kesilince ödeme durur, depozito bitince akış kesilir. Akışlı birimler bugün demo satıcıda; pakette çağrı başına tahsilat hazır."
+        },
+        {
+          "title": "Emanetsiz",
+          "body": "Para ya alıcının hesabında ya da kanal kontratında durur. Facilitator paraya dokunamaz; kuponu herkes doğrulayabilir, tahsilatı herkes tetikleyebilir, para yalnızca size gider."
+        },
+        {
+          "title": "Otomatik tahsilat",
+          "body": "Biriken kuponlar eşiği geçince ya da kanalın süresi dolmaya yaklaşınca facilitator tek claim işlemiyle tahsil eder. Beklemek istemezseniz tahsilatı kendiniz tetiklersiniz: claim'i herkes çağırabilir."
+        },
+        {
+          "title": "Standart x402",
+          "body": "PAYMENT-REQUIRED, PAYMENT-SIGNATURE ve PAYMENT-RESPONSE başlıkları x402 v2 ile aynıdır. channel şeması, exact şemasının yanında ikinci bir seçenek olarak sunulur."
+        },
+        {
+          "title": "Ağ ücreti yok",
+          "body": "Alıcı XLM tutmak zorunda değildir; işlem ücretlerini facilitator öder. Siz yalnızca USDC alırsınız."
+        },
+        {
+          "title": "Açıklanabilir redler",
+          "body": "Reddedilen her ödeme bir sebep koduyla döner: CHANNEL_EXHAUSTED, VOUCHER_UNDERPAID, WRONG_PAYEE, CHANNEL_EXPIRING. Ajan neyi düzelteceğini gövdeden okur; destek talebi açmaz."
+        }
+      ],
+      "limitsTitle": "Bugün ne var, ne yok",
+      "limits": [
+        "Stellar testnet üzerinde çalışır; kontratlar henüz denetlenmedi.",
+        "Paket Express ve uyumlu sunucular (Nest, Connect) içindir.",
+        "Çağrı başına tahsilat pakette tamdır. Token ve saniye başına akışlar bugün yalnızca demo satıcıda çalışır: akış oturumları facilitator'ın içindedir ve dış satıcılara henüz açılmadı."
+      ],
+      "ctaTitle": "İlk ücretli ucunuzu bugün açın.",
+      "ctaPrimary": "Meter hızlı başlangıç",
+      "ctaSecondary": "Canlı demoyu izle"
+    },
+    "reins": {
+      "meta": {
+        "title": "Reins: ajanlar için zincirde harcama yetkisi",
+        "description": "Ajanınıza anahtarı verin, dizgini elinizde tutun. Günlük tavan, işlem tavanı, izinli alıcılar ve işlem çiftleri Stellar'da yazılıdır ve ağ tarafından uygulanır."
+      },
+      "eyebrow": "Reinkey Reins",
+      "title": "Anahtar ajanda. Dizgin sizde.",
+      "tagline": "Sınırı sunucunun değil, zincirin uyguladığı ajan hesabı.",
+      "subtitle": "Reins, politikası zincirde yazılı bir akıllı hesaptır. Ajan kendi anahtarıyla öder ve işlem yapar; tavanı, izinli alıcıları ve izinli işlem çiftlerini Stellar uygular. Anahtar çalınsa bile sınırın dışına çıkılamaz.",
+      "bullets": [
+        "Günlük ve işlem başı tavan",
+        "Yalnızca izinli alıcılar ve işlem çiftleri",
+        "Tek işlemle dondur, tek işlemle geri çek"
+      ],
+      "codeTitle": "Ajan öder, siz uyursunuz",
+      "codeLead": "Ajan tek işlemle kanal açar, sonra her çağrıyı imzalı bir kuponla öder. Kayıt, API anahtarı ve kredi kartı yok.",
+      "responseTitle": "Sınırı aşan işlem zincirde düşer",
+      "responseLead": "Reddi bir sunucu değil __check_auth verir: işlem hash'i ve sebep koduyla, herkesin doğrulayabileceği biçimde.",
+      "features": [
+        {
+          "title": "Politika zincirde",
+          "body": "Günlük tavan, işlem başı tavan, izinli alıcılar, izinli DEX çiftleri ve son geçerlilik tarihi hesabın içinde yazılıdır. Sunucu çökse ya da ele geçirilse de sınır durur."
+        },
+        {
+          "title": "Dondur ve geri çek",
+          "body": "Sahip tek işlemle hesabı dondurur: ajanın anahtarı o andan sonra hiçbir şeyi imzalayamaz. recall ile bakiyeyi istediği an geri alır."
+        },
+        {
+          "title": "Sınırlı alım-satım",
+          "body": "Ajan Stellar DEX'inde (Soroswap) işlem yapabilir; hangi çiftte, işlem başına ve günde ne kadar, politikada yazar. Kayma koruması olmayan işlem reddedilir."
+        },
+        {
+          "title": "Ajan XLM tutmaz",
+          "body": "İşlemi bir relayer gönderir ve ücreti öder; ajan yalnızca yetkilendirme girişini imzalar. Ajanın cüzdanında tek varlık USDC'dir."
+        },
+        {
+          "title": "Açıklanabilir redler",
+          "body": "Her red bir sebep koduyla gelir: PER_TX_CAP_EXCEEDED, PAYEE_NOT_ALLOWED, DAILY_CAP_EXCEEDED, ACCOUNT_FROZEN. Politika reddi simülasyonda, zincire gitmeden de görülür."
+        },
+        {
+          "title": "Canlı denetim",
+          "body": "Konsol hesabın her ödemesini, her zincir işlemini ve her reddini canlı gösterir; kalıcı defter sayfa sayfa okunabilir."
+        }
+      ],
+      "limitsTitle": "Bugün ne var, ne yok",
+      "limits": [
+        "Stellar testnet üzerinde çalışır; kontratlar henüz denetlenmedi.",
+        "Hesap bugün deploy betiğiyle kurulur; konsoldan tek tıkla kurulum yol haritasındadır.",
+        "Zincirde uygulanan işlem sınırı DEX tarafında geçerlidir. Merkezi bir borsanın iç defterindeki işlemleri zincir göremez."
+      ],
+      "ctaTitle": "Ajanınıza güvenle harcama yetkisi verin.",
+      "ctaPrimary": "Reins hızlı başlangıç",
+      "ctaSecondary": "Reddi canlı izle"
+    }
+  }
+}

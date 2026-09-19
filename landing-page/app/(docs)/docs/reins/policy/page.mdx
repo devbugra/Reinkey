@@ -1,0 +1,60 @@
+export const metadata = { title: "Policy & rejections" };
+
+# Policy & rejections
+
+## The policy
+
+The policy is stored in the account contract and checked in `__check_auth` on every authorization the agent signs.
+
+| Field | Meaning |
+|---|---|
+| `agent_key` | The ed25519 key allowed to sign as the agent. |
+| `asset` | The asset the caps are counted in (USDC). |
+| `per_tx_cap` | Maximum amount in a single authorization. |
+| `daily_cap` | Maximum total per day. The day is derived from the ledger sequence, so it needs no clock. |
+| `payees` | Addresses the account may pay or open channels to. |
+| `channel` | The one channel contract it may call. |
+| `expires_ledger` | After this ledger the agent key stops working. |
+| `dex_router`, `pairs` | Optional. The router it may swap on and the allowed `(sell, buy)` asset pairs. |
+
+Read it from the SDK:
+
+```ts
+const policy = await account.getPolicy();
+const { day, amount } = await account.getSpent();
+```
+
+## Owner controls
+
+The owner key (not the agent key) can, each in one transaction:
+
+| Call | Effect |
+|---|---|
+| `set_policy(policy)` | Replace the policy. |
+| `freeze()` / `unfreeze()` | While frozen, every agent authorization fails with `ACCOUNT_FROZEN`. |
+| `recall(asset, to, amount)` | Pull funds out of the account. |
+| `set_controller(address)` | Delegate owner actions to another contract. |
+
+## Rejections come from the chain
+
+When the agent steps outside the policy, the transaction fails on Stellar:
+
+```ts
+await account.transfer(attacker, 1_000_000n);
+// SorobanCallError: PAYEE_NOT_ALLOWED
+```
+
+Most rejections surface during simulation, before anything is submitted, so a well-behaved agent never pays a fee for them. `chainReason(error)` returns the [reason code](/docs/reason-codes).
+
+To make a rejection publicly verifiable (a failed transaction with a hash), report it:
+
+```http
+POST /v1/report
+{ "account": "C…", "tx": "64 hex chars" }
+```
+
+The facilitator looks the transaction up on-chain, and only if it really failed publishes a `chain.rejected` event. Unverifiable reports are dropped.
+
+## What the policy does not cover
+
+On-chain limits apply to what happens on-chain: payments, channel deposits and DEX swaps. Trades inside a centralized exchange's internal ledger are invisible to Stellar and cannot be bounded this way.

@@ -1,0 +1,43 @@
+import { routes } from "@/content/site";
+
+export const metadata = { title: "Introduction" };
+
+# Reinkey documentation
+
+Reinkey is payment infrastructure for APIs and AI agents on Stellar. It extends [x402](https://github.com/x402-foundation/x402) with a **payment channel scheme**, so a payment is a signed voucher verified in about a millisecond instead of an on-chain transaction that takes five seconds.
+
+There are two products. Use one, or both.
+
+| | Reinkey Meter | Reinkey Reins |
+|---|---|---|
+| **For** | Sellers: APIs, data feeds, inference | Agent owners |
+| **Does** | Charges per request, per token or per second | Gives an agent a spending account with on-chain limits |
+| **You install** | `@reinkey/meter` | `@reinkey/sdk` |
+| **Start here** | [Meter quickstart](/docs/meter/quickstart) | [Reins quickstart](/docs/reins/quickstart) |
+
+## Try it without installing anything
+
+The testnet facilitator hosts a metered demo seller. An unpaid request returns the payment terms:
+
+```bash
+curl -i "$REINKEY_API/demo/book"
+```
+
+```http
+HTTP/1.1 402 Payment Required
+PAYMENT-REQUIRED: eyJ4NDAyVmVyc2lvbiI6Mi…
+```
+
+The current testnet endpoint is <code>{routes.api}</code>. Examples in these docs refer to it as `$REINKEY_API`.
+
+## What runs where
+
+- **On-chain (Soroban contracts):** the `channel` contract that holds deposits and pays sellers, and the `reinkey-account` contract that enforces an agent's policy in `__check_auth`.
+- **Off-chain (the facilitator):** verifies vouchers, keeps the highest accepted voucher per channel, and submits `claim` transactions. It never holds funds and cannot redirect them.
+- **In your server:** `meter()` middleware. **In your agent:** the SDK.
+
+Read [How it works](/docs/concepts) for the full picture.
+
+## Status
+
+> **Testnet, unaudited.** Everything here runs on Stellar testnet. The contracts have not been audited and the packages are pre-1.0. Interfaces may change.

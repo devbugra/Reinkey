@@ -1,0 +1,75 @@
+import { routes } from "@/content/site";
+
+export const metadata = { title: "Meter quickstart" };
+
+# Meter quickstart
+
+Charge for an Express endpoint per request. You need Node 20+, an Express app and a Stellar address to be paid at. You do **not** need to run a node, hold XLM, or create an account with us.
+
+## 1. Install
+
+```bash
+npm i @reinkey/meter
+```
+
+> The packages are pre-release. Until they are on npm, build them from the monorepo: `pnpm build && pnpm pack` in `packages/meter`.
+
+## 2. Meter an endpoint
+
+```ts
+import express from "express";
+import { reinkey } from "@reinkey/meter";
+
+const rk = await reinkey({
+  facilitator: process.env.REINKEY_API,   // the facilitator that verifies vouchers
+  payTo: process.env.SELLER_ADDRESS,      // your Stellar address (G…)
+});
+
+const app = express();
+
+app.get(
+  "/book",
+  rk.meter({ price: 5000n, unit: "request", description: "Order book" }),
+  (req, res) => res.json({ bids: [], asks: [] }),
+);
+
+app.listen(8080);
+```
+
+The testnet facilitator is <code>{routes.api}</code>. `price` is in USDC base units: `5000n` is 0.0005 USDC.
+
+## 3. See the 402
+
+```bash
+curl -i localhost:8080/book
+```
+
+```http
+HTTP/1.1 402 Payment Required
+PAYMENT-REQUIRED: eyJ4NDAyVmVyc2lvbiI6Mi…
+```
+
+The JSON body repeats the terms so an agent can act on them: scheme `channel`, the network, the asset, your `payTo`, the amount and unit, and the channel contract to open a channel on.
+
+## 4. Get paid
+
+Any x402 client that speaks the `channel` scheme can now pay you. With the Reinkey SDK:
+
+```ts
+import { x402Fetch } from "@reinkey/sdk";
+
+const { res, receipt } = await x402Fetch("http://localhost:8080/book", { signer, network });
+```
+
+See the [Reins quickstart](/docs/reins/quickstart) for how `signer` is created. Inside your handler the verified receipt is on `req.payment`.
+
+## 5. Settlement
+
+You don't have to do anything. The facilitator claims on your behalf once the unclaimed amount on a channel passes its threshold, and always before a channel expires. Funds arrive at `payTo` in USDC.
+
+To settle right now, call `POST $REINKEY_API/channels/:id/claim`. Anyone may call it; it can only pay the channel's payee.
+
+## Next
+
+- [Meter reference](/docs/meter/reference): options, the 402 body, streaming units.
+- [Reason codes](/docs/reason-codes): what a rejected payment tells the buyer.

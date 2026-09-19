@@ -1,0 +1,23 @@
+{
+  "name": "@reinkey/agents",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "demo": "tsx trader.ts",
+    "compromised": "tsx compromised.ts",
+    "spike:open": "tsx tools/spike-open.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@reinkey/core": "workspace:*",
+    "@reinkey/sdk": "workspace:*",
+    "@stellar/stellar-sdk": "^17.1.0",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  }
+}

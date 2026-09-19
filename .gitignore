@@ -1,0 +1,19 @@
+# bağımlılıklar ve derleme çıktıları
+node_modules/
+dist/
+.next/
+target/
+coverage/
+*.tgz
+*.tsbuildinfo
+next-env.d.ts
+
+# gizli bilgiler: yalnızca örnekler depoya girer
+.env
+.env.*
+!.env.example
+
+# araç ve işletim sistemi kırıntıları
+.DS_Store
+*.log
+.vercel

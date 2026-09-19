@@ -1,0 +1,14 @@
+{
+  "name": "reinkey-workspace",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.26.2",
+  "scripts": {
+    "build": "pnpm --filter @reinkey/core build && pnpm --filter @reinkey/sdk --filter @reinkey/meter build",
+    "test": "pnpm --filter @reinkey/core --filter @reinkey/sdk --filter @reinkey/meter test",
+    "typecheck": "pnpm --filter @reinkey/core --filter @reinkey/sdk --filter @reinkey/meter --filter @reinkey/agents typecheck",
+    "demo": "pnpm --filter @reinkey/agents demo",
+    "demo:compromised": "pnpm --filter @reinkey/agents compromised",
+    "spike:open": "pnpm --filter @reinkey/agents spike:open"
+  }
+}

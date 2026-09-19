@@ -1,0 +1,460 @@
+@import "tailwindcss";
+
+/* ============================================================
+   TASARIM TOKEN'LARI
+
+   Tek tema: koyu. Tema seçimi yok. Palet hero videosundan
+   (public/hero-gradient.mp4) alındı: gök mavisinden kraliyet mavisi ve
+   indigoya inen tek bir geçiş. Nötrler bu geçişe uysun diye hafif soğuk
+   (gece mavisi) tutuldu.
+
+   Bileşenlerde sabit renk yazılmaz; hepsi buradan gelir.
+   ============================================================ */
+
+:root {
+  color-scheme: dark;
+
+  /*
+   * MARKA RAMPASI. Videodan örneklenen duraklar. Doğrudan metin rengi
+   * olarak kullanılmaz; gradyan ve dekor içindir. Metin için --accent-text.
+   */
+  --brand-sky: #74b1f9;
+  --brand-blue: #5466fd;
+  --brand-indigo: #4c2ff9;
+  --brand-lavender: #a594ff;
+
+  /* --- Zemin ve yüzeyler: saf siyah değil, videonun karartılmış hâliyle birleşen gece mavisi --- */
+  --bg: #05060f;
+  --bg-alt: #080a18;
+  --surface: #0c0e1f;
+  --surface-2: #121530;
+  --surface-3: #1b1f40;
+
+  /* --- Metin --- */
+  --fg: #eef0ff;
+  --fg-muted: rgb(238 240 255 / 0.68);
+  --fg-subtle: rgb(238 240 255 / 0.46);
+
+  /* --- Çizgiler --- */
+  --line: rgb(238 240 255 / 0.1);
+  --line-strong: rgb(238 240 255 / 0.2);
+
+  /* AKSAN. Gök mavisi: zeminde 9:1. */
+  --accent: #74b1f9;
+  --accent-text: #74b1f9;
+  --accent-contrast: #05060f;
+
+  /* Vurgu metni gradyanı (bkz. components/ui/GradientText.tsx) */
+  --accent-gradient: linear-gradient(
+    100deg,
+    var(--brand-sky) 0%,
+    var(--brand-lavender) 100%
+  );
+
+  /* BİRİNCİL EYLEM. Marka rengi zemin, gece mavisi yazı (9:1). */
+  --primary: #74b1f9;
+  --primary-fg: #05060f;
+
+  /* --- Semantik --- */
+  --success: #5ee39a;
+  --success-bg: rgb(94 227 154 / 0.12);
+  --warning: #fbbf24;
+  --warning-bg: rgb(251 191 36 / 0.12);
+  --danger: #ff6b60;
+  --danger-bg: rgb(255 107 96 / 0.12);
+
+  /* --- Derinlik: gölge değil, hattın kendisi --- */
+  --glow-inset: none;
+  --glow-inset-strong: none;
+  --card-shadow: none;
+
+  /* --- Yarıçap: kartlar belirgin yuvarlak --- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  /* --- Hareket --- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-micro: 150ms;
+  --dur-section: 500ms;
+
+  /* --- Ölçü --- */
+  --measure: 65ch;
+}
+
+/* ============================================================
+   TAILWIND EŞLEMESİ
+   ============================================================ */
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-alt: var(--bg-alt);
+  --color-surface-1: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
+  --color-accent-contrast: var(--accent-contrast);
+
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+
+  /* Tipografi — Dialect'te başlıklar iri ve sıkı, gövde sakin */
+  --text-xs: 0.75rem; /* 12 — etiketler */
+  --text-sm: 0.875rem; /* 14 */
+  --text-base: 1rem; /* 16 — gövde */
+  --text-lg: 1.0625rem; /* 17 — giriş paragrafı */
+  --text-xl: 1.25rem; /* 20 */
+  --text-2xl: clamp(1.25rem, 1.05rem + 0.9vw, 1.5rem); /* 20 → 24 */
+  --text-3xl: clamp(1.5rem, 1.3rem + 0.9vw, 1.75rem); /* 24 → 28 */
+  --text-4xl: clamp(
+    1.875rem,
+    1.4rem + 2vw,
+    2.5rem
+  ); /* 30 → 40, bölüm başlığı */
+  --text-5xl: clamp(3rem, 2.1rem + 3.2vw, 4.5rem); /* 48 → 72, ana başlık */
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --ease-out-expo: var(--ease-out-expo);
+
+  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-code), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ============================================================
+   TABAN
+   ============================================================ */
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-size: var(--text-base);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  text-wrap: balance;
+}
+
+/*
+ * Harf aralığı puntoyla ters orantılı: büyük başlıkta sıkı tracking optik
+ * boşlukları kapatır, 17px'lik bir h3'te aynı değer harfleri yapıştırır.
+ */
+h1 {
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+h2 {
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+}
+
+h3,
+h4 {
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Yapışkan başlık, iç bağlantıyla gelinen bölümün başlığını örtmesin. */
+section[id],
+:target {
+  scroll-margin-top: 6rem;
+}
+
+::selection {
+  background-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================================
+   KART İÇİ AYRAÇ
+   Dialect'in imzası: kart tek kutu değil, ince bir çizgiyle bölünmüş
+   iki bölge. Üstte etiket, altta değer. Sınıf bileşenlerde kullanılır.
+   ============================================================ */
+
+.rule-top {
+  border-top: 1px solid var(--line);
+}
+
+/* ============================================================
+   DOKU
+   Dialect'te koyu yüzeyler düz değil, çok ince taneli. Tek bir SVG
+   gürültüsü; ağ isteği yok.
+   ============================================================ */
+
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============================================================
+   HERO VİDEOSU (bkz. components/ui/HeroVideo.tsx)
+
+   Video açık renkli: sol üstü neredeyse beyaz. Açık renkli başlık orada
+   okunmazdı. Bu yüzden video TERS ÇEVRİLİR ve ton 180° döndürülür: beyaz
+   siyaha döner, maviler mavi kalır (gök mavisi laciverte, indigo mora).
+   Parlaklık kısılır ki alt köşe metni boğmasın. Ayrı bir koyu video
+   dosyası gerekmez.
+   ============================================================ */
+
+.hero-video {
+  filter: invert(1) hue-rotate(180deg) brightness(0.72) saturate(1.35);
+}
+
+/*
+ * OKUNURLUK PERDESİ. İki katman:
+ * 1) Başlığın arkasında zemin renginde yumuşak bir leke — metin videonun
+ *    en parlak/koyu yerine denk gelse de kontrast korunur.
+ * 2) Altta zemine erime — hero ile sonraki bölüm arasında çizgi oluşmaz.
+ */
+.hero-scrim {
+  background-image:
+    radial-gradient(
+      ellipse 55% 45% at 50% 38%,
+      color-mix(in srgb, var(--bg) 62%, transparent) 0%,
+      transparent 100%
+    ),
+    linear-gradient(to bottom, transparent 55%, var(--bg) 100%);
+}
+
+/* ============================================================
+   AURORA (bkz. components/ui/AuroraBackground.tsx)
+   Kapanış bölümünün arka planı: hero videosunun renklerini taşıyan,
+   çok yavaş sürüklenen iki yumuşak ışık halkası — saf CSS, ağ isteği yok.
+   ============================================================ */
+
+@keyframes aurora-drift {
+  0% {
+    transform: translate3d(-6%, 0, 0) scale(1.05);
+  }
+  50% {
+    transform: translate3d(6%, 2%, 0) scale(1.15);
+  }
+  100% {
+    transform: translate3d(-6%, 0, 0) scale(1.05);
+  }
+}
+
+/*
+ * Işık katmanı iki halkadan oluşur ve ters yönlerde çok yavaş sürüklenir.
+ * Renkler marka rampasından, düşük opaklıkla: metnin arkasında bir parıltı,
+ * dikkat çeken bir yüzey değil.
+ */
+.aurora {
+  background-image: radial-gradient(
+    ellipse 70% 55% at 50% 0%,
+    color-mix(in srgb, var(--brand-sky) 22%, transparent) 0%,
+    transparent 70%
+  );
+  animation: aurora-drift 34s ease-in-out infinite;
+  will-change: transform;
+}
+
+.aurora::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background-image: radial-gradient(
+    ellipse 40% 40% at 70% 20%,
+    color-mix(in srgb, var(--brand-indigo) 18%, transparent) 0%,
+    transparent 65%
+  );
+  animation: aurora-drift 46s ease-in-out infinite reverse;
+  will-change: transform;
+}
+
+/* ============================================================
+   GRADYAN METİN (bkz. components/ui/GradientText.tsx)
+
+   Gradyan, animasyonlu kelimelerde üst öğeye DEĞİL her kelimeye verilir:
+   `background-clip: text` transform'lu alt öğelerde güvenilir değildir —
+   metin ya görünmez olur ya da kelime yükselirken son konumunda gölgesi
+   belirir. Her kelime kendi gradyanını taşır.
+   ============================================================ */
+
+.gradient-text:not(:has(.word-rise)),
+.gradient-text .word-rise {
+  background-image: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ============================================================
+   KELİME KELİME BELİRME
+   Başlık tek blok hâlinde değil, kelime kelime yükselerek gelir. Her kelime
+   kendi maskesinin içinden çıkar; bu yüzden dışarıdaki span'in `overflow`
+   değeri gizlidir. `both` doldurma kipi olmadan kelime, gecikmesi boyunca
+   son hâlinde görünür ve etki tamamen kaybolurdu.
+   ============================================================ */
+
+/*
+ * Başlangıç kayması maskenin alt payından BÜYÜK olmalı; aksi hâlde kelime
+ * animasyon başlarken maskenin altından bir şerit hâlinde görünür.
+ */
+@keyframes word-rise {
+  from {
+    transform: translateY(135%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.word-rise {
+  display: inline-block;
+  animation: word-rise 900ms var(--ease-out-expo) both;
+}
+
+/* ============================================================
+   ÇİZGİ ÇİZİLMESİ
+   Adımları bağlayan çizgi, bölüm göründüğünde soldan sağa çizilir. Bilgi
+   taşımadığı için ekran okuyucuya görünmez; yalnızca sıranın gözle
+   izlenmesini kolaylaştırır.
+   ============================================================ */
+
+@keyframes rail-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.rail-draw {
+  transform-origin: left center;
+  animation: rail-draw 900ms var(--ease-out-expo) both;
+}
+
+[dir="rtl"] .rail-draw {
+  transform-origin: right center;
+}
+
+/* ============================================================
+   YUMUŞAK NABIZ
+   Canlı olduğunu belirten tek noktalık işaret. Boyut değil opaklık
+   değişir: boyut değişimi çevresindeki metni optik olarak oynatır.
+   ============================================================ */
+
+@keyframes soft-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.soft-pulse {
+  animation: soft-pulse 2.4s ease-in-out infinite;
+}
+
+/* Sayfa açılışında çalışan giriş animasyonu (bkz. components/ui/RiseIn.tsx) */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+  to {
+    opacity: 1;
+    translate: none;
+  }
+}
+
+.rise-in {
+  animation: rise-in var(--dur-section) var(--ease-out-expo) both;
+}
+
+/* Hareket kapatma — opsiyonel değil */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Uygulama: sayfa geçişlerinde iskelet; dönen çark yok */
+.app-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-3) transparent;
+}
+
+/* Yazdırma: beyaz zemin, siyah metin */
+@media print {
+  :root {
+    --bg: #ffffff;
+    --bg-alt: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f6f6f6;
+    --surface-3: #ececec;
+    --fg: #111111;
+    --fg-muted: #333333;
+    --fg-subtle: #666666;
+    --line: #dddddd;
+    --line-strong: #bbbbbb;
+    --primary: #111111;
+    --primary-fg: #ffffff;
+  }
+  aside,
+  header,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  body {
+    background: #fff;
+  }
+}

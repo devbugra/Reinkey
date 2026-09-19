@@ -1,0 +1,121 @@
+/** Panelin küçük yapı taşları. */
+import { clsx } from "clsx";
+import type { Source } from "@/lib/types";
+import { txUrl, shortHash } from "@/lib/format";
+
+export const cn = clsx;
+
+export function Panel({
+  title,
+  hint,
+  action,
+  className,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  action?: React.ReactNode;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      className={cn(
+        "flex min-w-0 flex-col rounded-lg border border-line bg-surface-1",
+        className,
+      )}
+    >
+      <header className="flex items-baseline justify-between gap-3 border-b border-line px-5 py-3.5">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+          {hint && <p className="mt-0.5 truncate text-xs text-fg-subtle">{hint}</p>}
+        </div>
+        {action}
+      </header>
+      <div className="min-h-0 flex-1">{children}</div>
+    </section>
+  );
+}
+
+const SOURCE_STYLE: Record<Source, string> = {
+  chain: "border-brand-lavender/40 text-brand-lavender",
+  facilitator: "border-brand-sky/40 text-brand-sky",
+  gateway: "border-line-strong text-fg-muted",
+};
+
+const SOURCE_LABEL: Record<Source, string> = {
+  chain: "zincir",
+  facilitator: "facilitator",
+  gateway: "gateway",
+};
+
+export function SourceTag({ source }: { source: Source }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center rounded-full border px-2 py-px font-mono text-[10px] uppercase tracking-wider",
+        SOURCE_STYLE[source],
+      )}
+    >
+      {SOURCE_LABEL[source]}
+    </span>
+  );
+}
+
+export function Code({ code, tone = "danger" }: { code: string; tone?: "danger" | "warning" }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center rounded-sm px-1.5 py-px font-mono text-[11px] font-medium",
+        tone === "danger" ? "bg-danger-bg text-danger" : "bg-warning-bg text-warning",
+      )}
+    >
+      {code}
+    </span>
+  );
+}
+
+export function TxLink({ hash, className }: { hash: string | null | undefined; className?: string }) {
+  if (!hash) return null;
+  const url = txUrl(hash);
+  const label = shortHash(hash);
+  const cls = cn("font-mono text-[11px] text-fg-subtle", className);
+  return url ? (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className={cn(cls, "underline decoration-line-strong underline-offset-2 hover:text-accent")}
+      title="stellar.expert üzerinde aç"
+    >
+      tx {label}
+    </a>
+  ) : (
+    <span className={cls}>tx {label}</span>
+  );
+}
+
+export function Empty({ children }: { children: React.ReactNode }) {
+  return <p className="px-5 py-8 text-center text-sm text-fg-subtle">{children}</p>;
+}
+
+/** Üç bölmeli çubuk: tahsil edilen | kabul edilmiş ama tahsil edilmemiş | kalan. */
+export function DepositBar({
+  claimed,
+  pending,
+  className,
+}: {
+  claimed: number;
+  pending: number;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("flex h-2 w-full overflow-hidden rounded-full bg-surface-3", className)}
+      role="presentation"
+    >
+      <div className="h-full bg-brand-lavender transition-[width] duration-300" style={{ width: `${claimed * 100}%` }} />
+      <div className="h-full bg-brand-sky transition-[width] duration-150" style={{ width: `${pending * 100}%` }} />
+    </div>
+  );
+}

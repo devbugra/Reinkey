@@ -1,0 +1,93 @@
+export const metadata = { title: "Reins quickstart" };
+
+# Reins quickstart
+
+Give an agent a Stellar account it can pay from, with limits the network enforces.
+
+## 1. Install
+
+```bash
+npm i @reinkey/sdk
+```
+
+## 2. Deploy an account with a policy
+
+A Reinkey account is a contract. Its constructor takes the **owner** key (you) and a **policy** (what the agent may do). Today accounts are deployed with the scripts in the repository:
+
+```bash
+./scripts/deploy-testnet.sh
+```
+
+The script deploys the `channel` and `reinkey-account` contracts, funds the account with testnet USDC and writes the identifiers to `deployments/testnet.json`. See [Policy & rejections](/docs/reins/policy) for every field.
+
+> One-click account creation from the console is on the roadmap. Until then, deployment needs the Stellar CLI.
+
+## 3. Connect the agent
+
+```ts
+import { Keypair } from "@stellar/stellar-sdk";
+import { ReinkeyAccount } from "@reinkey/sdk";
+
+const account = new ReinkeyAccount({
+  rpcUrl: "https://soroban-testnet.stellar.org",
+  networkPassphrase: "Test SDF Network ; September 2015",
+  accountId,            // C… the Reinkey account
+  channelContractId,
+  usdcContractId,
+  agent: Keypair.fromSecret(process.env.AGENT_SECRET),     // the key named in the policy
+  relayer: Keypair.fromSecret(process.env.RELAYER_SECRET), // pays network fees
+});
+```
+
+The agent is never the transaction source. A **relayer** submits and pays the fee; the agent only signs the authorization entry. The agent holds USDC and nothing else.
+
+## 4. Open a channel
+
+```ts
+import { randomBytes } from "node:crypto";
+
+const voucherSecret = randomBytes(32);
+const { channelId } = await account.openChannel({
+  payee,                // the seller's address, must be in the policy's payees
+  deposit: 500_000n,    // 0.05 USDC
+  voucherSecret,
+});
+```
+
+One transaction. The voucher key is specific to this channel and separate from the agent key.
+
+## 5. Pay per call
+
+```ts
+import { ChannelSigner, x402Fetch } from "@reinkey/sdk";
+
+const signer = new ChannelSigner({
+  networkPassphrase, channelContract: channelContractId,
+  channelId, secret: voucherSecret, deposit: 500_000n,
+});
+
+const { res, receipt } = await x402Fetch(`${api}/demo/book`, { signer, network: "stellar:testnet" });
+```
+
+`x402Fetch` makes the request, reads the 402, signs the next voucher and retries. No chain round-trip.
+
+## 6. Pay per second or per token
+
+```ts
+import { streamPaid } from "@reinkey/sdk";
+
+await streamPaid({
+  url: `${api}/demo/ticker/stream`, apiUrl: api, signer, network: "stellar:testnet",
+  onEvent: (e) => e.type === "tick" && console.log(e.data),
+});
+```
+
+The SDK sends a new voucher each time a slice runs out, and stops paying the moment you stop listening.
+
+## 7. Trade within limits
+
+```ts
+await account.swap({ amountIn: 1_000_000n, minOut: 1n });
+```
+
+Only pairs named in the policy are allowed, and `minOut` is required: a swap without slippage protection is rejected with `SLIPPAGE_UNBOUNDED`.

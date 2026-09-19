@@ -1,0 +1,55 @@
+import { routes } from "@/content/site";
+
+export const metadata = { title: "Facilitator API" };
+
+# Facilitator API
+
+The facilitator is a plain HTTP service. The live, always-current reference is its OpenAPI document: <a href={routes.openapi}>openapi.json</a>. Agents can start from <a href={routes.llms}>llms.txt</a>. This page is a map.
+
+Amounts are decimal strings in base units. Errors use the shape described in [Reason codes](/docs/reason-codes).
+
+## x402 facilitator
+
+| | |
+|---|---|
+| `GET /supported` | Schemes and networks this facilitator handles. |
+| `POST /verify` | Verify a payment. For `channel`, a valid voucher is **accepted**: the channel's highest accepted cumulative advances. Returns `{ isValid, receipt }` or `{ isValid: false, invalidReason }`. |
+| `POST /settle` | Queue an accepted voucher for settlement. |
+
+```json
+{
+  "paymentPayload": { "x402Version": 2, "accepted": { "scheme": "channel" }, "payload": { "channelId": "7", "cumulative": "145000", "signature": "…" } },
+  "paymentRequirements": { "scheme": "channel", "payTo": "G…", "amount": "5000", "unit": "request", "resource": "https://…" }
+}
+```
+
+## Channels
+
+| | |
+|---|---|
+| `GET /channels` | Known channels, newest first. |
+| `GET /channels/:id` | Deposit, claimed, last accepted, remaining, expiry. |
+| `POST /channels/:id/voucher` | Next voucher for a running stream (`streamId`, `cumulative`, `signature`). |
+| `POST /channels/:id/claim` | Settle now. Callable by anyone; pays only the channel's payee. |
+
+## Accounts and audit
+
+| | |
+|---|---|
+| `GET /accounts/:address` | Policy, today's spend, frozen flag, balances, open channels. |
+| `GET /accounts/:address/ledger` | The account's events, newest first, cursor-paginated. |
+| `GET /events` | Server-sent events: the last 200 events, then live. Filter with `?account=` or `?channelId=`. |
+| `GET /stats` | Totals: vouchers, on-chain transactions, volume, median verification latency. |
+| `POST /v1/report` | Report an on-chain transaction; verified against the chain before it is published. |
+
+## Discovery
+
+| | |
+|---|---|
+| `GET /openapi.json` | OpenAPI 3 document. |
+| `GET /llms.txt` | Plain-text guide for language models. |
+| `POST /mcp` | Model Context Protocol endpoint. |
+
+## Events
+
+Each event has `id`, `type`, `source` and `ts`. Types: `channel.opened`, `channel.topped_up`, `voucher.accepted`, `voucher.rejected`, `channel.claimed`, `channel.closed`, `payment.exact`, `chain.rejected`, `stream.started`, `stream.ended`, `dex.swapped`, `account.frozen`.
