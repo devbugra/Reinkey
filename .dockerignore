@@ -1,0 +1,16 @@
+# Docker derleme bağlamı depo köküdür (backend/Dockerfile). Gizli ve üretilmiş
+# her şey dışarıda kalır; gizli değerler çalışma anında ortam değişkeniyle verilir.
+**/node_modules
+**/dist
+**/.next
+**/target
+**/.git
+**/.env
+**/.env.*
+!**/.env.example
+deployments/.secrets.env
+agents/.relayer.env
+landing-page
+app.mandate
+docs
+*.md

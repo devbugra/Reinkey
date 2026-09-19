@@ -18,7 +18,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/reinkey/reinkey.git",
+    "url": "git+https://github.com/devbugra/Reinkey.git",
     "directory": "packages/meter"
   },
   "engines": {
