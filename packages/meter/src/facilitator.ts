@@ -5,12 +5,14 @@
 import { statusForCode } from "./codes.ts";
 import {
   meter,
+  requestOrigin,
   type MeterContext,
   type MeterDeps,
   type MeterError,
   type MeterOptions,
 } from "./meter.ts";
-import type { ChannelReceipt, MeterMiddleware } from "./types.ts";
+import { openPaidStream, type PaidStream, type StreamOptions, type StreamsClient } from "./stream.ts";
+import type { ChannelReceipt, MeterMiddleware, MeterRequest, MeterResponse } from "./types.ts";
 
 /** Minimum depozito önerisi: bu uçta 1000 çağrı (backend'deki varsayılanla aynı). */
 const MIN_DEPOSIT_CALLS = 1000n;
@@ -66,6 +68,12 @@ export interface Reinkey {
     v: VoucherInput,
     ctx: { price: bigint; resource: string; unit?: string },
   ): Promise<ChannelReceipt>;
+  /**
+   * Token ya da saniye başına satılan SSE akışı. `rk.meter()` ilk dilimi aldıktan
+   * sonra çağrılır; facilitator'da bir akış oturumu açar ve dilim bittikçe
+   * kuponu orada bekler. Bkz. `PaidStream`.
+   */
+  stream(req: MeterRequest, res: MeterResponse, opts: StreamOptions): Promise<PaidStream>;
 }
 
 /** Facilitator'ın reddi ya da ulaşılamaması. `MeterError` alanlarını taşır. */
@@ -97,13 +105,13 @@ export async function reinkey(options: ReinkeyOptions): Promise<Reinkey> {
   if (typeof doFetch !== "function") throw new TypeError("reinkey(): no fetch available; pass `fetch`");
   const timeoutMs = options.timeoutMs ?? 10_000;
 
-  const call = async (method: "GET" | "POST", path: string, body?: unknown) => {
+  const call = async (method: "GET" | "POST" | "DELETE", path: string, body?: unknown, timeout = timeoutMs) => {
     try {
       const res = await doFetch(`${base}${path}`, {
         method,
         headers: body === undefined ? { accept: "application/json" } : { "content-type": "application/json", accept: "application/json" },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-        signal: AbortSignal.timeout(timeoutMs),
+        signal: AbortSignal.timeout(timeout),
       });
       const text = await res.text();
       let json: unknown;
@@ -175,7 +183,11 @@ export async function reinkey(options: ReinkeyOptions): Promise<Reinkey> {
         maxAmountRequired: ctx.price.toString(),
         resource: ctx.resource,
         unit: ctx.unit,
+        ...(ctx.method ? { method: ctx.method } : {}),
+        ...(ctx.description !== undefined ? { description: ctx.description } : {}),
       },
+      // Bazaar: facilitator doğrulanan ilk ödemeden sonra kaynağı kataloğa yazar.
+      ...(ctx.extensions ? { extensions: ctx.extensions } : {}),
     };
     const r = await call("POST", "/verify", body);
     if (!r.ok) throw httpError(r, "/verify");
@@ -238,6 +250,27 @@ export async function reinkey(options: ReinkeyOptions): Promise<Reinkey> {
     toError,
   });
 
+  // Dış satıcı akış oturumları: POST /streams, POST /streams/:id/wait, DELETE /streams/:id
+  const streams: StreamsClient = {
+    open: async (body) => {
+      const r = await call("POST", "/streams", body);
+      if (!r.ok) throw httpError(r, "/streams");
+      return r.json as { streamId: string; requiredCumulative: string };
+    },
+    wait: async (streamId, timeoutMs) => {
+      // Uzun sorgu: facilitator en çok 30 sn bekler; HTTP zaman aşımı onun üstünde olmalı.
+      const waitMs = Math.min(timeoutMs, 30_000);
+      const r = await call("POST", `/streams/${streamId}/wait`, { timeoutMs: waitMs }, waitMs + 5_000);
+      if (!r.ok) throw httpError(r, "/streams/:id/wait");
+      return r.json as { kind: string; receipt?: ChannelReceipt; requiredCumulative?: string };
+    },
+    end: async (streamId, reason, units) => {
+      const r = await call("DELETE", `/streams/${streamId}`, { reason, units });
+      if (!r.ok) throw httpError(r, "/streams/:id");
+      return r.json as { charged: string; vouchers: number };
+    },
+  };
+
   return {
     network,
     asset,
@@ -247,6 +280,11 @@ export async function reinkey(options: ReinkeyOptions): Promise<Reinkey> {
     exactEnabled,
     deps,
     meter: (opts) => meter(opts, deps(opts)),
+    stream: (req, res, opts) => {
+      const base = (options.publicUrl ?? requestOrigin(req)).replace(/\/+$/, "");
+      const path = (req.originalUrl ?? req.url ?? "/").split("?")[0];
+      return openPaidStream(streams, req, res, opts, { payTo: options.payTo, resource: `${base}${path}` });
+    },
     acceptVoucher: async (v, ctx) =>
       (await verifyChannel(
         {

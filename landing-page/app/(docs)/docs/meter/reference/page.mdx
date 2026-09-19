@@ -23,6 +23,7 @@ Express-compatible middleware (`(req, res, next)`), so it also works in Nest and
 | `description` | `string?` | Shown to buyers in the 402 body. |
 | `sliceTokens` | `number?` | For `token`: tokens paid per voucher. |
 | `sliceSeconds` | `number?` | For `second`: seconds paid per voucher. |
+| `bazaar` | `{ info?, schema? }?` | Discovery metadata for the x402 Bazaar extension: an example input (`info.input`) and output format (`info.output`), plus an optional JSON schema. Derived from the HTTP method and unit when omitted. |
 
 On success the middleware sets `req.payment` to the receipt, sets the `PAYMENT-RESPONSE` header and calls `next()`.
 
@@ -58,6 +59,56 @@ On success the middleware sets `req.payment` to the receipt, sets the `PAYMENT-R
 The same object is base64-encoded in the `PAYMENT-REQUIRED` header. For `token` and `second` units, `extra` also carries `sliceTokens` / `sliceSeconds` and `sliceAmount` (the price of one slice).
 
 A payment that is present but rejected also returns 402, with `error` set to the [reason code](/docs/reason-codes) and the same `accepts`, so the buyer can correct and retry.
+
+## Discovery (Bazaar)
+
+Every 402 carries an `extensions.bazaar` object describing how to call the resource:
+
+```json
+"extensions": {
+  "bazaar": {
+    "info": {
+      "input": { "type": "http", "method": "GET", "queryParams": {} },
+      "output": { "type": "json", "mimeType": "application/json" }
+    },
+    "schema": {}
+  }
+}
+```
+
+The middleware also forwards this to the facilitator with each verification. After the **first verified payment**, the resource appears in the facilitator's catalog, `GET /discovery/resources`, where agents (and the `reinkey_list_resources` MCP tool) can find it. Nothing to register, nothing to keep in sync: a paid endpoint lists itself.
+
+## Headers
+
+| Header | Direction | |
+|---|---|---|
+| `PAYMENT-REQUIRED` | response, on 402 | base64 JSON of the body above |
+| `PAYMENT-SIGNATURE` | request | base64 JSON payment payload (x402 v2) |
+| `PAYMENT-RESPONSE` | response, on success | base64 JSON receipt |
+| `X-PAYMENT` / `X-PAYMENT-RESPONSE` | both | accepted and mirrored for x402 v1 clients |
+
+Expose the response headers in CORS if browsers call your API.
+
+## Streaming units
+
+With `unit: "token"` or `"second"`, `rk.meter()` charges the first slice; `rk.stream()` then runs the slice loop for you. It opens a session on the facilitator, writes the SSE headers and the `session` event, and every time a slice is used up it tells the buyer `payment-required` and waits for the voucher on the facilitator (`POST /streams/:id/wait`). `@reinkey/sdk`'s `streamPaid()` is the matching buyer side and needs no configuration: it finds the facilitator in the 402's `extra.facilitator`.
+
+```ts
+app.get(
+  "/ticker",
+  rk.meter({ price: 1000n, unit: "second", sliceSeconds: 1 }),
+  async (req, res) => {
+    const s = await rk.stream(req, res, { price: 1000n, unit: "second", sliceSeconds: 1 });
+    while (await s.next()) {          // false when the buyer stops paying or disconnects
+      s.send("tick", await quote());
+      await sleep(1000);
+    }
+    await s.end();                    // settles the session, emits `done`
+  },
+);
+```
+
+`s.next()` returns `false` and sets `s.ended` when the stream stops: `CHANNEL_EXHAUSTED` (the deposit can't cover the next slice, decided before waiting), `TIMEOUT` (no voucher within `voucherTimeoutMs`, default 10 s), `ACCOUNT_FROZEN`, or `done` when the client disconnects. Every stream produces `stream.started` / `stream.ended` events in the facilitator's ledger, so it shows up in the console like any other payment.
 
 ## Headers
 

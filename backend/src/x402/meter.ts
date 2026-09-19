@@ -16,6 +16,11 @@ export interface MeterOptions {
   price: bigint;
   unit: 'request' | 'token' | 'second';
   description?: string;
+  /**
+   * Bazaar keşif meta verisi (x402 `extensions.bazaar`): istek örneği ve çıktı
+   * biçimi. Verilmezse yöntem ve birimden asgari bir tanım türetilir.
+   */
+  bazaar?: { info?: Record<string, unknown>; schema?: Record<string, unknown> };
   /** `unit: token` için: ödeme dilim başına alınır (sliceTokens × price). */
   sliceTokens?: number;
   /** `unit: second` için: ödeme dilim başına alınır (sliceSeconds × price). */
@@ -63,6 +68,36 @@ export function chargeFor(opts: MeterOptions): bigint {
   if (opts.unit === 'second')
     return opts.price * BigInt(opts.sliceSeconds ?? 1);
   return opts.price;
+}
+
+/**
+ * x402 Bazaar uzantısı (specs/extensions/bazaar.md). Facilitator bunu
+ * kataloğa yazar; ajanlar kaynağı çağırmadan önce girdi/çıktıyı buradan öğrenir.
+ * Akışlı birimlerde çıktı SSE'dir; uzantı bunun için ad tanımlamadığından
+ * `type: "sse"` ve mimeType birlikte verilir.
+ */
+export function bazaarExtension(
+  opts: Pick<MeterOptions, 'unit' | 'bazaar'>,
+  method: string,
+): Record<string, unknown> {
+  const m = method.toUpperCase();
+  const body = ['POST', 'PUT', 'PATCH'].includes(m);
+  const stream = opts.unit !== 'request';
+  return {
+    info: {
+      input: {
+        type: 'http',
+        method: m,
+        ...(body ? { bodyType: 'json', body: {} } : { queryParams: {} }),
+        ...opts.bazaar?.info?.input as object,
+      },
+      output: stream
+        ? { type: 'sse', mimeType: 'text/event-stream' }
+        : { type: 'json', mimeType: 'application/json' },
+      ...(opts.bazaar?.info ?? {}),
+    },
+    schema: opts.bazaar?.schema ?? {},
+  };
 }
 
 export function paymentRequirements(
@@ -130,8 +165,13 @@ export function meter(opts: MeterOptions, deps: MeterDeps) {
         source: e.source,
         message: e.message,
         ...(e.tx ? { tx: e.tx } : {}),
-        resource: { url: resource, description: opts.description ?? '' },
+        resource: {
+          url: resource,
+          description: opts.description ?? '',
+          mimeType: opts.unit === 'request' ? 'application/json' : 'text/event-stream',
+        },
         accepts,
+        extensions: { bazaar: bazaarExtension(opts, req.method) },
       };
       res.setHeader(HEADER_REQUIRED, encodeHeader(body));
       res.status(e.status).json(body);

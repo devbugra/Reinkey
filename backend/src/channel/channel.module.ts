@@ -6,6 +6,7 @@ import { ChannelVerifier } from './channel.verifier';
 import { ClaimService } from './claim.scheduler';
 import { FrozenRegistry } from './frozen.registry';
 import { StreamSessions } from './stream.sessions';
+import { StreamsController } from './streams.controller';
 
 @Global()
 @Module({
@@ -17,7 +18,7 @@ import { StreamSessions } from './stream.sessions';
     ClaimService,
     StreamSessions,
   ],
-  controllers: [ChannelController],
+  controllers: [ChannelController, StreamsController],
   exports: [
     FrozenRegistry,
     ChannelStore,

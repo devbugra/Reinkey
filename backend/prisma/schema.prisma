@@ -39,3 +39,22 @@ model Event {
   @@index([account])
   @@index([channelId])
 }
+
+/// Bazaar kataloğu: /verify'dan geçen (ödeme kanıtlı) ücretli kaynaklar + facilitator'ın kendi demo uçları.
+model Resource {
+  url         String   @id
+  method      String   @default("GET")
+  payTo       String
+  unit        String
+  price       BigInt
+  description String   @default("")
+  /// 402 gövdesindeki accepts[] (son görülen)
+  accepts     Json
+  /// extensions.bazaar (info + schema); satıcı göndermediyse method'dan türetilmiş asgari bilgi
+  metadata    Json
+  payments    Int      @default(0)
+  firstSeenAt DateTime @default(now())
+  lastPaidAt  DateTime @default(now())
+
+  @@index([payTo])
+}

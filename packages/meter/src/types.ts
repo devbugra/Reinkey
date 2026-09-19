@@ -8,6 +8,8 @@ export interface MeterRequest {
   /** Express: mount yolunu da içeren özgün URL. Yoksa `url` kullanılır. */
   originalUrl?: string;
   url?: string;
+  /** HTTP yöntemi; Bazaar meta verisi ve facilitator kataloğu için. Yoksa GET sayılır. */
+  method?: string;
   /** Express: `trust proxy` ayarına saygı duyar. */
   protocol?: string;
   /** node:http soketi; TLS ise `encrypted` alanı vardır. Yapısal uyum için `object`. */
@@ -21,6 +23,11 @@ export interface MeterResponse {
   status?(code: number): { json(body: unknown): unknown };
   statusCode?: number;
   end?(chunk?: string): unknown;
+  /** Akışlar (rk.stream) için: SSE gövdesi parça parça yazılır. node:http ve Express'te var. */
+  write?(chunk: string): unknown;
+  flushHeaders?(): unknown;
+  /** İstemci bağlantıyı kesince akış durur; node:http `close` olayı. */
+  on?(event: "close", listener: () => void): unknown;
 }
 
 export type MeterNext = (err?: unknown) => void;

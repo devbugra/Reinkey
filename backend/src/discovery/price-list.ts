@@ -14,8 +14,21 @@ export function priceList(cfg: AppConfig) {
         path: '/demo/book',
         url: `${cfg.publicUrl}/demo/book`,
         description: 'Order book snapshot (USDC_XLM)',
-        unit: 'request',
+        unit: 'request' as const,
         price: cfg.priceBookPerRequest.toString(),
+        schemes: ['channel'],
+      },
+      {
+        method: 'GET',
+        path: '/demo/ticker/stream',
+        url: `${cfg.publicUrl}/demo/ticker/stream`,
+        description: 'Live XLM/USDC ticker (SSE), paid per second in slices',
+        unit: 'second' as const,
+        price: cfg.priceTickerPerSecond.toString(),
+        sliceSeconds: cfg.tickerSliceSeconds,
+        sliceAmount: (
+          cfg.priceTickerPerSecond * BigInt(cfg.tickerSliceSeconds)
+        ).toString(),
         schemes: ['channel'],
       },
       {
@@ -23,7 +36,7 @@ export function priceList(cfg: AppConfig) {
         path: '/demo/chat',
         url: `${cfg.publicUrl}/demo/chat`,
         description: 'Streamed chat completion (SSE), paid per token in slices',
-        unit: 'token',
+        unit: 'token' as const,
         price: cfg.priceChatPerToken.toString(),
         sliceTokens: cfg.chatSliceTokens,
         sliceAmount: (

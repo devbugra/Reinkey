@@ -634,3 +634,29 @@ SDK (`../packages/sdk`) ve demo ajanları (`../agents`, `pnpm demo`) senin çal�
 3. **`POST /v1/report` gövdesinde `code` alanını kabul et:** `{ account, tx, code?, kind?, details? }`. RPC, başarısız işlemin sonucunda kontrat hata kodunu vermiyor; kod yalnızca simülasyonda ve tanı olaylarında görünüyor. Önce §15'teki tanı olayı taramasını dene; kodu bulamazsan ajandan gelen `code` değerini kullan. Her durumda tx'in gerçekten `FAILED` olduğunu doğrula. Yanıtta `codeSource: "chain" | "reporter"` alanını dön ve olayın `data` alanına da yaz.
 4. **Sayaç tutarsızlığı:** akış sonunda `done.charged = 125000` geldi, kanalın kümülatifi ise 140000'di. `charged`, o akış boyunca kabul edilen kuponların delta toplamı olmalı (ilk dilimin kuponu dahil). Kontrol et, bir birim testiyle sabitle.
 5. **Trustline notu:** test USDC'miz klasik bir varlık. `SELLER_PAY_TO` G-hesabının USDC trustline'ı olmalı (deploy betiği kuruyor); yoksa `claim` `#13` ile düşer.
+
+---
+
+## 17. EK (20 Eylül, Hat 3): Bazaar kataloğu — `GET /discovery/resources`
+
+Ek hedef (§9 kesme sırasındaki "Bazaar kataloğu") uygulandı.
+
+- **Kayıt ucu yok.** Bir kaynak kataloğa yalnızca `/verify`'dan geçen gerçek bir ödemeyle girer (ödeme kanıtı = listelenme). Facilitator'ın kendi demo uçları açılışta eklenir. Prisma modeli: `Resource` (göç `20260919222031_bazaar_catalog`).
+- **Liste biçimi** x402.org facilitator'ıyla aynı: `{ x402Version: 2, items: [{ resource, type: "http", x402Version, accepts, lastUpdated, metadata }], pagination: { limit, offset, total } }`. Sorgu: `payTo`, `limit`, `offset`, `type` (yalnızca `http`).
+- **402 gövdesi** artık `resource.mimeType` ve `extensions.bazaar` (`info.input`, `info.output`, `schema`) taşıyor; `meter()` bunları yöntem ve birimden türetir, satıcı `bazaar` seçeneğiyle zenginleştirebilir. `/verify` gövdesi `extensions` ve `paymentRequirements.method/description` kabul eder; `@reinkey/meter` bunları gönderir.
+- llms.txt'ye keşif paragrafı, MCP'ye `reinkey_list_resources` aracı eklendi. Fiyat listesine eksik olan `/demo/ticker/stream` eklendi.
+
+---
+
+## 18. EK (20 Eylül, Hat 3): dış satıcıya akış oturumları — `/streams`
+
+`StreamSessions` HTTP'ye açıldı (`src/channel/streams.controller.ts`); demo satıcı süreç içinden aynı sınıfı kullanmaya devam ediyor.
+
+- `POST /streams` `{ channelId, payTo, resource, unit, sliceCost, initialCharge }` → `{ streamId, requiredCumulative, voucherUrl }`. Kanalın alıcısı `payTo` olmalı; kanal başına en çok 4, toplamda 1000 açık oturum; 90 sn boşta kalan oturum `ABORTED` ile kapanır. `stream.started` yayınlar.
+- `POST /streams/:id/wait` `{ timeoutMs ≤ 30000 }` → `{ kind: paid, receipt, requiredCumulative } | timeout | exhausted | frozen | aborted`. Kalan depozito bir dilime yetmiyorsa beklemeden `exhausted`.
+- `DELETE /streams/:id` `{ reason, units }` → `{ charged, vouchers }`; `stream.ended` yayınlar (resource alanıyla).
+- Alıcı tarafı değişmedi: kupon `POST /channels/:id/voucher` ile gelir. SDK `streamPaid()` artık `apiUrl` verilmezse 402'deki `extra.facilitator`'ı kullanır.
+- `@reinkey/meter`: `rk.stream(req, res, opts)` → `PaidStream` (`next()`, `send()`, `end()`); SSE başlıkları ve `session` / `payment-required` / `error` / `done` olayları demo satıcıyla birebir.
+- Doğrulama: `agents/tools/meter-check.ts` (kanal #12): 3 çağrı, bozuk imza reddi, Bazaar kaydı, 5 saniyelik akış = 5 kupon, defterde `stream.ended` doğru tutarla.
+- Katalog yazımı `INSERT … ON CONFLICT` ile atomik yapıldı: art arda gelen /verify'ların yazımları çakışınca Prisma upsert'i satır kaybediyordu.
+

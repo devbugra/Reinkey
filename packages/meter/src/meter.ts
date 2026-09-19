@@ -16,6 +16,12 @@ export interface MeterOptions {
   price: bigint;
   unit: "request" | "token" | "second";
   description?: string;
+  /**
+   * x402 Bazaar keşif meta verisi (`extensions.bazaar`): istek örneği ve çıktı
+   * biçimi. Facilitator, ilk doğrulanmış ödemeden sonra kaynağı kataloğa yazar.
+   * Verilmezse yöntem ve birimden asgari bir tanım türetilir.
+   */
+  bazaar?: { info?: Record<string, unknown>; schema?: Record<string, unknown> };
   /** `unit: token` için: ödeme dilim başına alınır (sliceTokens × price). */
   sliceTokens?: number;
   /** `unit: second` için: ödeme dilim başına alınır (sliceSeconds × price). */
@@ -27,6 +33,10 @@ export interface MeterContext {
   payTo: string;
   resource: string;
   unit: string;
+  /** Facilitator kataloğu için: HTTP yöntemi, açıklama ve 402'deki uzantılar. */
+  method?: string;
+  description?: string;
+  extensions?: Record<string, unknown>;
 }
 
 /** Zincir dışı bir hata: sebep kodu gövdesi + HTTP durumu. */
@@ -61,8 +71,37 @@ export interface PaymentRequiredBody {
   source: string;
   message: string;
   tx?: string;
-  resource: { url: string; description: string };
+  resource: { url: string; description: string; mimeType?: string };
   accepts: Record<string, unknown>[];
+  extensions?: Record<string, unknown>;
+}
+
+/**
+ * x402 Bazaar uzantısı (specs/extensions/bazaar.md). Akışlı birimlerde çıktı
+ * SSE'dir; uzantı bunun için ad tanımlamadığından `type: "sse"` + mimeType verilir.
+ */
+export function bazaarExtension(
+  opts: Pick<MeterOptions, "unit" | "bazaar">,
+  method: string,
+): Record<string, unknown> {
+  const m = method.toUpperCase();
+  const body = ["POST", "PUT", "PATCH"].includes(m);
+  const stream = opts.unit !== "request";
+  return {
+    info: {
+      input: {
+        type: "http",
+        method: m,
+        ...(body ? { bodyType: "json", body: {} } : { queryParams: {} }),
+        ...((opts.bazaar?.info?.input as object | undefined) ?? {}),
+      },
+      output: stream
+        ? { type: "sse", mimeType: "text/event-stream" }
+        : { type: "json", mimeType: "application/json" },
+      ...(opts.bazaar?.info ?? {}),
+    },
+    schema: opts.bazaar?.schema ?? {},
+  };
 }
 
 /** Bu çağrı için alınacak tutar: dilimli uçlarda ilk dilimin bedeli. */
@@ -147,6 +186,8 @@ export function meter(opts: MeterOptions, deps: MeterDeps): MeterMiddleware {
     const path = (req.originalUrl ?? req.url ?? "/").split("?")[0];
     const resource = `${base}${path}`;
     const accepts = paymentRequirements(opts, deps, resource);
+    const method = (req.method ?? "GET").toUpperCase();
+    const extensions = { bazaar: bazaarExtension(opts, method) };
 
     const send402 = (e: MeterError) => {
       const body: PaymentRequiredBody = {
@@ -155,8 +196,13 @@ export function meter(opts: MeterOptions, deps: MeterDeps): MeterMiddleware {
         source: e.source,
         message: e.message,
         ...(e.tx ? { tx: e.tx } : {}),
-        resource: { url: resource, description: opts.description ?? "" },
+        resource: {
+          url: resource,
+          description: opts.description ?? "",
+          mimeType: opts.unit === "request" ? "application/json" : "text/event-stream",
+        },
         accepts,
+        extensions,
       };
       res.setHeader(HEADER_REQUIRED, encodeHeader(body));
       sendJson(res, e.status, body);
@@ -185,6 +231,9 @@ export function meter(opts: MeterOptions, deps: MeterDeps): MeterMiddleware {
       payTo: deps.payTo,
       resource,
       unit: opts.unit,
+      method,
+      description: opts.description,
+      extensions,
     };
     let receipt: object;
     try {

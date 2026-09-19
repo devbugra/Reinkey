@@ -121,6 +121,38 @@ describe("rk.meter()", () => {
     return { rk, ...m };
   };
 
+  it("402 carries Bazaar discovery metadata derived from method and unit", async () => {
+    const { rk } = await setup();
+    const { res, out } = fakeRes();
+    await rk.meter({ price: 200n, unit: "token", sliceTokens: 50, description: "Chat" })(
+      { ...fakeReq({}, "/chat"), method: "POST" },
+      res,
+      vi.fn(),
+    );
+    const body = out.body as { resource: { mimeType?: string }; extensions?: { bazaar: { info: { input: unknown; output: unknown } } } };
+    expect(body.resource.mimeType).toBe("text/event-stream");
+    expect(body.extensions?.bazaar.info.input).toEqual({ type: "http", method: "POST", bodyType: "json", body: {} });
+    expect(body.extensions?.bazaar.info.output).toEqual({ type: "sse", mimeType: "text/event-stream" });
+  });
+
+  it("forwards method, description and extensions to /verify so the facilitator can catalog the resource", async () => {
+    const { rk, calls } = await setup(() => ({ json: { isValid: true, receipt: { channelId: "7", delta: "5000" } } }));
+    const { res } = fakeRes();
+    await rk.meter({ price: 5000n, unit: "request", description: "Order book" })(
+      fakeReq({ "payment-signature": voucherHeader() }),
+      res,
+      vi.fn(),
+    );
+    const verify = calls.find((c) => c.url.endsWith("/verify"));
+    const sent = verify?.body as {
+      paymentRequirements: { method?: string; description?: string };
+      extensions?: { bazaar?: unknown };
+    };
+    expect(sent.paymentRequirements.method).toBe("GET");
+    expect(sent.paymentRequirements.description).toBe("Order book");
+    expect(sent.extensions?.bazaar).toBeTruthy();
+  });
+
   it("no header → 402 with channel requirements, resource derived from the request", async () => {
     const { rk } = await setup();
     const { res, out } = fakeRes();
@@ -351,5 +383,82 @@ describe("rk.acceptVoucher()", () => {
       .catch((e) => e);
     expect(err).toBeInstanceOf(FacilitatorError);
     expect(err).toMatchObject({ code: "VOUCHER_UNDERPAID", status: 402, source: "facilitator" });
+  });
+});
+
+describe("rk.stream()", () => {
+  function sseRes() {
+    const chunks: string[] = [];
+    const headers: Record<string, string> = {};
+    let ended = false;
+    const res = {
+      setHeader: (k: string, v: string) => void (headers[k] = v),
+      statusCode: 0,
+      write: (c: string) => void chunks.push(c),
+      end: () => void (ended = true),
+      on: () => undefined,
+    };
+    const events = () =>
+      chunks.map((c) => {
+        const m = /^event: (\S+)\ndata: (.*)\n\n$/.exec(c)!;
+        return { type: m[1], data: JSON.parse(m[2]) as Record<string, unknown> };
+      });
+    return { res, headers, events, isEnded: () => ended };
+  }
+
+  const setup = async (extra: Record<string, Route>) => {
+    const m = mockFetch({ "GET /supported": supported, "GET /demo/info": demoInfo, ...extra });
+    const rk = await reinkey({ facilitator: FACILITATOR, payTo: PAY_TO, fetch: m.fn });
+    return { rk, ...m };
+  };
+  const paidReq = () => ({ ...fakeReq({}, "/ticker"), payment: { scheme: "channel", channelId: "7", accepted: "1000", delta: "1000", remaining: "9000" } });
+
+  it("opens a session, streams the first slice, asks for the next voucher and continues when paid", async () => {
+    const waits = [{ json: { kind: "paid", receipt: { channelId: "7", accepted: "2000" }, requiredCumulative: "3000" } }];
+    const { rk, calls } = await setup({
+      "POST /streams": () => ({ status: 201, json: { streamId: "s1", requiredCumulative: "2000" } }),
+      "POST /streams/s1/wait": () => waits.shift()!,
+      "DELETE /streams/s1": () => ({ json: { charged: "2000", vouchers: 2 } }),
+    });
+    const { res, headers, events, isEnded } = sseRes();
+    const s = await rk.stream(paidReq(), res as never, { price: 1000n, unit: "second", sliceSeconds: 1 });
+
+    expect(headers["Content-Type"]).toMatch(/text\/event-stream/);
+    expect(events()[0]).toEqual({ type: "session", data: { streamId: "s1", channelId: "7", unit: "second", sliceSeconds: 1, pricePerSecond: "1000" } });
+
+    expect(await s.next()).toBe(true); // 1. saniye: peşin ödenmiş
+    s.send("tick", { price: "0.13" });
+    expect(await s.next()).toBe(true); // 2. saniye: payment-required → paid
+    const ev = events();
+    expect(ev.find((e) => e.type === "payment-required")?.data).toEqual({ streamId: "s1", requiredCumulative: "2000" });
+    expect(s.units).toBe(2);
+
+    await s.end();
+    expect(events().at(-1)).toEqual({ type: "done", data: { units: 2, charged: "2000", vouchers: 2 } });
+    expect(isEnded()).toBe(true);
+    const del = calls.find((c) => c.method === "DELETE");
+    expect(del?.body).toEqual({ reason: "done", units: 2 });
+  });
+
+  it("ends with CHANNEL_EXHAUSTED when the facilitator reports the deposit cannot cover the next slice", async () => {
+    const { rk, calls } = await setup({
+      "POST /streams": () => ({ status: 201, json: { streamId: "s2", requiredCumulative: "2000" } }),
+      "POST /streams/s2/wait": () => ({ json: { kind: "exhausted" } }),
+      "DELETE /streams/s2": () => ({ json: { charged: "1000", vouchers: 1 } }),
+    });
+    const { res, events, isEnded } = sseRes();
+    const s = await rk.stream(paidReq(), res as never, { price: 1000n, unit: "second" });
+    expect(await s.next()).toBe(true);
+    expect(await s.next()).toBe(false);
+    expect(s.ended).toBe("CHANNEL_EXHAUSTED");
+    expect(events().at(-1)).toEqual({ type: "error", data: { code: "CHANNEL_EXHAUSTED", units: 1 } });
+    expect(isEnded()).toBe(true);
+    expect(calls.find((c) => c.method === "DELETE")?.body).toEqual({ reason: "CHANNEL_EXHAUSTED", units: 1 });
+  });
+
+  it("refuses to start without a verified payment on the request", async () => {
+    const { rk } = await setup({});
+    const { res } = sseRes();
+    await expect(rk.stream(fakeReq({}, "/ticker"), res as never, { price: 1000n, unit: "token" })).rejects.toThrow(/rk.meter\(\)/);
   });
 });

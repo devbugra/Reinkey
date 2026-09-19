@@ -225,7 +225,7 @@
       },
       {
         "title": "Kendini tanıtan servis",
-        "body": "OpenAPI, llms.txt ve MCP: ajan servisi dokümana bakmadan keşfeder ve çağırır."
+        "body": "OpenAPI, llms.txt, MCP ve Bazaar kataloğu: bir ajan servisinizi belge okumadan keşfeder ve çağırır. Ücretli bir uç, ilk doğrulanmış ödemeden sonra kataloğa kendiliğinden girer."
       }
     ]
   },
@@ -417,7 +417,7 @@
       "features": [
         {
           "title": "Üç birim",
-          "body": "request: çağrı başına. token: akışlı yanıtta dilim dilim. second: canlı veri akışında dinlenen saniye kadar. Bağlantı kesilince ödeme durur, depozito bitince akış kesilir. Akışlı birimler bugün demo satıcıda; pakette çağrı başına tahsilat hazır."
+          "body": "request: çağrı başına. token: akışlı yanıtta dilim dilim. second: canlı veri akışında dinlenen saniye kadar. Bağlantı kesilince ödeme durur, depozito bitince akış kesilir. Üçü de tek pakette; akış için rk.stream()."
         },
         {
           "title": "Emanetsiz",
@@ -444,7 +444,7 @@
       "limits": [
         "Stellar testnet üzerinde çalışır; kontratlar henüz denetlenmedi.",
         "Paket Express ve uyumlu sunucular (Nest, Connect) içindir.",
-        "Çağrı başına tahsilat pakette tamdır. Token ve saniye başına akışlar bugün yalnızca demo satıcıda çalışır: akış oturumları facilitator'ın içindedir ve dış satıcılara henüz açılmadı."
+        "Çağrı, token ve saniye başına tahsilatın üçü de pakette: akış oturumları facilitator'da tutulur ve dış satıcıya HTTP ile açıktır. Canlı testnet'te ayrı bir sunucudan doğrulandı."
       ],
       "ctaTitle": "İlk ücretli ucunuzu bugün açın.",
       "ctaPrimary": "Meter hızlı başlangıç",

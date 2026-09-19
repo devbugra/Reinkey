@@ -188,7 +188,11 @@ export async function* parseSse(res: Response): AsyncGenerator<StreamEvent> {
 
 export type PaidStreamOptions = {
   url: string;
-  apiUrl: string;
+  /**
+   * Kuponların gönderileceği facilitator. Verilmezse 402 şartlarındaki
+   * `extra.facilitator` kullanılır: dış bir satıcının alıcısı onu ancak oradan öğrenir.
+   */
+  apiUrl?: string;
   signer: ChannelSigner;
   network: string;
   method?: "GET" | "POST";
@@ -221,10 +225,12 @@ export async function streamPaid(o: PaidStreamOptions): Promise<PaidStreamResult
   // İlk istek: şartları öğren (402) ve ilk dilimi peşin öde.
   const probe = await fetch(o.url, init);
   let firstSlice = o.firstSlice;
+  let apiUrl = o.apiUrl;
   if (probe.status === 402) {
     const body = (await probe.json()) as PaymentRequired;
     const req = pickChannelRequirement(body);
     if (!req) throw new Error("402 yanıtında channel şeması yok");
+    apiUrl ??= (req.extra as { facilitator?: string }).facilitator;
     if (firstSlice === undefined) {
       const perUnit = BigInt(req.amount);
       const slice = Number(
@@ -238,8 +244,9 @@ export async function streamPaid(o: PaidStreamOptions): Promise<PaidStreamResult
     throw new Error(`akış başlatılamadı: ${probe.status} ${await probe.text()}`);
   } else {
     // Ücretsiz akış: doğrudan tüket.
-    return consume(probe, o, null);
+    return consume(probe, { ...o, apiUrl: apiUrl ?? "" }, null);
   }
+  if (!apiUrl) throw new Error("facilitator adresi yok: apiUrl verin ya da 402 extra.facilitator taşımalı");
 
   const voucher = o.signer.next(firstSlice!);
   const res = await fetch(o.url, {
@@ -247,12 +254,12 @@ export async function streamPaid(o: PaidStreamOptions): Promise<PaidStreamResult
     headers: { ...(init.headers as Record<string, string>), ...encodePaymentHeader(o.signer.payload(voucher, o.network)) },
   });
   if (!res.ok) throw new Error(`akış reddedildi: ${res.status} ${await res.text()}`);
-  return consume(res, o, firstSlice!);
+  return consume(res, { ...o, apiUrl }, firstSlice!);
 }
 
 async function consume(
   res: Response,
-  o: PaidStreamOptions,
+  o: PaidStreamOptions & { apiUrl: string },
   firstCharged: bigint | null,
 ): Promise<PaidStreamResult> {
   let events = 0;

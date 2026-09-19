@@ -32,6 +32,16 @@ Amounts are decimal strings in base units. Errors use the shape described in [Re
 | `POST /channels/:id/voucher` | Next voucher for a running stream (`streamId`, `cumulative`, `signature`). |
 | `POST /channels/:id/claim` | Settle now. Callable by anyone; pays only the channel's payee. |
 
+## Streams (external sellers)
+
+The facilitator holds stream sessions so a seller can wait for the next voucher where vouchers are verified. `@reinkey/meter`'s `rk.stream()` wraps these.
+
+| | |
+|---|---|
+| `POST /streams` | Open a session after the first slice was verified: `{ channelId, payTo, resource, unit, sliceCost, initialCharge }` → `{ streamId, requiredCumulative, voucherUrl }`. At most 4 open sessions per channel. |
+| `POST /streams/:id/wait` | Long-poll for the next voucher (`timeoutMs` ≤ 30000). Returns `{ kind: "paid", receipt, requiredCumulative }`, or `kind` = `timeout` / `exhausted` / `frozen` / `aborted`. |
+| `DELETE /streams/:id` | End the session: `{ reason, units }` → `{ charged, vouchers }`; emits `stream.ended`. Idle sessions are closed after 90 s. |
+
 ## Accounts and audit
 
 | | |
@@ -46,9 +56,10 @@ Amounts are decimal strings in base units. Errors use the shape described in [Re
 
 | | |
 |---|---|
+| `GET /discovery/resources` | **x402 Bazaar catalog.** Every resource that has received at least one verified payment through this facilitator, with its 402 terms (`accepts`) and `extensions.bazaar` input/output metadata. Query: `payTo`, `limit`, `offset`. Response: `{ x402Version, items[], pagination }`. There is no registration endpoint: a verified payment is the listing. |
 | `GET /openapi.json` | OpenAPI 3 document. |
 | `GET /llms.txt` | Plain-text guide for language models. |
-| `POST /mcp` | Model Context Protocol endpoint. |
+| `POST /mcp` | Model Context Protocol endpoint. Tools include `reinkey_list_resources` (the catalog), `reinkey_price_list`, `reinkey_get_channel`, `reinkey_get_account`, `reinkey_stats`, `reinkey_supported`. |
 
 ## Events
 

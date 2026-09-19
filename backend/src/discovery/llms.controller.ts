@@ -40,6 +40,10 @@ Chain mode: ${c.chainMode}
 
 ${prices}
 
+Discovery (x402 Bazaar): \`GET ${c.publicUrl}/discovery/resources\` lists every resource that has
+received at least one verified payment through this facilitator, with its 402 terms and
+\`extensions.bazaar\` input/output metadata. Filter with \`?payTo=\`.
+
 ## How to pay with the \`channel\` scheme
 
 1. Call a paid resource without payment. You get HTTP 402 with a JSON body (also base64 in the
@@ -89,7 +93,7 @@ CHANNEL_EXHAUSTED, RATE_LIMITED.
 - GET  ${c.publicUrl}/stats — counters
 - GET  ${c.publicUrl}/openapi.json, ${c.publicUrl}/docs — OpenAPI
 - POST ${c.publicUrl}/mcp — MCP server (streamable HTTP): reinkey_supported, reinkey_get_channel,
-  reinkey_get_account, reinkey_stats, reinkey_price_list
+  reinkey_get_account, reinkey_stats, reinkey_price_list, reinkey_list_resources
 `;
   }
 }

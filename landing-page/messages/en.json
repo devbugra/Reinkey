@@ -225,7 +225,7 @@
       },
       {
         "title": "Self-describing service",
-        "body": "OpenAPI, llms.txt and MCP: an agent can discover and call the service without reading the docs."
+        "body": "OpenAPI, llms.txt, MCP and the Bazaar catalog: an agent can discover and call the service without reading the docs. A paid endpoint lists itself after its first verified payment."
       }
     ]
   },
@@ -417,7 +417,7 @@
       "features": [
         {
           "title": "Three units",
-          "body": "request: per call. token: slice by slice on a streamed response. second: for exactly as long as a live feed is listened to. Payment stops when the connection drops; the stream stops when the deposit runs out. Streaming units run on the demo seller today; per-request billing is ready in the package."
+          "body": "request: per call. token: slice by slice on a streamed response. second: for exactly as long as a live feed is listened to. Payment stops when the connection drops; the stream stops when the deposit runs out. All three in one package; rk.stream() for streams."
         },
         {
           "title": "Non-custodial",
@@ -444,7 +444,7 @@
       "limits": [
         "Runs on Stellar testnet; the contracts haven't been audited yet.",
         "The package targets Express and compatible servers (Nest, Connect).",
-        "Per-request billing is complete in the package. Per-token and per-second streams run only on the demo seller today: stream sessions live inside the facilitator and aren't open to external sellers yet."
+        "Per-request, per-token and per-second billing are all in the package: stream sessions live on the facilitator and are open to external sellers over HTTP. Verified on testnet from a separate server."
       ],
       "ctaTitle": "Open your first paid endpoint today.",
       "ctaPrimary": "Meter quickstart",

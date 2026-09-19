@@ -19,6 +19,7 @@ import { channelView } from '../channel/channel.controller';
 import { jsonSafe } from '../common/bigint';
 import { APP_CONFIG, type AppConfig } from '../config/config';
 import { ExactVerifier } from '../x402/exact.verifier';
+import { CatalogService } from './catalog.service';
 import { priceList } from './price-list';
 
 const text = (value: unknown) => ({
@@ -39,6 +40,7 @@ export class McpController {
     private readonly store: ChannelStore,
     private readonly stats: StatsService,
     private readonly exact: ExactVerifier,
+    private readonly catalog: CatalogService,
   ) {}
 
   private build(): McpServer {
@@ -107,6 +109,15 @@ export class McpController {
           'Paid resources, prices (USDC base units, 7 decimals) and units',
       },
       () => text(priceList(this.cfg)),
+    );
+
+    server.registerTool(
+      'reinkey_list_resources',
+      {
+        description:
+          'x402 Bazaar catalog: paid resources that received verified payments through this facilitator (402 terms + input/output metadata)',
+      },
+      async () => text(await this.catalog.list({ limit: 50 })),
     );
 
     return server;

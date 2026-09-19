@@ -211,9 +211,33 @@ app.post("/channels/:id/voucher", express.json(), async (req, res) => {
 
 Caveat: `accepted + SLICE_COST` assumes no other voucher advanced the channel in the meantime. If one buyer runs several paid calls on the same channel concurrently, read the current value from the last receipt you saw or from `GET {facilitator}/channels/:id` before asking for the next slice.
 
+## Streams: per token, per second
+
+`rk.meter()` charges the first slice; `rk.stream()` runs the slice loop. It opens a session on the facilitator (`POST /streams`), writes the SSE headers and the `session` event, and whenever a slice is used up it emits `payment-required` and waits for the buyer's voucher on the facilitator (`POST /streams/:id/wait`, long-poll). The buyer side is `@reinkey/sdk`'s `streamPaid()`, which finds the facilitator in the 402's `extra.facilitator`.
+
+```ts
+app.get(
+  "/ticker",
+  rk.meter({ price: 1000n, unit: "second", sliceSeconds: 1 }),
+  async (req, res) => {
+    const s = await rk.stream(req, res, { price: 1000n, unit: "second", sliceSeconds: 1 });
+    while (await s.next()) {          // false once the buyer stops paying or disconnects
+      s.send("tick", await quote());
+      await sleep(1000);
+    }
+    await s.end();                    // settles the session on the facilitator, emits `done`
+  },
+);
+```
+
+`s.ended` tells you why a stream stopped: `CHANNEL_EXHAUSTED` (decided before waiting, from the channel's remaining deposit), `TIMEOUT` (`voucherTimeoutMs`, default 10 s), `ACCOUNT_FROZEN`, or `done`. Each stream is recorded as `stream.started` / `stream.ended` in the facilitator's ledger.
+
+## Verified against the live facilitator
+
+`agents/tools/meter-check.ts` runs this package on a separate `node:http` server against the testnet facilitator: a real on-chain channel opened by a Reinkey account, three paid calls (402 → voucher → 200 with `PAYMENT-RESPONSE`), a forged signature rejected with `VOUCHER_BAD_SIGNATURE`, the endpoint appearing in the Bazaar catalog, and a per-second stream of 5 ticks paid with 5 vouchers, ending `done` with the right total in the ledger.
+
 ## Not yet in this package
 
-- Managed stream sessions (see above) — you write the slice loop yourself.
 - The `exact` scheme. The client code path exists (`/verify` then `/settle`) but the current facilitator does not enable `exact`, so it is **untested**; `reinkey()` refuses `exact` payloads unless `/supported` advertises them.
 - Retries / circuit breaking for facilitator calls. A facilitator outage yields `503 FACILITATOR_UNAVAILABLE`; your endpoint is unavailable, never free.
 - Seller authentication towards the facilitator (there is none on the facilitator side yet).

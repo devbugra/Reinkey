@@ -5,6 +5,7 @@ import { ChannelStore } from '../channel/channel.cache';
 import { ChannelVerifier } from '../channel/channel.verifier';
 import { ReinkeyError } from '../common/errors';
 import { APP_CONFIG, type AppConfig } from '../config/config';
+import { CatalogService } from '../discovery/catalog.service';
 import { ExactVerifier } from './exact.verifier';
 import { payloadScheme } from './headers';
 
@@ -23,6 +24,8 @@ const FacilitatorBody = z.object({
   x402Version: z.number().optional(),
   paymentPayload: z.unknown(),
   paymentRequirements: Requirements,
+  /** Satıcının 402'sindeki uzantılar; `bazaar` varsa kataloğa yazılır. */
+  extensions: z.record(z.string(), z.unknown()).optional(),
 });
 
 const example = {
@@ -49,6 +52,7 @@ export class FacilitatorController {
     private readonly channel: ChannelVerifier,
     private readonly exact: ExactVerifier,
     private readonly store: ChannelStore,
+    private readonly catalog: CatalogService,
   ) {}
 
   @Get('supported')
@@ -102,6 +106,8 @@ export class FacilitatorController {
         resource: r.resource ?? 'facilitator:/verify',
         unit: r.unit ?? 'request',
       },
+      requirements: r,
+      bazaar: p.data.extensions?.bazaar as Record<string, unknown> | undefined,
     };
   }
 
@@ -113,12 +119,28 @@ export class FacilitatorController {
   })
   @ApiBody({ schema: { example } })
   async verify(@Body() body: unknown) {
-    const { payload, scheme, ctx } = this.parse(body);
+    const { payload, scheme, ctx, requirements, bazaar } = this.parse(body);
     try {
       const receipt =
         scheme === 'exact'
           ? await this.exact.verify(payload, ctx)
           : await this.channel.verify(payload, ctx);
+      // Ödeme kanıtlandı: kaynak Bazaar kataloğuna girer (yanıtı bekletmez).
+      if (requirements.resource?.startsWith('http')) {
+        void this.catalog
+          .record({
+            resource: requirements.resource,
+            method: typeof requirements.method === 'string' ? requirements.method : undefined,
+            payTo: ctx.payTo,
+            unit: ctx.unit,
+            price: BigInt(requirements.amount ?? requirements.maxAmountRequired ?? '0'),
+            description:
+              typeof requirements.description === 'string' ? requirements.description : undefined,
+            accepts: [requirements as Record<string, unknown>],
+            bazaar,
+          })
+          .catch(() => {});
+      }
       return { isValid: true, receipt };
     } catch (e) {
       if (!(e instanceof ReinkeyError) || e.code === 'CHAIN_UNAVAILABLE')

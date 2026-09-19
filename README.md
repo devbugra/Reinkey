@@ -34,9 +34,9 @@ const { res } = await x402Fetch(`${api}/book`, { signer, network: "stellar:testn
 |---|---|
 | `contracts/` | Soroban contracts: `channel`, `reinkey-account`, `credit-pool` |
 | `packages/core` | `@reinkey/core`: voucher encoding and signing, reason codes, types |
-| `packages/meter` | `@reinkey/meter`: seller middleware (Reinkey Meter) |
+| `packages/meter` | `@reinkey/meter`: seller middleware (Reinkey Meter): per-request `rk.meter()`, per-token/per-second `rk.stream()` |
 | `packages/sdk` | `@reinkey/sdk`: agent SDK (Reinkey Reins) |
-| `backend/` | The facilitator: voucher verification, automatic claims, audit ledger, SSE, OpenAPI, `llms.txt`, MCP, demo seller |
+| `backend/` | The facilitator: voucher verification, automatic claims, audit ledger, SSE, x402 Bazaar catalog (`/discovery/resources`), OpenAPI, `llms.txt`, MCP, demo seller |
 | `app.mandate/` | Reinkey Console: live feed, Meter (seller) view, Reins (account) view |
 | `landing-page/` | Marketing site, product pages and the documentation (`/docs`) |
 | `agents/` | Demo agents: a trader, and a compromised agent that gets stopped by the chain |
