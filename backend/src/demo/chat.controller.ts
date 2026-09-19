@@ -40,7 +40,13 @@ export class ChatController {
     private readonly events: EventsService,
   ) {
     if (cfg.anthropicApiKey)
-      this.anthropic = new Anthropic({ apiKey: cfg.anthropicApiKey });
+      this.anthropic = new Anthropic({
+        apiKey: cfg.anthropicApiKey,
+        // Organizasyon düzeyinde (workspace'e bağlı olmayan) anahtarlar bu başlığı zorunlu tutar.
+        ...(cfg.anthropicWorkspaceId
+          ? { defaultHeaders: { 'anthropic-workspace-id': cfg.anthropicWorkspaceId } }
+          : {}),
+      });
   }
 
   @Post('chat')
@@ -105,6 +111,7 @@ export class ChatController {
       channelId: channelId.toString(),
       sliceTokens: slice,
       pricePerToken: perToken.toString(),
+      mode: this.cfg.chatMode,
     });
 
     const end = (reason: 'done' | 'CHANNEL_EXHAUSTED' | 'TIMEOUT') => {
@@ -120,7 +127,13 @@ export class ChatController {
     };
 
     try {
-      for await (const text of this.tokens(body?.prompt ?? '')) {
+      // LLM hata verip hazır metne düşerse alıcı bunu bilmeli: ödediği şey değişti.
+      const onFallback = () =>
+        send('notice', {
+          code: 'LLM_UNAVAILABLE',
+          message: 'LLM unavailable; streaming fallback text instead',
+        });
+      for await (const text of this.tokens(body?.prompt ?? '', onFallback)) {
         if (closed) break;
         if (tokens >= paidThrough) {
           const cached = this.store.peek(channelId);
@@ -167,7 +180,10 @@ export class ChatController {
   }
 
   /** Token kaynağı: fallback (hazır metin) ya da llm (Anthropic). LLM hatasında fallback'e düşer. */
-  private async *tokens(prompt: string): AsyncGenerator<string> {
+  private async *tokens(
+    prompt: string,
+    onFallback?: () => void,
+  ): AsyncGenerator<string> {
     if (this.cfg.chatMode === 'llm' && this.anthropic) {
       let yielded = 0;
       try {
@@ -202,6 +218,7 @@ export class ChatController {
           `LLM hatası, fallback moduna geçiliyor: ${(e as Error).message}`,
         );
         if (yielded > 0) return;
+        onFallback?.();
       }
     }
     for (const t of fallbackTokens()) {

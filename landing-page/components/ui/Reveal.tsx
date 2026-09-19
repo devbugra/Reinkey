@@ -4,14 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Viewport'a girince bir kez 16px asagidan yukari + opaklik gecisi.
- * IntersectionObserver mount aninda zaten gorunur olan ogeler icin de
- * tetiklenir. `prefers-reduced-motion` altinda gecis globals.css tarafindan
- * kapatilir, oge dogrudan son halinde belirir. JavaScript calismazsa
- * layout'taki <noscript> stili icerigi gorunur tutar.
+ * Viewport'a girince bir kez: 16px aşağıdan yukarı, opaklık ve hafif bir
+ * netleşme (blur → keskin). IntersectionObserver mount anında zaten görünür
+ * olan öğeler için de tetiklenir. `prefers-reduced-motion` altında geçiş
+ * globals.css tarafından kapatılır, öğe doğrudan son hâlinde belirir.
+ * JavaScript çalışmazsa layout'taki <noscript> stili içeriği görünür tutar.
  *
- * `as` gereklidir: sarmalayici bir <ul> icindeyse <div> render etmek
- * ul > div > li nesting'i uretir ve ekran okuyucuda liste semantigi kaybolur.
+ * Blur yalnızca görünmezken satır içi stille verilir; görünür olunca
+ * özellik tamamen kaldırılır. `filter: blur(0)` bile bir kapsayıcı blok
+ * oluşturur ve içteki `position: fixed` öğeleri bozardı.
+ *
+ * `as` gereklidir: sarmalayıcı bir <ul> içindeyse <div> render etmek
+ * ul > div > li nesting'i üretir ve ekran okuyucuda liste semantiği kaybolur.
  */
 export function Reveal({
   children,
@@ -21,7 +25,7 @@ export function Reveal({
 }: {
   children: React.ReactNode;
   className?: string;
-  /** Kardes elemanlarda 60ms stagger icin: delay={i * 60} */
+  /** Kardeş elemanlarda 60ms stagger için: delay={i * 60} */
   delay?: number;
   as?: "div" | "li";
 }) {
@@ -50,9 +54,12 @@ export function Reveal({
     <Tag
       ref={ref as React.Ref<HTMLDivElement & HTMLLIElement>}
       data-reveal=""
-      style={{ transitionDelay: visible ? `${delay}ms` : undefined }}
+      style={{
+        transitionDelay: visible ? `${delay}ms` : undefined,
+        filter: visible ? undefined : "blur(6px)",
+      }}
       className={cn(
-        "transition-[opacity,translate] duration-500 ease-(--ease-out-expo)",
+        "transition-[opacity,translate,filter] duration-700 ease-(--ease-out-expo)",
         visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
         className,
       )}

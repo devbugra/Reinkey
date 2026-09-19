@@ -19,21 +19,16 @@ export function Limits() {
     <section
       id={anchors.limits.slice(1)}
       aria-labelledby="sinir-baslik"
-      className="border-t border-line bg-bg-alt py-20 sm:py-28"
+      className="section-rule bg-bg-alt py-20 sm:py-28"
     >
       <Container>
         <Reveal>
-          <div className="relative overflow-hidden rounded-xl border border-line bg-surface-1 p-8 shadow-[var(--card-shadow)] sm:p-12">
-            <div
-              aria-hidden="true"
-              className="absolute inset-x-0 top-0 h-px bg-line-strong"
-            />
-            <div className="grid gap-10 md:grid-cols-12 md:gap-12">
+          <div className="card relative overflow-hidden rounded-xl p-8 sm:p-12">
+            <span aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 opacity-60" />
+            <div className="relative grid gap-10 md:grid-cols-12 md:gap-12">
               <div className="md:col-span-7">
-                <p className="text-xs font-medium tracking-[0.14em] text-accent-text uppercase">
-                  {t("eyebrow")}
-                </p>
-                <h2 id="sinir-baslik" className="mt-4 text-4xl font-semibold">
+                <p className="eyebrow text-accent-text">{t("eyebrow")}</p>
+                <h2 id="sinir-baslik" className="mt-5 text-4xl font-semibold">
                   {t("title")}
                 </h2>
                 <p className="mt-5 max-w-[65ch] text-fg-muted">{t("body")}</p>
@@ -43,7 +38,7 @@ export function Limits() {
                 {points.map((point) => (
                   <li
                     key={point}
-                    className="flex items-start gap-3 rounded-md border border-line bg-surface-2 px-4 py-3 text-sm text-fg"
+                    className="flex items-start gap-3 rounded-md border border-line bg-surface-2/70 px-4 py-3 text-sm text-fg shadow-[inset_0_1px_0_0_var(--highlight)]"
                   >
                     <Minus
                       className="mt-0.5 size-4 shrink-0 text-fg-subtle"

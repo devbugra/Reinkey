@@ -43,8 +43,17 @@ export function Footer() {
   ];
 
   return (
-    <footer className="border-t border-line bg-bg-alt py-14">
-      <Container>
+    <footer className="section-rule relative overflow-hidden bg-bg-alt pt-16 pb-10">
+      {/* Filigran: markanın adı, sayfanın en altında, zeminden bir ton açık.
+          Bilgi taşımaz; sayfayı bir imzayla kapatır. */}
+      <span
+        aria-hidden="true"
+        dir="ltr"
+        className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 font-display text-[22vw] leading-none font-semibold tracking-[-0.06em] whitespace-nowrap text-fg/[0.025] select-none sm:-bottom-10 lg:text-[16rem]"
+      >
+        {site.name}
+      </span>
+      <Container className="relative">
         <div className="grid gap-10 md:grid-cols-12">
           <div className="md:col-span-5">
             <span dir="ltr" className="flex items-center text-fg">
@@ -52,6 +61,10 @@ export function Footer() {
             </span>
             <p className="mt-3 max-w-[38ch] text-sm text-fg-muted">
               {t("tagline")}
+            </p>
+            <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-line bg-surface-1/70 px-3 py-1.5 text-xs text-fg-muted">
+              <span aria-hidden="true" className="soft-pulse size-1.5 rounded-full bg-success" />
+              {t("status")}
             </p>
             <div className="mt-6">
               <LanguageSwitcher />
@@ -89,7 +102,7 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-12 flex flex-col gap-2 border-t border-line pt-6 text-sm text-fg-subtle sm:flex-row sm:justify-between">
+        <div className="mt-14 flex flex-col gap-2 border-t border-line pt-6 text-sm text-fg-subtle sm:flex-row sm:justify-between">
           <p>
             © {new Date().getFullYear()} <span dir="ltr">{site.name}</span>.{" "}
             {t("disclaimer")}

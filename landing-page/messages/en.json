@@ -37,7 +37,11 @@
       "1,000 payments, 2 transactions",
       "Limits enforced on-chain",
       "One line for sellers"
-    ]
+    ],
+    "builtOn": "Built on",
+    "visual": {
+      "badge": "Simulation"
+    }
   },
   "playground": {
     "eyebrow": "Try it yourself",
@@ -121,7 +125,9 @@
       "1,000 calls = 2 tx"
     ],
     "withNote": "Pay per token or per second. The limit lives on-chain.",
-    "measureNote": "Measured on testnet; ledger ~5 s."
+    "measureNote": "Measured on testnet; ledger ~5 s.",
+    "beforeRate": "~5 s per payment · one transaction each",
+    "afterRate": "~2 ms per payment · signed voucher, no chain"
   },
   "problem": {
     "eyebrow": "The problem",
@@ -197,7 +203,27 @@
         "note": "app.get(\"/api\", meter({ price, unit }), handler)"
       }
     ],
-    "whyStellar": "Why Stellar: custom account auth (__check_auth), fee sponsorship, and transactions that cost a fraction of a cent."
+    "whyStellar": "Why Stellar: custom account auth (__check_auth), fee sponsorship, and transactions that cost a fraction of a cent.",
+    "diagram": {
+      "offchain": "Off-chain · milliseconds",
+      "onchain": "On-chain · ~5 s per ledger",
+      "stellar": "Stellar · Soroban",
+      "agent": "Agent",
+      "agentSub": "@reinkey/sdk · signs vouchers",
+      "seller": "Seller API",
+      "sellerSub": "meter() · 402 or 200",
+      "facilitator": "Facilitator",
+      "facilitatorSub": "verify · claim · pay fees",
+      "account": "{name} Account",
+      "accountSub": "__check_auth · caps, payees",
+      "channel": "Channel contract",
+      "channelSub": "deposit · vouchers · settle",
+      "voucher": "voucher · ~1 ms",
+      "verify": "verify",
+      "open": "open · 1 tx",
+      "claim": "claim · 1 tx",
+      "policy": "policy check"
+    }
   },
   "features": {
     "eyebrow": "Product",
@@ -382,7 +408,8 @@
     },
     "disclaimer": "A non-custodial payment protocol running on Stellar testnet. The contracts haven't been audited yet.",
     "event": "Stellar Pro Hackathon · Istanbul · 2026",
-    "products": "Products"
+    "products": "Products",
+    "status": "Stellar testnet · live"
   },
   "productsSection": {
     "eyebrow": "Products",

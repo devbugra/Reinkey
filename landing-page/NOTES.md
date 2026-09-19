@@ -35,3 +35,15 @@
 - **Belgeler:** `app/(docs)` ayrı bir kök düzen, tek dil (İngilizce), dil önekinin dışında (`proxy.ts` `/docs`'a dokunmaz). MDX (`@next/mdx`, `remark-gfm`, `rehype-slug`); tipografi `mdx-components.tsx`'te. Gezinme ağacı `content/docs.ts`.
 - **Kod örnekleri** `content/snippets.ts`'te ve paketlerin gerçek arayüzüyle birebir; arayüz değişirse önce orası.
 - **Dürüstlük notu:** Meter'da token/saniye akışları dış satıcıya açık DEĞİL (akış oturumları yalnızca facilitator'ın demo satıcısında). Ürün sayfası ve `/docs/meter/reference` bunu açıkça söylüyor. Paketler npm'de yayında değil; belgeler bunu da söylüyor.
+
+## Tasarım geçişi (20 Eylül)
+
+Yapı ve metin argümanı aynı; yüzey dili baştan kuruldu. `npm run lint`, `npm run typecheck`, `npm run build` geçiyor; masaüstü (1440) ve mobil (390) tam sayfa ekran görüntüleriyle kontrol edildi.
+
+- **Derinlik:** kartlar düz kutu değil (`.card`): üstten sönen ince ışık, 1px üst highlight, altta yumuşak karanlık. Etkileşimli kartlar fareyi izleyen ışık ve kenarlık alır (`.spotlight`, `components/ui/Spotlight.tsx`); dokunmatikte çizilmez. Öne çıkan kart gradyan kenarlıklı (`.card-featured`).
+- **Bölüm ayraçları** düz çizgi yerine ortada parlayan hat (`.section-rule`); etiketler kısa aksan çizgili (`.eyebrow`). Dokular: `.bg-grid`, `.bg-dots`, `.glow-top`.
+- **Hero:** başlığın altında canlı bir kanal simülasyonu (`HeroVisual.tsx`): kanal açılır, bin kupon akar, tek işlemle tahsil edilir, döngü başa sarar. Playground ile aynı birim ve fiyatlar; görünmezken durur, "hareketi azalt" açıksa son durum sabit. Altında "Üzerine kurulu" şeridi (ad olarak, logo yok).
+- **Yeni görseller:** Compare'de iki şeridin ritmi (yavaş bloklar / hızlı çubuklar), HowItWorks'te her adımın üstünde mini arayüz parçası, Architecture'da akan kesik çizgili SVG diyagram (`ArchitectureDiagram.tsx`; etiketler `architecture.diagram.*`).
+- **Kod:** kütüphanesiz sözdizimi renklendirme (`lib/highlight.tsx`; ts, bash, http, json). CodeBlock, belgeler ve Features'daki tek satır aynısını kullanır.
+- **Hareket:** Reveal ve RiseIn artık hafif blur'dan netleşir; birincil düğmede ışık süpürmesi (`.btn-primary`).
+- Yeni metin anahtarları iki dilde: `hero.builtOn`, `hero.visual.badge`, `compare.beforeRate/afterRate`, `architecture.diagram.*`, `footer.status`.

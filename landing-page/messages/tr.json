@@ -37,7 +37,11 @@
       "1000 ödeme, 2 zincir işlemi",
       "Sınırı zincir uygular",
       "Satıcıya tek satır"
-    ]
+    ],
+    "builtOn": "Üzerine kurulu",
+    "visual": {
+      "badge": "Simülasyon"
+    }
   },
   "playground": {
     "eyebrow": "Kendiniz deneyin",
@@ -121,7 +125,9 @@
       "1000 çağrı = 2 işlem"
     ],
     "withNote": "Token ve saniye başına ödeme mümkün. Sınır zincirde.",
-    "measureNote": "Testnet ölçümü; ledger ~5 sn."
+    "measureNote": "Testnet ölçümü; ledger ~5 sn.",
+    "beforeRate": "Ödeme başına ~5 sn · her biri bir işlem",
+    "afterRate": "Ödeme başına ~2 ms · imzalı kupon, zincir yok"
   },
   "problem": {
     "eyebrow": "Sorun",
@@ -197,7 +203,27 @@
         "note": "app.get(\"/api\", meter({ price, unit }), handler)"
       }
     ],
-    "whyStellar": "Neden Stellar: özel hesap auth'u (__check_auth), ücret sponsorluğu ve sentin kesri kadar işlem maliyeti."
+    "whyStellar": "Neden Stellar: özel hesap auth'u (__check_auth), ücret sponsorluğu ve sentin kesri kadar işlem maliyeti.",
+    "diagram": {
+      "offchain": "Zincir dışı · milisaniye",
+      "onchain": "Zincirde · ledger başına ~5 sn",
+      "stellar": "Stellar · Soroban",
+      "agent": "Ajan",
+      "agentSub": "@reinkey/sdk · kupon imzalar",
+      "seller": "Satıcı API'si",
+      "sellerSub": "meter() · 402 ya da 200",
+      "facilitator": "Facilitator",
+      "facilitatorSub": "doğrula · tahsil et · ücret öde",
+      "account": "{name} Account",
+      "accountSub": "__check_auth · tavan, alıcı",
+      "channel": "Channel kontratı",
+      "channelSub": "depozito · kupon · tahsilat",
+      "voucher": "kupon · ~1 ms",
+      "verify": "doğrula",
+      "open": "open · 1 işlem",
+      "claim": "claim · 1 işlem",
+      "policy": "politika denetimi"
+    }
   },
   "features": {
     "eyebrow": "Ürün",
@@ -382,7 +408,8 @@
     },
     "disclaimer": "Stellar testnet üzerinde çalışan emanetsiz bir ödeme protokolü. Kontratlar henüz denetlenmedi.",
     "event": "Stellar Pro Hackathon · İstanbul · 2026",
-    "products": "Ürünler"
+    "products": "Ürünler",
+    "status": "Stellar testnet · canlı"
   },
   "productsSection": {
     "eyebrow": "Ürünler",

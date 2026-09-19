@@ -1,5 +1,15 @@
 import { cn } from "@/lib/utils";
+import { Spotlight } from "./Spotlight";
 
+type Tag = "div" | "li" | "article" | "section";
+
+/**
+ * KART.
+ *
+ * Tek yüzey dili (bkz. globals.css `.card`): gece mavisi zemin, üstten
+ * sönen ince ışık, 1px üst highlight, altta yumuşak karanlık. `interactive`
+ * kartlar fareyle hafifçe kalkar ve imleci izleyen bir ışık alır.
+ */
 export function Card({
   className,
   children,
@@ -10,23 +20,24 @@ export function Card({
 }: {
   className?: string;
   children: React.ReactNode;
-  as?: "div" | "li" | "article" | "section";
+  as?: Tag;
   interactive?: boolean;
   bare?: boolean;
 }) {
-  return (
-    <Tag
-      className={cn(
-        "rounded-lg border border-line bg-surface-1 shadow-[var(--card-shadow)]",
-        !bare && "p-6",
-        interactive &&
-          "transition-[color,background-color,border-color,translate] duration-200 ease-(--ease-out-expo) hover:-translate-y-0.5 hover:border-line-strong hover:bg-surface-2",
-        className,
-      )}
-    >
-      {Tag === "li" && bare ? children : children}
-    </Tag>
+  const classes = cn(
+    "card rounded-lg",
+    !bare && "p-6",
+    interactive && "card-hover",
+    className,
   );
+  if (interactive) {
+    return (
+      <Spotlight as={Tag} className={classes}>
+        {children}
+      </Spotlight>
+    );
+  }
+  return <Tag className={classes}>{children}</Tag>;
 }
 
 /**
@@ -46,20 +57,26 @@ export function SplitCard({
   head: React.ReactNode;
   children: React.ReactNode;
   className?: string;
-  as?: "div" | "li" | "article" | "section";
+  as?: Tag;
   interactive?: boolean;
 }) {
-  return (
-    <Tag
-      className={cn(
-        "flex flex-col overflow-hidden rounded-lg border border-line bg-surface-1 shadow-[var(--card-shadow)]",
-        interactive &&
-          "transition-[border-color,translate] duration-200 ease-(--ease-out-expo) hover:-translate-y-0.5 hover:border-line-strong",
-        className,
-      )}
-    >
+  const classes = cn(
+    "card flex flex-col overflow-hidden rounded-lg",
+    interactive && "card-hover",
+    className,
+  );
+  const body = (
+    <>
       <div className="px-5 py-4">{head}</div>
       <div className="flex-1 border-t border-line px-5 py-4">{children}</div>
-    </Tag>
+    </>
   );
+  if (interactive) {
+    return (
+      <Spotlight as={Tag} className={classes}>
+        {body}
+      </Spotlight>
+    );
+  }
+  return <Tag className={classes}>{body}</Tag>;
 }

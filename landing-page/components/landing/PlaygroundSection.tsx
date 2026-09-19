@@ -10,16 +10,15 @@ export function PlaygroundSection() {
     <section
       id={anchors.playground.slice(1)}
       aria-labelledby="deneme-baslik"
-      className="border-t border-line bg-bg-alt py-20 sm:py-28"
+      className="section-rule relative bg-bg-alt py-20 sm:py-28"
     >
+      <div aria-hidden="true" className="glow-top pointer-events-none absolute inset-x-0 top-0 h-[40rem]" />
       <Container>
         <Reveal>
           <div className="grid gap-x-12 gap-y-5 md:grid-cols-12">
             <div className="md:col-span-7">
-              <p className="text-xs font-medium tracking-[0.14em] text-accent-text uppercase">
-                {t("eyebrow")}
-              </p>
-              <h2 id="deneme-baslik" className="mt-4 text-4xl font-semibold">
+              <p className="eyebrow text-accent-text">{t("eyebrow")}</p>
+              <h2 id="deneme-baslik" className="mt-5 text-4xl font-semibold">
                 {t("title")}
               </h2>
             </div>

@@ -496,7 +496,7 @@ export function Playground() {
   return (
     <div className="flex flex-col gap-6">
       {/* --------------------------------------------- sayaç şeridi: bölümün yıldızı */}
-      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line lg:grid-cols-4">
+      <dl className="card grid grid-cols-2 gap-px overflow-hidden rounded-xl !bg-line lg:grid-cols-4">
         <Stat label={t("counters.vouchers")} value={String(state.vouchers)} accent />
         <Stat label={t("counters.txs")} value={String(state.txs)} accent />
         <Stat label={t("counters.paid")} value={`${usdc(state.paid)} USDC`} />
@@ -510,8 +510,8 @@ export function Playground() {
       <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
         {/* ------------------------------------------------ sol: ajan terminali */}
         <div className="lg:col-span-7">
-          <div className="overflow-hidden rounded-xl border border-line bg-surface-1 shadow-[var(--card-shadow)]">
-            <div className="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3">
+          <div className="card overflow-hidden rounded-xl">
+            <div className="flex items-center gap-2 border-b border-line bg-surface-2/60 px-4 py-3">
               <span className="size-2.5 rounded-full bg-fg-subtle/30" />
               <span className="size-2.5 rounded-full bg-fg-subtle/20" />
               <span className="size-2.5 rounded-full bg-fg-subtle/15" />
@@ -579,7 +579,7 @@ export function Playground() {
               </Group>
 
               {/* Akış kutusu: ödenen dilim kadar metin görünür. */}
-              <div className="mt-6 rounded-lg border border-line bg-bg">
+              <div className="mt-6 rounded-lg border border-line bg-bg shadow-[inset_0_1px_0_0_var(--highlight)]">
                 <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
                   <p className="text-xs font-medium tracking-[0.12em] text-fg-subtle uppercase">
                     {t("stream.title")}
@@ -627,7 +627,7 @@ export function Playground() {
 
         {/* ---------------------------------- sağ: politika, sayaçlar, iz, sıfırlama */}
         <div className="flex flex-col gap-4 lg:col-span-5">
-          <div className="rounded-lg border border-line bg-surface-1 p-4">
+          <div className="card rounded-lg p-4">
             <p className="text-xs font-medium tracking-[0.12em] text-fg-subtle uppercase">
               {t("policyTitle")}
             </p>
@@ -657,7 +657,7 @@ export function Playground() {
             )}
           </div>
 
-          <div className="flex flex-1 flex-col rounded-lg border border-line bg-surface-1">
+          <div className="card flex flex-1 flex-col rounded-lg">
             <p className="px-4 py-3 text-xs font-medium tracking-[0.12em] text-fg-subtle uppercase">
               {t("trace.title")}
             </p>
@@ -717,9 +717,11 @@ function Stat({
       <dd
         dir="ltr"
         className={cn(
-          "mt-1 font-mono font-medium tabular-nums",
+          "mt-1 tabular-nums",
           // Karşılaştırma hücresi daha uzun bir metin taşır; tek satırda kalsın.
-          muted ? "text-base text-fg-muted sm:text-lg" : "text-xl sm:text-2xl",
+          muted
+            ? "font-mono text-base text-fg-muted sm:text-lg"
+            : "font-display text-xl font-semibold sm:text-3xl",
           accent && "text-accent-text",
           !accent && !muted && "text-fg",
         )}
@@ -778,10 +780,10 @@ function ActionButton({
         onClick={onClick}
         disabled={disabled}
         className={cn(
-          "flex w-full flex-col items-start gap-1 rounded-md border px-3 py-2.5 text-start transition-colors duration-150 disabled:cursor-not-allowed",
+          "flex w-full flex-col items-start gap-1 rounded-md border bg-surface-2/40 px-3 py-2.5 text-start shadow-[inset_0_1px_0_0_var(--highlight)] transition-[border-color,background-color,box-shadow] duration-150 disabled:cursor-not-allowed",
           active
-            ? "border-accent/60 bg-surface-2"
-            : "border-line hover:border-line-strong disabled:opacity-50",
+            ? "border-accent/60 bg-accent/10 shadow-[inset_0_1px_0_0_var(--highlight),0_0_24px_-8px_color-mix(in_srgb,var(--brand-sky)_60%,transparent)]"
+            : "border-line hover:border-accent/40 hover:bg-surface-2 disabled:opacity-50",
         )}
       >
         <span dir="ltr" className="font-mono text-xs text-accent-text">
@@ -853,7 +855,7 @@ function TraceLine({
 
 function Rule({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-line bg-surface-2 px-3 py-2">
+    <div className="rounded-md border border-line bg-surface-2/70 px-3 py-2 shadow-[inset_0_1px_0_0_var(--highlight)]">
       <dt className="text-[11px] text-fg-subtle">{label}</dt>
       <dd dir="ltr" className="mt-0.5 truncate font-mono text-xs text-fg">
         {value}
@@ -896,7 +898,7 @@ function Meter({
             "h-full rounded-full transition-[width] duration-300",
             pct >= 80 ? "bg-danger" : "bg-accent",
           )}
-          style={{ width: `${pct}%` }}
+          style={{ width: `${pct}%`, backgroundImage: pct >= 80 ? undefined : "var(--accent-gradient)" }}
         />
       </div>
     </div>

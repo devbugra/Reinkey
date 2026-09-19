@@ -68,6 +68,8 @@ const schema = z.object({
   CHAT_SLICE_TOKENS: int.default(50),
 
   ANTHROPIC_API_KEY: optional,
+  /** Workspace'e bağlı olmayan (organizasyon) anahtarlar için zorunlu başlık. */
+  ANTHROPIC_WORKSPACE_ID: optional,
   CHAT_MODEL: z.string().default('claude-haiku-4-5-20251001'),
   CHAT_MODE: z.enum(['fallback', 'llm']).default('fallback'),
 });
@@ -105,6 +107,7 @@ export interface AppConfig {
   agentsDir: string;
   chatSliceTokens: number;
   anthropicApiKey?: string;
+  anthropicWorkspaceId?: string;
   chatModel: string;
   chatMode: 'fallback' | 'llm';
 }
@@ -181,6 +184,7 @@ export function loadConfig(raw: NodeJS.ProcessEnv = process.env): AppConfig {
     agentsDir: e.AGENTS_DIR,
     chatSliceTokens: e.CHAT_SLICE_TOKENS,
     anthropicApiKey: e.ANTHROPIC_API_KEY,
+    anthropicWorkspaceId: e.ANTHROPIC_WORKSPACE_ID,
     chatModel: e.CHAT_MODEL,
     chatMode: e.CHAT_MODE,
   };

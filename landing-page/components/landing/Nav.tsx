@@ -120,7 +120,7 @@ export function Nav() {
         className={cn(
           "pointer-events-auto relative mx-auto flex h-14 w-full max-w-6xl items-center gap-3 rounded-full ps-4 pe-2 transition-[background-color,border-color,box-shadow] duration-200 ease-(--ease-out-expo) sm:ps-5 sm:pe-2.5",
           scrolled
-            ? "border border-line bg-surface-1/85 shadow-[var(--card-shadow)] backdrop-blur-xl"
+            ? "border border-line bg-surface-1/75 shadow-[var(--card-shadow)] backdrop-blur-xl backdrop-saturate-150"
             : "border border-transparent bg-transparent",
         )}
       >
@@ -141,10 +141,10 @@ export function Nav() {
                     href={link.href}
                     aria-current={on ? "true" : undefined}
                     className={cn(
-                      "rounded-full px-3 py-1.5 text-sm transition-colors duration-150",
+                      "rounded-full px-3 py-1.5 text-sm transition-[color,background-color] duration-150",
                       on
-                        ? "bg-surface-2 text-fg"
-                        : "text-fg-muted hover:text-fg",
+                        ? "bg-surface-2 text-fg shadow-[inset_0_1px_0_0_var(--highlight)]"
+                        : "text-fg-muted hover:bg-surface-2/60 hover:text-fg",
                     )}
                   >
                     {link.label}

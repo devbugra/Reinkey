@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { Spotlight } from "@/components/ui/Spotlight";
 import { cn } from "@/lib/utils";
 
 type Plan = {
@@ -41,8 +42,9 @@ export function Pricing() {
     <section
       id={anchors.pricing.slice(1)}
       aria-labelledby="fiyat-baslik"
-      className="border-t border-line bg-bg-alt py-20 sm:py-28"
+      className="section-rule relative bg-bg-alt py-20 sm:py-28"
     >
+      <div aria-hidden="true" className="glow-top pointer-events-none absolute inset-x-0 top-0 h-[36rem]" />
       <Container>
         <SectionHeader
           eyebrow={t("eyebrow")}
@@ -51,21 +53,23 @@ export function Pricing() {
           titleId="fiyat-baslik"
         />
 
-        <ul className="mt-14 grid items-start gap-5 lg:grid-cols-3">
+        <ul className="mt-14 grid items-stretch gap-5 lg:grid-cols-3">
           {plans.map((plan, i) => {
             const featured = Boolean(plan.badge);
             return (
               <Reveal key={plan.name} as="li" delay={i * 60} className="h-full">
-                <div
+                <Spotlight
+                  as="div"
                   className={cn(
-                    "flex h-full flex-col rounded-lg border bg-surface-1 p-6 shadow-[var(--card-shadow)]",
-                    featured ? "border-accent/40 bg-surface-2" : "border-line",
+                    "card card-hover flex h-full flex-col rounded-xl p-6 sm:p-7",
+                    featured && "card-featured bg-surface-2",
                   )}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="text-lg font-semibold">{plan.name}</h3>
                     {plan.badge ? (
-                      <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-contrast">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-contrast">
+                        <span aria-hidden="true" className="soft-pulse size-1.5 rounded-full bg-accent-contrast" />
                         {plan.badge}
                       </span>
                     ) : null}
@@ -74,10 +78,10 @@ export function Pricing() {
                     {plan.description}
                   </p>
 
-                  <p className="mt-6 flex items-baseline gap-1.5">
+                  <p className="mt-7 flex items-baseline gap-1.5">
                     <span
                       dir="ltr"
-                      className="text-4xl font-semibold tracking-tight"
+                      className="font-display text-4xl font-semibold tracking-tight"
                     >
                       {plan.price}
                     </span>
@@ -91,7 +95,7 @@ export function Pricing() {
                     href={PLAN_HREF[i] ?? anchors.closing}
                     variant={featured ? "primary" : "secondary"}
                     size="md"
-                    className="mt-6 w-full"
+                    className="mt-7 w-full"
                   >
                     {plan.cta}
                   </Button>
@@ -110,7 +114,7 @@ export function Pricing() {
                       </li>
                     ))}
                   </ul>
-                </div>
+                </Spotlight>
               </Reveal>
             );
           })}
@@ -124,7 +128,7 @@ export function Pricing() {
         <Reveal
           as="div"
           delay={200}
-          className="mt-10 rounded-lg border border-line bg-surface-1 p-6"
+          className="card mt-10 rounded-xl p-6 sm:p-7"
         >
           <h3 className="text-base font-semibold">{t("endpoints.title")}</h3>
           <p className="mt-1.5 max-w-[70ch] text-sm text-fg-muted">
@@ -134,7 +138,7 @@ export function Pricing() {
             {ENDPOINTS.map((item) => (
               <li
                 key={`${item.method} ${item.path}`}
-                className="flex items-baseline justify-between gap-3 rounded-md border border-line bg-surface-2 px-4 py-3 font-mono text-sm"
+                className="flex items-baseline justify-between gap-3 rounded-md border border-line bg-bg px-4 py-3 font-mono text-sm"
               >
                 <span className="truncate text-fg-muted">
                   <span className="text-accent-text">{item.method}</span>{" "}

@@ -6,6 +6,8 @@ import { CodeBlock } from "@/components/ui/CodeBlock";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { Spotlight } from "@/components/ui/Spotlight";
+import { cn } from "@/lib/utils";
 import { ProductMark } from "./ProductMark";
 
 const INSTALL: Record<ProductKey, string> = {
@@ -15,6 +17,12 @@ const INSTALL: Record<ProductKey, string> = {
 const QUICKSTART: Record<ProductKey, string> = {
   meter: docs.quickstartMeter,
   reins: docs.quickstartReins,
+};
+
+/** Her ürünün kartın üst kenarında kendi ışığı: Meter gök mavisi, Reins lavanta. */
+const TINT: Record<ProductKey, string> = {
+  meter: "var(--brand-sky)",
+  reins: "var(--brand-lavender)",
 };
 
 /**
@@ -34,7 +42,7 @@ export function Products() {
     <section
       id={anchors.products.slice(1)}
       aria-labelledby="urunler-baslik"
-      className="border-t border-line bg-bg-alt py-20 sm:py-28"
+      className="section-rule bg-bg-alt py-20 sm:py-28"
     >
       <Container>
         <SectionHeader
@@ -44,19 +52,37 @@ export function Products() {
           lead={t("lead", { name: site.name })}
         />
 
-        <ul className="mt-14 grid gap-4 lg:grid-cols-2">
+        <ul className="mt-14 grid gap-5 lg:grid-cols-2">
           {(Object.keys(products) as ProductKey[]).map((key, i) => {
             const product = products[key];
             const bullets = tp.raw(`${key}.bullets`) as string[];
             return (
-              <Reveal key={key} as="li" delay={i * 60} className="h-full">
-                <article className="flex h-full flex-col overflow-hidden rounded-lg border border-line bg-surface-1 shadow-[var(--card-shadow)]">
+              <Reveal key={key} as="li" delay={i * 80} className="h-full">
+                <Spotlight as="article" className="card card-hover flex h-full flex-col overflow-hidden rounded-xl">
+                  {/* Üst kenar ışığı ve köşeden sönen renk lekesi */}
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 top-0 h-px"
+                    style={{ backgroundImage: `linear-gradient(90deg, transparent, ${TINT[key]} 50%, transparent)` }}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -top-24 -end-24 size-72 rounded-full opacity-40 blur-3xl"
+                    style={{ background: `radial-gradient(circle, color-mix(in srgb, ${TINT[key]} 40%, transparent), transparent 70%)` }}
+                  />
                   <div className="flex-1 px-6 pt-6 pb-5 sm:px-7 sm:pt-7">
-                    <p className="text-xs font-medium tracking-[0.14em] text-fg-subtle uppercase">
-                      {t(`for.${key}`)}
-                    </p>
-                    <h3 className="mt-4 flex items-center gap-3 text-2xl font-semibold">
-                      <span className="flex size-10 items-center justify-center rounded-md border border-line bg-surface-2 text-accent-text">
+                    <p className="eyebrow text-fg-subtle">{t(`for.${key}`)}</p>
+                    <h3 className="mt-5 flex items-center gap-3 text-2xl font-semibold">
+                      <span
+                        className={cn(
+                          "flex size-11 items-center justify-center rounded-lg border shadow-[inset_0_1px_0_0_rgb(255_255_255/0.1)]",
+                        )}
+                        style={{
+                          borderColor: `color-mix(in srgb, ${TINT[key]} 35%, transparent)`,
+                          background: `linear-gradient(180deg, color-mix(in srgb, ${TINT[key]} 22%, transparent), color-mix(in srgb, ${TINT[key]} 8%, transparent))`,
+                          color: TINT[key],
+                        }}
+                      >
                         <ProductMark product={key} className="size-5" />
                       </span>
                       <span dir="ltr">
@@ -74,15 +100,15 @@ export function Products() {
                     </ul>
                   </div>
 
-                  <div className="border-t border-line px-6 py-5 sm:px-7">
+                  <div className="border-t border-line bg-bg/40 px-6 py-5 sm:px-7">
                     <CodeBlock code={INSTALL[key]} title="bash" />
                     <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
                       <a
                         href={`/${locale}${product.path}`}
-                        className="inline-flex items-center gap-1.5 font-medium text-fg transition-colors duration-150 hover:text-accent-text"
+                        className="group inline-flex items-center gap-1.5 font-medium text-fg transition-colors duration-150 hover:text-accent-text"
                       >
                         {t("learnMore", { product: product.name })}
-                        <ArrowRight className="size-4 rtl:-scale-x-100" aria-hidden="true" />
+                        <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5" aria-hidden="true" />
                       </a>
                       <a
                         href={QUICKSTART[key]}
@@ -92,7 +118,7 @@ export function Products() {
                       </a>
                     </div>
                   </div>
-                </article>
+                </Spotlight>
               </Reveal>
             );
           })}

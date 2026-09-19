@@ -16,9 +16,9 @@ const base =
  * Renkler globals.css'teki --primary token'larından gelir.
  */
 const variants: Record<Variant, string> = {
-  primary: "bg-primary text-primary-fg hover:opacity-85",
+  primary: "btn-primary bg-primary text-primary-fg",
   secondary:
-    "border border-line-strong bg-surface-1 text-fg hover:bg-surface-2",
+    "btn-secondary border border-line-strong bg-surface-1 text-fg hover:border-fg/30 hover:bg-surface-2",
   ghost: "text-fg-muted hover:text-fg",
   danger: "border border-danger/40 bg-danger-bg text-danger hover:opacity-85",
   accent: "bg-accent text-accent-contrast hover:opacity-85",

@@ -8,6 +8,7 @@ import { Container } from "@/components/ui/Container";
 import { GradientText } from "@/components/ui/GradientText";
 import { Reveal } from "@/components/ui/Reveal";
 import { RiseIn } from "@/components/ui/RiseIn";
+import { Spotlight } from "@/components/ui/Spotlight";
 import { ProductMark } from "./ProductMark";
 
 /**
@@ -39,19 +40,22 @@ export function ProductPage({
     <>
       <section className="relative isolate overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-24">
         <AuroraBackground />
+        <span aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 -z-10 opacity-60" />
         <Container>
           <div className="mx-auto max-w-3xl text-center">
             <RiseIn>
               <p
                 dir="ltr"
-                className="flex items-center justify-center gap-2.5 text-xs font-medium tracking-[0.18em] text-fg-subtle uppercase"
+                className="inline-flex items-center gap-2.5 rounded-full border border-line bg-surface-1/50 py-1.5 ps-2 pe-4 text-xs font-medium tracking-[0.16em] text-fg-muted uppercase backdrop-blur-md"
               >
-                <ProductMark product={product} className="size-5 text-accent-text" />
+                <span className="flex size-6 items-center justify-center rounded-full bg-accent/15 text-accent-text">
+                  <ProductMark product={product} className="size-3.5" />
+                </span>
                 {site.name} {name}
               </p>
             </RiseIn>
             <RiseIn delay={60}>
-              <h1 className="mt-7 text-5xl leading-[1.02] font-semibold tracking-tight">
+              <h1 className="text-glow mt-8 text-5xl leading-[1.02] font-semibold tracking-tight">
                 <GradientText>{t("title")}</GradientText>
               </h1>
             </RiseIn>
@@ -81,7 +85,7 @@ export function ProductPage({
         </Container>
       </section>
 
-      <section aria-labelledby="kod-baslik" className="border-t border-line bg-bg-alt py-20 sm:py-28">
+      <section aria-labelledby="kod-baslik" className="section-rule bg-bg-alt py-20 sm:py-28">
         <Container>
           <div className="grid gap-x-12 gap-y-10 lg:grid-cols-12">
             <Reveal className="lg:col-span-5">
@@ -101,22 +105,25 @@ export function ProductPage({
         </Container>
       </section>
 
-      <section aria-label={name} className="border-t border-line py-20 sm:py-28">
+      <section aria-label={name} className="section-rule py-20 sm:py-28">
         <Container>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f, i) => (
               <Reveal key={f.title} as="li" delay={(i % 3) * 60} className="h-full">
-                <div className="flex h-full flex-col overflow-hidden rounded-lg border border-line bg-surface-1 shadow-[var(--card-shadow)]">
-                  <h3 className="px-5 py-4 text-base font-semibold">{f.title}</h3>
+                <Spotlight as="div" className="card card-hover flex h-full flex-col overflow-hidden rounded-lg">
+                  <h3 className="flex items-center gap-3 px-5 py-4 text-base font-semibold">
+                    <span dir="ltr" className="font-mono text-xs text-accent-text">0{i + 1}</span>
+                    {f.title}
+                  </h3>
                   <p className="flex-1 border-t border-line px-5 py-4 text-sm text-fg-muted">{f.body}</p>
-                </div>
+                </Spotlight>
               </Reveal>
             ))}
           </ul>
         </Container>
       </section>
 
-      <section aria-labelledby="sinir-baslik" className="border-t border-line bg-bg-alt py-20 sm:py-24">
+      <section aria-labelledby="sinir-baslik" className="section-rule bg-bg-alt py-20 sm:py-24">
         <Container>
           <Reveal className="mx-auto max-w-3xl">
             <h2 id="sinir-baslik" className="text-3xl font-semibold">
@@ -134,11 +141,12 @@ export function ProductPage({
         </Container>
       </section>
 
-      <section aria-labelledby="basla-baslik" className="relative overflow-hidden border-t border-line py-24 sm:py-28">
+      <section aria-labelledby="basla-baslik" className="section-rule relative overflow-hidden py-24 sm:py-28">
         <AuroraBackground />
+        <span aria-hidden="true" className="bg-grid bg-grid-bottom pointer-events-none absolute inset-0 -z-10 opacity-70" />
         <Container>
           <Reveal className="mx-auto max-w-2xl text-center">
-            <h2 id="basla-baslik" className="text-4xl font-semibold">
+            <h2 id="basla-baslik" className="text-glow text-4xl font-semibold">
               {t("ctaTitle")}
             </h2>
             <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">

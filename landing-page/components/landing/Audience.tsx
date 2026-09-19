@@ -13,7 +13,7 @@ export function Audience() {
     <section
       id={anchors.audience.slice(1)}
       aria-labelledby="kimler-baslik"
-      className="border-t border-line py-20 sm:py-28"
+      className="section-rule py-20 sm:py-28"
     >
       <Container>
         <SectionHeader
@@ -30,8 +30,11 @@ export function Audience() {
               delay={(i % 4) * 60}
               className="h-full"
             >
-              <Card className="h-full" interactive>
-                <h3 className="text-base font-semibold">{item.title}</h3>
+              <Card className="flex h-full flex-col" interactive>
+                <span dir="ltr" className="font-mono text-xs text-accent-text">
+                  0{i + 1}
+                </span>
+                <h3 className="mt-4 text-base font-semibold">{item.title}</h3>
                 <p className="mt-2 text-sm text-fg-muted">{item.body}</p>
               </Card>
             </Reveal>

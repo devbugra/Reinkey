@@ -73,7 +73,7 @@ export default async function LocaleLayout({
     >
       <head>
         <noscript>
-          <style>{`[data-reveal]{opacity:1!important;translate:none!important}`}</style>
+          <style>{`[data-reveal]{opacity:1!important;translate:none!important;filter:none!important}`}</style>
         </noscript>
       </head>
       <body className="flex min-h-full flex-col">

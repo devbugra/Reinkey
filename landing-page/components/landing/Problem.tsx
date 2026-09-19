@@ -16,7 +16,7 @@ export function Problem() {
     <section
       id={anchors.problem.slice(1)}
       aria-labelledby="sorun-baslik"
-      className="border-t border-line bg-bg-alt py-20 sm:py-28"
+      className="section-rule bg-bg-alt py-20 sm:py-28"
     >
       <Container>
         <SectionHeader
@@ -36,12 +36,9 @@ export function Problem() {
                 delay={i * 60}
                 className="h-full"
               >
-                <Card className="h-full">
-                  <span className="flex size-10 items-center justify-center rounded-md border border-line bg-surface-2">
-                    <Icon
-                      className="size-5 text-accent-text"
-                      aria-hidden="true"
-                    />
+                <Card className="h-full" interactive>
+                  <span className="flex size-10 items-center justify-center rounded-md border border-danger/25 bg-danger-bg text-danger shadow-[inset_0_1px_0_0_rgb(255_255_255/0.06)]">
+                    <Icon className="size-5" aria-hidden="true" />
                   </span>
                   <h3 className="mt-5 text-xl font-semibold">{item.title}</h3>
                   <p className="mt-2.5 text-sm text-fg-muted">{item.body}</p>
