@@ -52,6 +52,25 @@ The facilitator holds stream sessions so a seller can wait for the next voucher 
 | `GET /stats` | Totals: vouchers, on-chain transactions, volume, median verification latency. |
 | `POST /v1/report` | Report an on-chain transaction; verified against the chain before it is published. |
 
+## Seller finance (Meter)
+
+Derived from the audit ledger, so the report and the ledger can't disagree. Three numbers are kept apart: **earned** (accepted vouchers), **settled** (claimed on-chain), **receivable** (the difference).
+
+| | |
+|---|---|
+| `GET /sellers/:payTo/revenue` | Totals (earned, settled, receivable, payments, settlements, payments per settlement, buyers), revenue by resource, a time series (`?bucket=hour\|day`, `?days=` 1–365), receivables aging per channel, and the settlement list. |
+| `GET /sellers/:payTo/settlements.csv` | Accounting export: one row per on-chain settlement (time, tx, channel, payer, amount, payments covered, explorer link). |
+
+## Float (credit pool)
+
+Read-only; nothing here submits a transaction. See [Float](/docs/float).
+
+| | |
+|---|---|
+| `GET /float` | Pool summary (size, share price, utilization), known credit lines with health, investor positions, share-price history. |
+| `GET /float/lines/:account` | One account's line: debt, value, `healthBps`, `liquidatable`. |
+| `GET /float/positions/:address` | An investor's shares and their USDC value. |
+
 ## Discovery
 
 | | |

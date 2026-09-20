@@ -65,6 +65,12 @@ const schema = z.object({
   DEMO_ACCOUNT_ID: optional,
   AGENT_OWNER_SECRET: optional,
   AGENTS_DIR: z.string().default('../agents'),
+  // Reinkey Float (kredi havuzu). Boşsa deployments dosyasından okunur; o da yoksa Float kapalı.
+  CREDIT_POOL_ID: optional,
+  /** Havuzdan hat açılmış Reinkey hesapları, virgülle. */
+  CREDIT_ACCOUNT_IDS: optional,
+  /** Pozisyonu gösterilecek yatırımcı adresleri, virgülle. */
+  FLOAT_INVESTORS: optional,
   CHAT_SLICE_TOKENS: int.default(50),
 
   ANTHROPIC_API_KEY: optional,
@@ -105,6 +111,9 @@ export interface AppConfig {
   demoAccountId?: string;
   agentOwnerSecret?: string;
   agentsDir: string;
+  creditPoolId?: string;
+  creditAccountIds: string[];
+  floatInvestors: string[];
   chatSliceTokens: number;
   anthropicApiKey?: string;
   anthropicWorkspaceId?: string;
@@ -122,6 +131,12 @@ function readDeployment(file: string): Record<string, string> {
     return {};
   }
 }
+
+const list = (v?: string) =>
+  (v ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
 export function loadConfig(raw: NodeJS.ProcessEnv = process.env): AppConfig {
   const parsed = schema.safeParse(raw);
@@ -182,6 +197,9 @@ export function loadConfig(raw: NodeJS.ProcessEnv = process.env): AppConfig {
     demoAccountId: e.DEMO_ACCOUNT_ID ?? dep.demoAccountId,
     agentOwnerSecret: e.AGENT_OWNER_SECRET,
     agentsDir: e.AGENTS_DIR,
+    creditPoolId: e.CREDIT_POOL_ID ?? dep.creditPoolId,
+    creditAccountIds: list(e.CREDIT_ACCOUNT_IDS ?? dep.creditAccountId),
+    floatInvestors: list(e.FLOAT_INVESTORS ?? dep.investorPublicKey),
     chatSliceTokens: e.CHAT_SLICE_TOKENS,
     anthropicApiKey: e.ANTHROPIC_API_KEY,
     anthropicWorkspaceId: e.ANTHROPIC_WORKSPACE_ID,

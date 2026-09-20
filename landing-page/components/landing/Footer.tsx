@@ -15,6 +15,7 @@ export function Footer() {
       links: [
         { label: `${site.name} ${products.meter.name}`, href: `${home}${products.meter.path}` },
         { label: `${site.name} ${products.reins.name}`, href: `${home}${products.reins.path}` },
+        { label: `${site.name} ${products.float.name}`, href: `${home}${products.float.path}` },
         { label: t("links.demo"), href: `${home}${anchors.playground}` },
         { label: t("links.howItWorks"), href: `${home}${anchors.howItWorks}` },
         { label: t("links.pricing"), href: `${home}${anchors.pricing}` },

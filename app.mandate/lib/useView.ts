@@ -3,15 +3,15 @@
 /**
  * Konsolun adres çubuğundaki durumu: hangi görünüm, hangi hesap, hangi satıcı.
  * URL'de durur ki bir görünüm bağlantı olarak paylaşılabilsin:
- *   /?view=meter&seller=G…   /?view=reins&account=C…
+ *   /?view=meter&seller=G…   /?view=reins&account=C…   /?view=float
  * Adres verilmezse backend'in demo hesabı ve demo satıcısı gösterilir.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export type View = "live" | "meter" | "reins";
+export type View = "live" | "meter" | "reins" | "float";
 export type ViewState = { view: View; account: string | null; seller: string | null };
 
-const VIEWS: View[] = ["live", "meter", "reins"];
+const VIEWS: View[] = ["live", "meter", "reins", "float"];
 /** Stellar adresi: G… (hesap) ya da C… (kontrat), 56 karakter base32. */
 export const isAddress = (v: string) => /^[GC][A-Z2-7]{55}$/.test(v);
 

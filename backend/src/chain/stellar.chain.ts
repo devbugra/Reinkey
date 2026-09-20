@@ -102,6 +102,14 @@ export class StellarChain implements ChainPort {
     return unwrapResult<T>(tx.result);
   }
 
+  readContract<T>(
+    contractId: string,
+    method: string,
+    args?: Record<string, unknown>,
+  ): Promise<T> {
+    return this.read<T>(contractId, method, args);
+  }
+
   /** Kontrat kimliğini okunur varlık adına çevirir. */
   private assetName(id: string): string {
     if (id === this.usdcContractId) return 'USDC';

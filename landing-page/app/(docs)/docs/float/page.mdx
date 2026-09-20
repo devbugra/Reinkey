@@ -1,0 +1,77 @@
+import { routes } from "@/content/site";
+
+export const metadata = { title: "Float: credit pool" };
+
+# Reinkey Float
+
+Float is a lending pool for agent accounts. It rests on one property of [Reins](/docs/reins/policy): funds in a Reinkey account can only go where its policy allows. When control of the account is handed to the pool, the owner's signature stops working too, so credit placed in the account **cannot leave the system**. Capital that can't escape needs no collateral.
+
+> **Testnet, unaudited, read-only surface.** The pool contract is deployed and tested, and the facilitator exposes it over HTTP. Depositing, opening a line and liquidating are contract calls today; there is no UI for them and no permissionless borrowing.
+
+## How it works
+
+1. **Deposit.** An investor deposits USDC and receives shares. `share price = (idle USDC + outstanding debt + pool XLM × price) / total shares`.
+2. **Hand over.** The account owner calls `set_controller(pool)` on a Reinkey account. From then on only the pool can change its policy, freeze it or recall funds.
+3. **Open a line.** The pool admin calls `open_line(account, limit, beneficiary)`: `limit` USDC moves into the account and is recorded as debt.
+4. **Work.** The agent pays sellers through channels and trades on the allowed DEX pairs, inside the account's caps.
+5. **Close or liquidate.** `close_line` returns the debt plus the pool's share of the profit (20% today) and sends the rest to the beneficiary. If the account's value falls below the liquidation threshold (90% of debt today), **anyone** may call `liquidate`: the account is frozen, remaining funds return to the pool and the loss shows up in the share price.
+
+## Pricing
+
+An account's value is `USDC + XLM × price`. The price is conservative: the **lower** of the Reflector oracle and the Soroswap pool price, so pumping the DEX price can't make an account look healthy. Oracle prices older than `max_price_age` are ignored.
+
+With only the pool price configured, a single large trade can move it and trigger an unfair liquidation (a loss to the borrower, not the lender). Mainnet needs the oracle and a TWAP.
+
+## Read the pool
+
+The testnet endpoint is <code>{routes.api}</code>.
+
+```bash
+curl -s "$REINKEY_API/float"
+```
+
+```json
+{
+  "enabled": true,
+  "pool": {
+    "pool": "C…POOL",
+    "totalShares": "1000000000",
+    "totalAssets": "1004774820",
+    "totalDebt": "0",
+    "idle": "1004774820",
+    "sharePrice": "10047748",
+    "price": "1338178",
+    "utilizationBps": 0,
+    "config": { "liqThresholdBps": 9000, "profitShareBps": 2000, "maxPriceAgeSeconds": 3600 }
+  },
+  "lines": [],
+  "positions": [{ "address": "G…", "shares": "1000000000", "value": "1004774800", "shareOfPoolBps": 10000 }],
+  "history": [{ "ts": "…", "sharePrice": "10047748", "totalAssets": "1004774820", "totalDebt": "0" }]
+}
+```
+
+All amounts are 7-decimal base units as strings. `sharePrice` and `price` use the same scale: `10047748` is 1.0047748 USDC per share.
+
+| | |
+|---|---|
+| `GET /float` | Pool summary, known credit lines, investor positions and share-price history (`?history=` up to 500 samples; the facilitator samples once a minute because the contract keeps no history). |
+| `GET /float/lines/:account` | One account's line and health: `debt`, `value`, `usdc`, `xlm`, `price`, `healthBps` (value / debt), `liqThresholdBps`, `liquidatable`. |
+| `GET /float/positions/:address` | An investor's shares, their USDC value today and their share of the pool. |
+
+Everything is read by simulation; these endpoints never submit a transaction.
+
+## Contract interface
+
+| Call | Who | Effect |
+|---|---|---|
+| `deposit(from, amount)` → shares | anyone | Deposit USDC, mint shares at the current share price. |
+| `withdraw(from, shares)` → USDC | share holder | Burn shares for USDC, limited to the idle balance. |
+| `transfer(from, to, amount)` | share holder | Shares are a transferable balance. |
+| `open_line(account, limit, beneficiary)` | admin | Requires the account's controller to be this pool. |
+| `health(account)` | anyone | Value, debt, balances, price, `liquidatable`. |
+| `liquidate(account)` | anyone | Only when `liquidatable`; freezes and recalls. |
+| `close_line(caller, account)` | admin or beneficiary | Repay debt, split profit. |
+
+## What health does not count
+
+Unspent deposits sitting in the account's open payment channels are not included in its value, because the channel contract has no per-account index. Money locked in a channel therefore looks like a loss until the channel closes. The error is on the cautious side.

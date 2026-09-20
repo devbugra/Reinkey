@@ -6,7 +6,7 @@ export const metadata = { title: "Introduction" };
 
 Reinkey is payment infrastructure for APIs and AI agents on Stellar. It extends [x402](https://github.com/x402-foundation/x402) with a **payment channel scheme**, so a payment is a signed voucher verified in about a millisecond instead of an on-chain transaction that takes five seconds.
 
-There are two products. Use one, or both.
+There are three products. Use one, or all.
 
 | | Reinkey Meter | Reinkey Reins |
 |---|---|---|
@@ -14,6 +14,8 @@ There are two products. Use one, or both.
 | **Does** | Charges per request, per token or per second | Gives an agent a spending account with on-chain limits |
 | **You install** | `@reinkey/meter` | `@reinkey/sdk` |
 | **Start here** | [Meter quickstart](/docs/meter/quickstart) | [Reins quickstart](/docs/reins/quickstart) |
+
+**Reinkey Float** is the finance layer on top: a lending pool where agents work on uncollateralized credit, because funds in a Reins account handed to the pool cannot leave its policy. [Read about Float](/docs/float).
 
 ## Try it without installing anything
 

@@ -22,6 +22,10 @@ export const docsNav = [
     ],
   },
   {
+    title: "Reinkey Float",
+    items: [{ href: "/docs/float", label: "Credit pool" }],
+  },
+  {
     title: "Reference",
     items: [
       { href: "/docs/reason-codes", label: "Reason codes" },

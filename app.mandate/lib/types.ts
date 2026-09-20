@@ -187,3 +187,64 @@ export type LedgerPage = { events: FeedEvent[]; nextCursor: string | null };
 
 /** POST /channels/:id/claim */
 export type ClaimResult = { claimed?: boolean; reason?: string; tx?: string };
+
+/** GET /float: Reinkey Float (kredi havuzu). Tutarlar 7 ondalıklı taban birim, string. */
+export type FloatPool = {
+  pool: string;
+  config: { admin: string; liqThresholdBps: number; profitShareBps: number; maxPriceAgeSeconds: number; oracle: string | null; pair: string | null };
+  totalShares: string;
+  totalAssets: string;
+  totalDebt: string;
+  idle: string;
+  sharePrice: string;
+  price: string;
+  utilizationBps: number;
+  ledger: number;
+  asOf: string;
+};
+export type FloatLine = {
+  account: string;
+  open: boolean;
+  debt: string;
+  beneficiary: string;
+  value: string;
+  usdc: string;
+  xlm: string;
+  price: string;
+  liquidatable: boolean;
+  healthBps: number | null;
+  liqThresholdBps: number;
+};
+export type FloatPosition = { address: string; shares: string; value: string; shareOfPoolBps: number; sharePrice: string };
+export type FloatSample = { ts: string; sharePrice: string; totalAssets: string; totalDebt: string; price: string };
+export type FloatOverview =
+  | { enabled: false }
+  | { enabled: true; pool: FloatPool; lines: FloatLine[]; positions: FloatPosition[]; history: FloatSample[] };
+
+/** GET /sellers/:payTo/revenue: Meter satıcı finansı. Tutarlar taban birim, string. */
+export type RevenueReport = {
+  payTo: string;
+  window: { since: string; days: number; bucket: "hour" | "day" };
+  totals: {
+    earned: string;
+    settled: string;
+    receivable: string;
+    payments: number;
+    settlements: number;
+    paymentsPerSettlement: number | null;
+    buyers: number;
+  };
+  byResource: { resource: string; unit: string; payments: number; buyers: number; amount: string }[];
+  series: { t: string; earned: string; settled: string; payments: number }[];
+  receivables: {
+    channelId: string;
+    payer: string;
+    amount: string;
+    vouchers: number;
+    open: boolean;
+    lastVoucherAt: string | null;
+    ageSeconds: number | null;
+    expiresInSeconds: number | null;
+  }[];
+  settlements: { tx: string; at: string; channelId: string; payer: string; amount: string; paymentsCovered: number }[];
+};

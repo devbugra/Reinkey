@@ -23,7 +23,8 @@
     "meter": "Meter",
     "reins": "Reins",
     "docs": "Belgeler",
-    "products": "Ürünler"
+    "products": "Ürünler",
+    "float": "Float"
   },
   "hero": {
     "eyebrow": "Sayaçlı x402 · Stellar",
@@ -413,14 +414,16 @@
   },
   "productsSection": {
     "eyebrow": "Ürünler",
-    "title": "Tek ray, iki ürün.",
-    "lead": "{name} iki tarafı da çözer: satıcı kullanım kadar tahsil eder, ajan sınırı zincirde yazılı bir hesapla harcar. Birini ya da ikisini birden kullanın.",
+    "title": "Tek ray, üç ürün.",
+    "lead": "{name} üç tarafı da çözer: satıcı kullanım kadar tahsil eder, ajan sınırı zincirde yazılı bir hesapla harcar, sermaye kaçamayacağı bir hesaba borç verir. Birini ya da hepsini kullanın.",
     "learnMore": "{product} sayfası",
     "docs": "Hızlı başlangıç",
     "for": {
       "meter": "Satıcılar için",
-      "reins": "Ajan sahipleri için"
-    }
+      "reins": "Ajan sahipleri için",
+      "float": "Sermaye sahipleri için"
+    },
+    "read": "Canlı havuzu oku"
   },
   "products": {
     "meter": {
@@ -506,7 +509,7 @@
         },
         {
           "title": "Sınırlı alım-satım",
-          "body": "Ajan Stellar DEX'inde (Soroswap) işlem yapabilir; hangi çiftte, işlem başına ve günde ne kadar, politikada yazar. Kayma koruması olmayan işlem reddedilir."
+          "body": "Ajan Stellar DEX'inde (Soroswap) işlem yapabilir; hangi çiftte, işlem başına ve günde ne kadar, politikada yazar. Kayma koruması olmayan işlem reddedilir. Hesapta USDC yoksa kanal XLM ile açılır: gereken kadarı DEX'te çevrilir, satıcı yine USDC alır."
         },
         {
           "title": "Ajan XLM tutmaz",
@@ -530,6 +533,60 @@
       "ctaTitle": "Ajanınıza güvenle harcama yetkisi verin.",
       "ctaPrimary": "Reins hızlı başlangıç",
       "ctaSecondary": "Reddi canlı izle"
+    },
+    "float": {
+      "meta": {
+        "title": "Float: ajanlar için teminatsız döner sermaye",
+        "description": "Ajan hesabı havuza devredildiğinde para politikanın dışına çıkamaz. Kaçamayan sermayeye teminat gerekmez: yatırımcı USDC yatırır, ajanlar krediyle çalışır, sağlık zincirde hesaplanır."
+      },
+      "eyebrow": "Reinkey Float",
+      "title": "Kaçamayan sermayeye teminat gerekmez.",
+      "tagline": "Ajanların çalıştığı döner sermaye. Risk zincirde hesaplanır.",
+      "subtitle": "Bir Reins hesabındaki para yalnızca politikanın izin verdiği yerlere gidebilir. Hesap havuza devredildiğinde sahibinin imzası da geçersizleşir: krediyi ne ajan ne de hesabı kuran kişi dışarı çıkarabilir. Float bunun üstüne kurulu bir kredi havuzudur.",
+      "bullets": [
+        "Yatırımcı USDC yatırır, pay alır",
+        "Ajan teminatsız hatla öder ve işlem yapar",
+        "Değer eşiğin altına düşerse herkes tasfiye edebilir"
+      ],
+      "codeTitle": "Havuz herkese açık bir API",
+      "codeLead": "Büyüklük, pay fiyatı, kullanım oranı ve yatırımcı pozisyonları zincirden okunur. Pay fiyatı = (boşta duran USDC + açık borç + havuzdaki XLM × fiyat) / toplam pay.",
+      "responseTitle": "Her hattın sağlığı zincirde hesaplanır",
+      "responseLead": "Değer, hesaptaki USDC ile XLM'in ihtiyatlı fiyatla toplamıdır. Borcun %90'ının altına inerse tasfiyeyi herkes tetikleyebilir: hesap dondurulur, kalan fon havuza döner, zarar pay fiyatına yansır.",
+      "features": [
+        {
+          "title": "Kaçamayan sermaye",
+          "body": "Kredi bir Reins hesabına aktarılır ve hesabın denetimi havuza geçer (set_controller). Politika yalnızca izinli satıcılara ödeme ve izinli çiftlerde takasa izin verir; para sistemin dışına çıkamaz."
+        },
+        {
+          "title": "İhtiyatlı fiyat",
+          "body": "Değerleme, oracle (Reflector) ile DEX havuz fiyatından düşük olanıyla yapılır. DEX fiyatını şişirerek hesabı sağlıklı göstermek mümkün değildir."
+        },
+        {
+          "title": "İzinsiz tasfiye",
+          "body": "liquidate'i herkes çağırabilir. Koşul zincirde denetlenir; sağlıklı bir hesap tasfiye edilemez."
+        },
+        {
+          "title": "Kâr paylaşımı",
+          "body": "Hat kapanırken borç havuza döner, kârın belirli bir payı (bugün %20) havuza, kalanı lehdara gider. Kârla kapanan her hat pay fiyatını yükseltir."
+        },
+        {
+          "title": "Pay = alacak",
+          "body": "Yatırımcının payı devredilebilir bir bakiyedir; değeri pay fiyatıyla çarpımıdır. Çekim, havuzda boşta duran USDC kadar yapılabilir."
+        },
+        {
+          "title": "Canlı görünürlük",
+          "body": "Konsolun Float görünümü havuz büyüklüğünü, pay fiyatı geçmişini, kullanım oranını ve her hattın sağlık göstergesini canlı gösterir."
+        }
+      ],
+      "limitsTitle": "Bugün ne var, ne yok",
+      "limits": [
+        "Stellar testnet üzerinde çalışır; kontrat henüz denetlenmedi. Gerçek sermaye yatırmayın.",
+        "Konsol ve API bugün salt okunurdur: yatırma, hat açma ve tasfiye kontrat çağrısıyla yapılır, arayüzü yoktur. Hat açmak yöneticinin elindedir; izinsiz borçlanma yok.",
+        "Açık kanallardaki harcanmamış depozito sağlık hesabına katılmaz (ihtiyatlı yönde hata). Yalnızca DEX fiyat kaynağı tanımlıysa fiyat tek bir büyük işlemle oynatılabilir; mainnet için oracle ve TWAP şarttır."
+      ],
+      "ctaTitle": "Havuzu canlı izleyin.",
+      "ctaPrimary": "Float belgeleri",
+      "ctaSecondary": "Konsolda aç"
     }
   }
 }

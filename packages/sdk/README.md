@@ -6,6 +6,16 @@ An agent gets a key that can only spend what an on-chain policy allows (per-tran
 
 > **Status: pre-release.** Stellar **testnet only**. The smart contracts are **unaudited**. The package is **not yet published to npm**; the install line below is what it will be.
 
+## Pay with any asset
+
+```ts
+const { channelId, swap } = await account.openChannelWith({
+  payee, deposit: 100_000n, voucherSecret, payWith: "XLM",
+});
+```
+
+Quotes the XLM needed (`quoteIn`, Soroswap `router_get_amounts_in`), swaps it with `minOut = deposit`, then opens the channel. Two transactions, both inside the account's policy; surplus USDC stays in the account. Verified on testnet with `agents/tools/paywith-check.ts`.
+
 ## Install
 
 ```sh

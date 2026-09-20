@@ -8,13 +8,15 @@ With x402's `exact` scheme every payment is its own Stellar transaction and wait
 
 > **Status: Stellar testnet, unaudited, pre-1.0.** Don't send mainnet funds.
 
-## Two products
+## Three products
 
 | | **Reinkey Meter** | **Reinkey Reins** |
 |---|---|---|
 | For | Sellers: APIs, data feeds, inference | Agent owners |
 | Does | Charges per request, per token or per second | An agent account with caps, allowed payees and allowed trading pairs, enforced in `__check_auth` |
 | Package | [`@reinkey/meter`](packages/meter) | [`@reinkey/sdk`](packages/sdk) |
+
+**Reinkey Float** is the finance layer: a lending pool (`contracts/credit-pool`) where agents work on uncollateralized credit. Funds in a Reins account handed to the pool cannot leave its policy, so capital that can't escape needs no collateral. Read-only over `GET /float` and the console's Float view.
 
 ```ts
 // Seller: one line per endpoint
@@ -37,7 +39,7 @@ const { res } = await x402Fetch(`${api}/book`, { signer, network: "stellar:testn
 | `packages/meter` | `@reinkey/meter`: seller middleware (Reinkey Meter): per-request `rk.meter()`, per-token/per-second `rk.stream()` |
 | `packages/sdk` | `@reinkey/sdk`: agent SDK (Reinkey Reins) |
 | `backend/` | The facilitator: voucher verification, automatic claims, audit ledger, SSE, x402 Bazaar catalog (`/discovery/resources`), OpenAPI, `llms.txt`, MCP, demo seller |
-| `app.mandate/` | Reinkey Console: live feed, Meter (seller) view, Reins (account) view |
+| `app.mandate/` | Reinkey Console: live feed, Meter (seller), Reins (account) and Float (credit pool) views |
 | `landing-page/` | Marketing site, product pages and the documentation (`/docs`) |
 | `agents/` | Demo agents: a trader, and a compromised agent that gets stopped by the chain |
 | `scripts/`, `deployments/` | Testnet deploy scripts and the deployed contract ids |

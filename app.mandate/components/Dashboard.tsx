@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, Gauge, KeyRound, Maximize2, Minimize2, PlugZap } from "lucide-react";
+import { Activity, Gauge, KeyRound, Landmark, Maximize2, Minimize2, PlugZap } from "lucide-react";
 import { env } from "@/lib/env";
 import { big } from "@/lib/format";
 import { useFeed, type Connection } from "@/lib/useFeed";
+import { useFloat } from "@/lib/useFloat";
 import { useView, type View } from "@/lib/useView";
 import { Blocked } from "./Blocked";
 import { Channels } from "./Channels";
@@ -19,6 +20,7 @@ import { Terminal } from "./Terminal";
 import { Timeline } from "./Timeline";
 import { Trades } from "./Trades";
 import { cn } from "./ui";
+import { FloatView } from "./views/FloatView";
 import { MeterView } from "./views/MeterView";
 import { ReinsView } from "./views/ReinsView";
 
@@ -64,6 +66,7 @@ const VIEWS: { id: View; label: string; hint: string; icon: React.ReactNode }[] 
   { id: "live", label: "Canlı", hint: "Ödemeler, zincir işlemleri ve redler, tek akışta", icon: <Activity className="size-3.5" aria-hidden="true" /> },
   { id: "meter", label: "Meter", hint: "Satıcı: gelir, kanallar, tahsilat", icon: <Gauge className="size-3.5" aria-hidden="true" /> },
   { id: "reins", label: "Reins", hint: "Ajan hesabı: politika, harcama, defter", icon: <KeyRound className="size-3.5" aria-hidden="true" /> },
+  { id: "float", label: "Float", hint: "Kredi havuzu: büyüklük, pay fiyatı, hatların sağlığı", icon: <Landmark className="size-3.5" aria-hidden="true" /> },
 ];
 
 function Header({
@@ -151,6 +154,7 @@ export default function Dashboard() {
   const f = useFeed(nav.account);
   const { state } = f;
   const [present, togglePresent] = usePresent();
+  const float = useFloat(nav.view === "float");
   // Adres verilmediyse backend'in demo hesabı ve demo satıcısı gösterilir.
   const accountAddr = nav.account ?? state.info?.account ?? null;
   const sellerAddr = nav.seller ?? state.info?.seller ?? null;
@@ -193,6 +197,8 @@ export default function Dashboard() {
             onSeller={(seller) => setNav({ seller })}
           />
         )}
+
+        {nav.view === "float" && <FloatView data={float.data} failed={float.failed} />}
 
         {nav.view === "reins" && (
           <ReinsView

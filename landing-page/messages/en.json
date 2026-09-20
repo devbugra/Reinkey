@@ -23,7 +23,8 @@
     "meter": "Meter",
     "reins": "Reins",
     "docs": "Docs",
-    "products": "Products"
+    "products": "Products",
+    "float": "Float"
   },
   "hero": {
     "eyebrow": "Metered x402 · Stellar",
@@ -413,14 +414,16 @@
   },
   "productsSection": {
     "eyebrow": "Products",
-    "title": "One rail, two products.",
-    "lead": "{name} solves both sides: the seller charges for exactly what was used, the agent spends from an account whose limits are written on-chain. Use one, or both.",
+    "title": "One rail, three products.",
+    "lead": "{name} solves all three sides: the seller charges for exactly what was used, the agent spends from an account whose limits are written on-chain, and capital lends to an account it can't escape from. Use one, or all.",
     "learnMore": "Explore {product}",
     "docs": "Quickstart",
     "for": {
       "meter": "For sellers",
-      "reins": "For agent owners"
-    }
+      "reins": "For agent owners",
+      "float": "For capital providers"
+    },
+    "read": "Read the live pool"
   },
   "products": {
     "meter": {
@@ -506,7 +509,7 @@
         },
         {
           "title": "Bounded trading",
-          "body": "The agent can trade on the Stellar DEX (Soroswap); which pair, how much per trade and per day is in the policy. Trades without slippage protection are rejected."
+          "body": "The agent can trade on the Stellar DEX (Soroswap); which pair, how much per trade and per day is in the policy. Trades without slippage protection are rejected. With no USDC on hand, a channel opens with XLM: just enough is converted on the DEX and the seller still receives USDC."
         },
         {
           "title": "No XLM for the agent",
@@ -530,6 +533,60 @@
       "ctaTitle": "Give your agent spending power, safely.",
       "ctaPrimary": "Reins quickstart",
       "ctaSecondary": "Watch a rejection live"
+    },
+    "float": {
+      "meta": {
+        "title": "Float: uncollateralized working capital for agents",
+        "description": "Once an agent's account is handed to the pool, funds can't leave its policy. Capital that can't escape needs no collateral: investors deposit USDC, agents work on credit, health is computed on-chain."
+      },
+      "eyebrow": "Reinkey Float",
+      "title": "Capital that can't escape needs no collateral.",
+      "tagline": "Working capital for agents. Risk is computed on-chain.",
+      "subtitle": "Funds in a Reins account can only go where its policy allows. Once the account is handed to the pool, even its owner's signature stops working: neither the agent nor whoever created the account can take the credit out. Float is a lending pool built on that property.",
+      "bullets": [
+        "Investors deposit USDC and receive shares",
+        "Agents pay and trade on an uncollateralized line",
+        "Anyone can liquidate once value falls below the threshold"
+      ],
+      "codeTitle": "The pool is a public API",
+      "codeLead": "Size, share price, utilization and investor positions are read from the chain. Share price = (idle USDC + outstanding debt + pool XLM × price) / total shares.",
+      "responseTitle": "Every line's health is computed on-chain",
+      "responseLead": "Value is the account's USDC plus its XLM at a conservative price. Below 90% of debt, anyone can trigger liquidation: the account is frozen, remaining funds return to the pool, and the loss shows up in the share price.",
+      "features": [
+        {
+          "title": "Capital that can't escape",
+          "body": "Credit is transferred into a Reins account and control of the account passes to the pool (set_controller). The policy only allows payments to approved sellers and swaps on approved pairs; money can't leave the system."
+        },
+        {
+          "title": "Conservative pricing",
+          "body": "Valuation uses the lower of the oracle (Reflector) and the DEX pool price. Pumping the DEX price can't make an account look healthy."
+        },
+        {
+          "title": "Permissionless liquidation",
+          "body": "Anyone can call liquidate. The condition is checked on-chain; a healthy account cannot be liquidated."
+        },
+        {
+          "title": "Profit sharing",
+          "body": "When a line closes, debt returns to the pool, a share of the profit (20% today) goes to the pool and the rest to the beneficiary. Every profitable line raises the share price."
+        },
+        {
+          "title": "Shares are a claim",
+          "body": "An investor's shares are a transferable balance worth shares × share price. Withdrawals are limited to the USDC sitting idle in the pool."
+        },
+        {
+          "title": "Live visibility",
+          "body": "The console's Float view shows pool size, share-price history, utilization and a health gauge for every line, live."
+        }
+      ],
+      "limitsTitle": "What exists today, and what doesn't",
+      "limits": [
+        "Runs on Stellar testnet; the contract hasn't been audited. Don't deposit real capital.",
+        "The console and API are read-only today: depositing, opening a line and liquidating are contract calls with no UI. Opening a line is the admin's decision; there is no permissionless borrowing.",
+        "Unspent deposits in open channels aren't counted in health (an error on the cautious side). With only the DEX price source configured, the price can be moved by a single large trade; mainnet needs the oracle and a TWAP."
+      ],
+      "ctaTitle": "Watch the pool live.",
+      "ctaPrimary": "Float docs",
+      "ctaSecondary": "Open in console"
     }
   }
 }

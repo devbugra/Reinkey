@@ -180,6 +180,66 @@ export class ReinkeyAccount {
     };
   }
 
+  /**
+   * DEX fiyatı: `amountOut` kadar `path[1]` almak için kaç `path[0]` gerekir
+   * (Soroswap `router_get_amounts_in`; havuz ücreti dahil). Salt okunur.
+   */
+  async quoteIn(amountOut: bigint, path: [string, string]): Promise<bigint> {
+    const router = this.o.dexRouterId;
+    if (!router) throw new Error("dexRouterId tanımlı değil");
+    const amounts = await this.view<(string | bigint)[]>(
+      this.call(
+        router,
+        "router_get_amounts_in",
+        nativeToScVal(amountOut, { type: "i128" }),
+        nativeToScVal([new Address(path[0]), new Address(path[1])]),
+      ),
+    );
+    return BigInt(amounts[0]);
+  }
+
+  /**
+   * HERHANGİ BİR VARLIKLA ÖDE (katman 3). Hesapta USDC yoksa bile kanal açılır:
+   * gereken XLM DEX'te USDC'ye çevrilir, ardından depozito kilitlenir. Satıcı her
+   * zaman USDC alır; ödeme rayı ile takas rayı aynı ağdadır.
+   *
+   * İki zincir işlemidir (Soroban'da işlem başına tek kontrat çağrısı): takas,
+   * sonra açılış. İkisi de hesabın politikasından geçer: çift izinli olmalı,
+   * `minOut` zorunludur (burada depozitonun kendisi), depozito tavana sayılır.
+   * Kontrat yalnızca girdi-sabit takasa izin verdiği için girdi, fiyatın üstüne
+   * `slippageBps` pay eklenerek hesaplanır; artan USDC hesapta kalır.
+   */
+  async openChannelWith(params: {
+    payee: string;
+    deposit: bigint;
+    voucherSecret: Uint8Array;
+    payWith: "XLM";
+    /** Fiyat ile gönderim arasındaki oynamaya pay (baz puan; varsayılan %1). */
+    slippageBps?: number;
+    ttlLedgers?: number;
+  }): Promise<{
+    channelId: bigint;
+    tx: string;
+    expiryLedger: number;
+    swap: { tx: string; sold: bigint; bought: bigint };
+  }> {
+    if (!this.o.xlmContractId) throw new Error("xlmContractId tanımlı değil");
+    const path: [string, string] = [this.o.xlmContractId, this.o.usdcContractId];
+    const quoted = await this.quoteIn(params.deposit, path);
+    const amountIn = quoted + (quoted * BigInt(params.slippageBps ?? 100)) / 10_000n + 1n;
+    const swapped = await this.swap({ amountIn, minOut: params.deposit, path });
+    const opened = await this.openChannel({
+      payee: params.payee,
+      deposit: params.deposit,
+      voucherSecret: params.voucherSecret,
+      ttlLedgers: params.ttlLedgers,
+    });
+    return {
+      ...opened,
+      swap: { tx: swapped.tx, sold: amountIn, bought: swapped.amounts.at(-1) ?? 0n },
+    };
+  }
+
   async topUp(channelId: bigint, amount: bigint): Promise<string> {
     const op = this.call(
       this.o.channelContractId,

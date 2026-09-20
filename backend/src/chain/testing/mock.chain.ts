@@ -111,6 +111,10 @@ export class MockChain implements ChainPort {
     return t ? { ...t } : { status: 'NOT_FOUND' as const };
   }
 
+  async readContract<T>(): Promise<T> {
+    throw new Error('MockChain: readContract desteklenmez');
+  }
+
   async getPairReserves(): Promise<never> {
     throw new Error('MockChain: DEX fiyatı yok (yalnızca birim testleri)');
   }

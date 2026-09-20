@@ -24,10 +24,13 @@ export function withName(text: string): string {
  *  - Meter: satıcı tarafı, kullanım bazlı tahsilat. Koddaki `meter()` ile aynı ad.
  *  - Reins: ajan tarafı, zincirde uygulanan harcama yetkisi. Slogandan gelir:
  *    "Give your agent the keys. Keep the reins."
+ *  - Float: finans tarafı, ajanların çalıştığı döner sermaye. Reins hesabı havuza
+ *    devredilince para politikanın dışına çıkamaz; teminatsız kredi bunun üstüne kurulur.
  */
 export const products = {
   meter: { key: "meter", name: "Meter", path: "/meter", pkg: "@reinkey/meter" },
   reins: { key: "reins", name: "Reins", path: "/reins", pkg: "@reinkey/sdk" },
+  float: { key: "float", name: "Float", path: "/float", pkg: "credit-pool" },
 } as const;
 export type ProductKey = keyof typeof products;
 
@@ -36,6 +39,7 @@ export const docs = {
   home: "/docs",
   quickstartMeter: "/docs/meter/quickstart",
   quickstartReins: "/docs/reins/quickstart",
+  float: "/docs/float",
 } as const;
 
 /**

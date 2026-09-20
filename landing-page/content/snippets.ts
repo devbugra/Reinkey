@@ -53,6 +53,29 @@ const { channelId } = await account.openChannel({
 // Every call after that is a signed voucher. No chain, ~1 ms.
 const signer = new ChannelSigner({ channelId, secret: voucherSecret, ...channel });
 const { res } = await x402Fetch("${env.apiUrl}/demo/book", { signer, network });`,
+  floatRead: `curl -s ${env.apiUrl}/float`,
+  float: `GET /float
+
+{
+  "pool": {
+    "totalAssets": "1004774820",     // 100.48 USDC
+    "totalDebt":   "0",
+    "sharePrice":  "10047748",       // 1 share = 1.0047748 USDC
+    "utilizationBps": 0,
+    "config": { "liqThresholdBps": 9000, "profitShareBps": 2000 }
+  },
+  "positions": [{ "shares": "1000000000", "value": "1004774800" }]
+}`,
+  floatHealth: `GET /float/lines/C…ACCOUNT
+
+{
+  "open": true,
+  "debt":  "200000000",              // 20 USDC drawn
+  "value": "213400000",              // USDC + XLM × conservative price
+  "healthBps": 10670,                // value / debt = 106.7%
+  "liqThresholdBps": 9000,           // below 90% anyone may liquidate
+  "liquidatable": false
+}`,
   reinsReject: `// A stolen agent key tries to send funds to its own wallet.
 await account.transfer(attacker, 1_000_000n);
 

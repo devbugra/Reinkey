@@ -73,6 +73,7 @@ export function ReinsView({
                 <Stat label="Tek işlem tavanı" value={`${usdc(account.policy.perTxCap)} USDC`} />
                 <Stat label="Günlük tavan" value={`${usdc(account.policy.dailyCap)} USDC`} />
                 <Stat label="USDC bakiyesi" value={usdc(account.balance)} />
+                <Stat label="XLM bakiyesi" value={account.balanceXlm ? usdc(account.balanceXlm, 2) : "—"} />
                 <Stat label="Kanallarda kilitli" value={`${usdc(locked)} USDC`} />
                 <Stat label="Politika bitişi (ledger)" value={int(account.policy.expiresLedger)} />
                 <Stat label="Ajan anahtarı" value={<span className="font-mono text-xs">{shortAddr(account.policy.agentKey, 6, 6)}</span>} />

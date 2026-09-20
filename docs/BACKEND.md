@@ -660,3 +660,28 @@ Ek hedef (§9 kesme sırasındaki "Bazaar kataloğu") uygulandı.
 - Doğrulama: `agents/tools/meter-check.ts` (kanal #12): 3 çağrı, bozuk imza reddi, Bazaar kaydı, 5 saniyelik akış = 5 kupon, defterde `stream.ended` doğru tutarla.
 - Katalog yazımı `INSERT … ON CONFLICT` ile atomik yapıldı: art arda gelen /verify'ların yazımları çakışınca Prisma upsert'i satır kaybediyordu.
 
+---
+
+## 19. EK (20 Eylül, Hat 3): Reinkey Float — kredi havuzunun salt okunur yüzeyi
+
+`contracts/credit-pool` deploy edilmiş ve smoke testinden geçmişti ama hiçbir yüzeyde yoktu. Artık üçüncü ürün: **Float**.
+
+- `ChainPort.readContract(contractId, method, args)`: genel salt okuma (simülasyon). Float bununla okur; havuza özel metot eklenmedi.
+- `src/float/`: `FloatService` (5 sn önbellek; pay fiyatını dakikada bir `PoolSample` tablosuna örnekler, göç `20260920000235_float_pool_samples`; kontrat geçmiş tutmuyor), `FloatController`.
+- Uçlar: `GET /float` (havuz + hatlar + pozisyonlar + geçmiş), `GET /float/lines/:account`, `GET /float/positions/:address`. **Zincire yazan hiçbir şey yok.**
+- Config: `CREDIT_POOL_ID`, `CREDIT_ACCOUNT_IDS`, `FLOAT_INVESTORS`; boşsa `deployments/testnet.json` (`creditPoolId`, `creditAccountId`, `investorPublicKey`). Havuz tanımsızsa `{ enabled: false }`.
+- Konsol: Float görünümü (`/?view=float`). Landing: `/float` ürün sayfası, `/docs/float`.
+- Canlı durum (20 Eylül): 100 pay, toplam varlık 100,48 USDC, pay fiyatı 1,0047748, açık borç 0.
+
+---
+
+## 20. EK (20 Eylül, Hat 3): satıcı finansı — `/sellers/:payTo/revenue`
+
+Meter'ın finans yüzü. Kaynak denetim defteri (`Event`) ve kanal durumu; ayrı muhasebe tablosu yok.
+
+- `GET /sellers/:payTo/revenue?days=&bucket=hour|day`: `totals` (kazanılan, tahsil edilen, alacak, ödeme, tahsilat, tahsilat başına ödeme, alıcı), `byResource`, `series`, `receivables` (kanal bazında yaş ve kanalın bitişine kalan süre), `settlements`.
+- `GET /sellers/:payTo/settlements.csv`: tahsilat başına bir satır.
+- Eski kayıtlardaki çift `channel.claimed` olayları tx bazında tekilleştirilir (MAX tutar, MAX vouchersCovered).
+- Konsol: Meter görünümünde "Gelir raporu", "Kaynak bazında gelir", "Alacak yaşlandırma" ve CSV düğmesi.
+- Canlı doğrulama (20 Eylül): kazanılan 0,1335 = tahsil edilen 0,1335, alacak 0; 574 ödeme 20 tahsilatla (tahsilat başına 28,7 ödeme).
+

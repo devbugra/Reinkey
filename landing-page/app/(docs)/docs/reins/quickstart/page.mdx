@@ -56,6 +56,19 @@ const { channelId } = await account.openChannel({
 
 One transaction. The voucher key is specific to this channel and separate from the agent key.
 
+### Pay with XLM instead
+
+The account doesn't need to hold USDC. `openChannelWith` converts just enough XLM on the DEX and then locks the deposit; the seller still receives USDC.
+
+```ts
+const { channelId, swap } = await account.openChannelWith({
+  payee, deposit: 100_000n, voucherSecret, payWith: "XLM",
+});
+// swap.sold XLM → swap.bought USDC, then the channel opens
+```
+
+Two transactions (Soroban allows one contract call per transaction), both checked by the policy: the `XLM → USDC` pair must be allowed, `minOut` is set to the deposit, and the deposit counts against the caps. The input is quoted with `account.quoteIn()` plus 1% headroom (`slippageBps`); any surplus USDC stays in the account.
+
 ## 5. Pay per call
 
 ```ts

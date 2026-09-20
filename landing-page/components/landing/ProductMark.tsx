@@ -9,6 +9,7 @@ import { MARK_STROKE } from "./Wordmark";
  *
  *  - Meter: sayaç kadranı ve ibre (kullanım ölçülür).
  *  - Reins: bir halkadan çıkan iki dizgin (yön sahibinde kalır).
+ *  - Float: şamandıra ve dalgalar (sermaye batmaz, kaçmaz).
  */
 export function ProductMark({ product, className }: { product: ProductKey; className?: string }) {
   return (
@@ -27,6 +28,13 @@ export function ProductMark({ product, className }: { product: ProductKey; class
           <path d="M4 17a8 8 0 1 1 16 0" />
           <path d="M12 17l4-6" />
           <path d="M4 17h16" />
+        </>
+      ) : product === "float" ? (
+        // Float: su üstünde duran sermaye. Bir şamandıra ve altında iki dalga.
+        <>
+          <circle cx="12" cy="7.5" r="3.25" />
+          <path d="M3.5 15c2.1-1.6 4.3-1.6 6.4 0s4.3 1.6 6.4 0 3.2-1.4 4.2-.9" />
+          <path d="M3.5 19.5c2.1-1.6 4.3-1.6 6.4 0s4.3 1.6 6.4 0 3.2-1.4 4.2-.9" />
         </>
       ) : (
         <>

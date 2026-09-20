@@ -40,6 +40,9 @@ Chain mode: ${c.chainMode}
 
 ${prices}
 
+Credit pool (Reinkey Float, read-only): \`GET ${c.publicUrl}/float\` returns pool size, share price,
+utilization, credit lines with on-chain health, and investor positions.
+
 Discovery (x402 Bazaar): \`GET ${c.publicUrl}/discovery/resources\` lists every resource that has
 received at least one verified payment through this facilitator, with its 402 terms and
 \`extensions.bazaar\` input/output metadata. Filter with \`?payTo=\`.

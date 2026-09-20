@@ -35,6 +35,8 @@ export function ProductPage({
   const features = t.raw("features") as { title: string; body: string }[];
   const limits = t.raw("limits") as string[];
   const name = products[product].name;
+  // Konsol ürünün kendi görünümünde açılır (Canlı varsayılan).
+  const consoleHref = product === "float" ? `${routes.panel}/?view=float` : product === "reins" ? `${routes.panel}/?view=reins` : routes.panel;
 
   return (
     <>
@@ -68,7 +70,7 @@ export function ProductPage({
                   {t("ctaPrimary")}
                   <ArrowRight className="size-4 rtl:-scale-x-100" aria-hidden="true" />
                 </Button>
-                <Button href={routes.panel} variant="secondary" size="lg">
+                <Button href={consoleHref} variant="secondary" size="lg">
                   {t("ctaSecondary")}
                 </Button>
               </div>
@@ -154,7 +156,7 @@ export function ProductPage({
                 {t("ctaPrimary")}
                 <ArrowRight className="size-4 rtl:-scale-x-100" aria-hidden="true" />
               </Button>
-              <Button href={routes.panel} variant="secondary" size="lg">
+              <Button href={consoleHref} variant="secondary" size="lg">
                 {t("ctaSecondary")}
               </Button>
             </div>

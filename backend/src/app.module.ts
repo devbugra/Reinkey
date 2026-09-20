@@ -9,7 +9,9 @@ import type { AppConfig } from './config/config';
 import { DemoControlsModule } from './demo/controls.module';
 import { DemoModule } from './demo/demo.module';
 import { DiscoveryModule } from './discovery/discovery.module';
+import { FloatModule } from './float/float.module';
 import { HealthController } from './health.controller';
+import { SellersModule } from './sellers/sellers.module';
 import { X402Module } from './x402/x402.module';
 
 @Module({})
@@ -28,6 +30,8 @@ export class AppModule {
         DemoModule,
         AccountsModule,
         DiscoveryModule,
+        FloatModule,
+        SellersModule,
         ...(cfg.demoControls ? [DemoControlsModule] : []),
       ],
       controllers: [HealthController],

@@ -5,7 +5,7 @@ import { routing } from "@/i18n/routing";
 const SITE_URL = env.siteUrl;
 
 /** Dil önekli sayfalar; belgeler tek dildedir ve ayrıca eklenir. */
-const PAGES = ["", "/meter", "/reins"];
+const PAGES = ["", "/meter", "/reins", "/float"];
 const DOCS = [
   "/docs",
   "/docs/concepts",
@@ -13,6 +13,7 @@ const DOCS = [
   "/docs/meter/reference",
   "/docs/reins/quickstart",
   "/docs/reins/policy",
+  "/docs/float",
   "/docs/reason-codes",
   "/docs/api",
 ];

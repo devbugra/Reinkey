@@ -9,6 +9,7 @@ import { env } from "@/lib/env";
 import { clock, int, ratio, usdc } from "@/lib/format";
 import type { ChannelView, ClaimView } from "@/lib/store";
 import { Identity } from "../Identity";
+import { Revenue } from "../Revenue";
 import { DepositBar, Empty, Panel, TxLink, cn } from "../ui";
 
 function Kpi({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
@@ -76,6 +77,8 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`;
         <Kpi label="Açık kanal" value={int(open)} sub={`${int(mine.length)} kanal, ${int(buyers)} alıcı`} />
         <Kpi label="Tahsilat işlemi" value={int(myClaims.length)} sub="Bu oturumda görülen zincir işlemleri" />
       </div>
+
+      <Revenue seller={seller} active />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <Panel title="Kanallar" hint="Size ödeme yapan her alıcının kanalı · mor: tahsil edildi · mavi: tahsilat bekliyor">

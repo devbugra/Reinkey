@@ -33,7 +33,7 @@ Fintech dilinde iki ürün:
 |---|---|---|---|
 | 1 | **Saniye başı piyasa verisi** | Borsanın canlı fiyat akışı `meter({ unit: "second" })` ile satılır; ajan dinlediği saniye kadar öder, bağlantı kesilince ödeme durur, depozito bitince akış kesilir | Çekirdek |
 | 2 | **Ajan işlem hesabı (DEX)** | Ajan hesabı Stellar DEX'inde (Soroswap) işlem yapar; çift, işlem başı tutar ve günlük tavan zincirde uygulanır. Anahtar çalınsa bile tavanın dışına çıkılamaz | Çekirdek sonrası ilk ek |
-| 3 | **Herhangi bir varlıkla öde** | Ajanın elindeki XLM kanal açılırken DEX üzerinden USDC'ye çevrilir; satıcı USDC alır. Ödeme rayı ile takas rayı aynı ağda | Zaman kalırsa; yoksa sunumda |
+| 3 | **Herhangi bir varlıkla öde** | Ajanın elindeki XLM kanal açılırken DEX üzerinden USDC'ye çevrilir; satıcı USDC alır. Ödeme rayı ile takas rayı aynı ağda | **Yapıldı (20 Eylül):** SDK `openChannelWith({ payWith: "XLM" })`; iki işlem (takas + açılış), testnet'te doğrulandı |
 
 **Dürüst sınır:** Merkezi borsalarda alım-satım borsanın iç defterinde döner; zincirde uygulanan işlem sınırı yalnızca DEX tarafında geçerlidir. Merkezi borsaya satılan ürün katman 1 (veri) ve tahsilat altyapısıdır.
 

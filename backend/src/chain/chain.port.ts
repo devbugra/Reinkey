@@ -71,6 +71,15 @@ export interface ChainPort {
     status: 'SUCCESS' | 'FAILED' | 'NOT_FOUND';
     contractErrorCode?: number;
   }>;
+  /**
+   * Herhangi bir kontratta salt okunur çağrı (simülasyon; zincire yazmaz, ücret yok).
+   * Float (kredi havuzu) görünümü bununla okunur; argümanlar kontrat spesifikasyonundaki adlarla verilir.
+   */
+  readContract<T>(
+    contractId: string,
+    method: string,
+    args?: Record<string, unknown>,
+  ): Promise<T>;
   /** Soroswap USDC/XLM havuzunun rezervleri. Okunamazsa hata fırlatır. */
   getPairReserves(): Promise<PairReserves>;
   /** Sahip imzasıyla hesabı dondurur / çözer. */

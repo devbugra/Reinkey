@@ -58,3 +58,18 @@ model Resource {
 
   @@index([payTo])
 }
+
+/// Reinkey Float: havuzun periyodik anlık görüntüsü (pay fiyatı ve büyüklük grafiği için).
+model PoolSample {
+  id          BigInt   @id @default(autoincrement())
+  pool        String
+  sharePrice  BigInt
+  totalAssets BigInt
+  totalDebt   BigInt
+  totalShares BigInt
+  /// 1 XLM kaç USDC (7 ondalık); ihtiyatlı fiyat (oracle ile DEX'in düşüğü)
+  price       BigInt
+  createdAt   DateTime @default(now())
+
+  @@index([pool, createdAt])
+}

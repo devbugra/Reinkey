@@ -13,20 +13,24 @@ import { ProductMark } from "./ProductMark";
 const INSTALL: Record<ProductKey, string> = {
   meter: snippets.meterInstall,
   reins: snippets.reinsInstall,
+  // Float bir paket değil, zincirdeki bir havuz: kurulum yerine canlı okuma.
+  float: snippets.floatRead,
 };
 const QUICKSTART: Record<ProductKey, string> = {
   meter: docs.quickstartMeter,
   reins: docs.quickstartReins,
+  float: docs.float,
 };
 
-/** Her ürünün kartın üst kenarında kendi ışığı: Meter gök mavisi, Reins lavanta. */
+/** Her ürünün kartın üst kenarında kendi ışığı: Meter gök mavisi, Reins lavanta, Float yeşil (sermaye). */
 const TINT: Record<ProductKey, string> = {
   meter: "var(--brand-sky)",
   reins: "var(--brand-lavender)",
+  float: "var(--success)",
 };
 
 /**
- * İKİ ÜRÜN.
+ * ÜÇ ÜRÜN.
  *
  * Hero "ne" olduğunu söyler; bu bölüm "hangisi benim için" sorusunu cevaplar.
  * Ziyaretçi ya satıcıdır ya ajan sahibi: iki kart yan yana durur ve her biri
@@ -52,7 +56,7 @@ export function Products() {
           lead={t("lead", { name: site.name })}
         />
 
-        <ul className="mt-14 grid gap-5 lg:grid-cols-2">
+        <ul className="mt-14 grid gap-5 lg:grid-cols-3">
           {(Object.keys(products) as ProductKey[]).map((key, i) => {
             const product = products[key];
             const bullets = tp.raw(`${key}.bullets`) as string[];

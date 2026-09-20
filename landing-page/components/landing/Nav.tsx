@@ -29,6 +29,7 @@ export function Nav() {
   const links = [
     { href: `${home}${products.meter.path}`, label: t("meter") },
     { href: `${home}${products.reins.path}`, label: t("reins") },
+    { href: `${home}${products.float.path}`, label: t("float") },
     { href: `${home}${anchors.howItWorks}`, label: t("howItWorks") },
     { href: `${home}${anchors.pricing}`, label: t("pricing") },
     { href: docs.home, label: t("docs") },
