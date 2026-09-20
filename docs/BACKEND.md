@@ -705,3 +705,14 @@ Kendi likidite havuzumuz yok ve olmayacak: takas Stellar'da zaten var olan likid
 - İkinci fiyat kaynağı olarak kredi havuzunun ihtiyatlı fiyatı (Reflector oracle ile havuzun
   düşüğü) okunur; kotasyon ile kredi değerlemesi sessizce ayrışamaz.
 - Testler: `src/dex/dex.service.spec.ts` (13 test), her red yolu ayrı.
+
+## 22. EK (20 Eylül, Hat 3): self-servis hesap — konsoldan kur, sınırla, dondur
+
+Konsol artık salt okunur değil: kullanıcı **kendi** Reinkey hesabını tarayıcıdan kurar ve sınırlarını kendi cüzdanıyla değiştirir. Backend bu akışta yer almaz; yalnızca iki okuma alanı ekledi:
+
+- `GET /demo/info` → `accountWasm` (dağıtılmış `reinkey-account` wasm hash'i, `deployments/testnet.json → accountWasmHash`) ve `dexFactory`. Konsol yeni hesabı bu hash'ten `createCustomContract` ile kurar: aynı kod, sahibi bağlanan cüzdan.
+- `GET /accounts/:addr` → `owner` (G…, `get_owner`) ve `policy.pairIds` (çiftlerin kontrat adresleri). Konsol düzenlemeyi yalnızca `owner === bağlı cüzdan` iken açar; politika yeniden yazılırken çiftler adresleriyle gerekir.
+
+Yazma yolu (`app.mandate/lib/account.ts`): `set_policy` / `freeze` / `unfreeze` kaydetme modunda simüle edilir, hesabın auth girdisinin önimajı cüzdanın `signAuthEntry`'siyle imzalanır, 64 baytlık imza `Sig::Owner(BytesN<64>)` olarak yerleştirilir, imzalı hâli yeniden simüle edilir (`__check_auth` burada çalışır) ve gönderilir. Yönetimi bir controller'a devredilmiş hesaplarda (kredi hattı) düzenleme kapalıdır: kontrat sahip imzasını değil controller'ı arar.
+
+Testnet'te aynı kodlamayla doğrulandı (20 Eylül): kurulum `93dade11…`, `set_policy` `01633b1a…`, `freeze` `f8588362…`; örnek hesapta özdeş politika yazımı `bc1f9fb4…`. Doğrulanmayan tek halka cüzdan uzantısının kendisidir (başsız tarayıcıda Freighter yok); imzanın üretildiği yer dışında yol birebir aynıdır.

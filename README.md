@@ -8,6 +8,10 @@ With x402's `exact` scheme every payment is its own Stellar transaction and wait
 
 > **Status: Stellar testnet, unaudited, pre-1.0.** Don't send mainnet funds.
 
+## Self-serve, not a demo
+
+Connect a wallet at [reinkey.io](https://www.reinkey.io) → **Reins** → *Create your own agent account*. One transaction deploys the same account code with **your wallet as owner**; the agent key is generated in your browser and shown once. From then on you change caps, payees, expiry and exchange permission, or freeze the account, from the console — each write is authorized by your wallet as `Sig::Owner` and goes straight to the chain. Our server is not in that path and could not change a limit if it wanted to.
+
 ## What makes this different
 
 Guarding an agent's spending is a crowded idea. Three things decide whether a guard actually holds.
