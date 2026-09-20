@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import {
   FacilitatorError,
@@ -460,5 +461,46 @@ describe("rk.stream()", () => {
     const { rk } = await setup({});
     const { res } = sseRes();
     await expect(rk.stream(fakeReq({}, "/ticker"), res as never, { price: 1000n, unit: "token" })).rejects.toThrow(/rk.meter\(\)/);
+  });
+});
+
+describe("signed receipts", () => {
+  it("sends a request hash to /verify and attests the response body it delivered", async () => {
+    const attested: { url: string; body: unknown }[] = [];
+    const m = mockFetch({
+      "GET /supported": () => ({
+        json: { kinds: [{ scheme: "channel", network: "stellar:testnet", extra: { asset: ASSET, channelContract: CHANNEL, receiptSigner: "GSIGNER" } }] },
+      }),
+      "POST /verify": () => ({ json: { isValid: true, receipt: { channelId: "7", delta: "5000", receipt: { id: "r1" } } } }),
+      "POST /receipts/r1/attest": (body: unknown) => {
+        attested.push({ url: "/receipts/r1/attest", body });
+        return { json: {} };
+      },
+    });
+    const rk = await reinkey({ facilitator: FACILITATOR, payTo: PAY_TO, fetch: m.fn });
+    expect(rk.receiptSigner).toBe("GSIGNER");
+
+    const { res } = fakeRes();
+    const chunks: string[] = [];
+    // node:http tarzı yanıt: gövde `end` ile yazılır.
+    const seller = { ...res, write: (c: string) => void chunks.push(c), end: (c?: string) => void (c && chunks.push(c)) };
+    await rk.meter({ price: 5000n, unit: "request" })(
+      fakeReq({ "payment-signature": voucherHeader() }),
+      seller as never,
+      () => seller.end('{"ok":true}'),
+    );
+
+    const verify = m.calls.find((c) => c.url.endsWith("/verify"));
+    const sent = verify?.body as { paymentRequirements: { requestHash?: string } };
+    expect(sent.paymentRequirements.requestHash).toMatch(/^[0-9a-f]{64}$/);
+    // Aynı istek aynı özeti vermeli (kanonik biçim kararlı).
+    expect(sent.paymentRequirements.requestHash).toBe(
+      createHash("sha256").update('GET\nhttps://seller.test/book?depth=5\n').digest("hex"),
+    );
+    await new Promise((r) => setTimeout(r, 0));
+    expect(attested).toHaveLength(1);
+    expect((attested[0].body as { responseHash: string }).responseHash).toBe(
+      createHash("sha256").update('{"ok":true}').digest("hex"),
+    );
   });
 });

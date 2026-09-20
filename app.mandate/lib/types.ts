@@ -167,6 +167,9 @@ export type AccountSnapshot = {
 /** GET /demo/info */
 export type DemoInfo = {
   network: string;
+  /** Cüzdanla imzalı işlemler için: zincire doğrudan bağlanma bilgisi. */
+  networkPassphrase?: string;
+  rpcUrl?: string;
   explorerTxBase: string;
   account: string;
   seller: string;
@@ -248,4 +251,25 @@ export type RevenueReport = {
     expiresInSeconds: number | null;
   }[];
   settlements: { tx: string; at: string; channelId: string; payer: string; amount: string; paymentsCovered: number }[];
+};
+
+/** GET /receipts: imzalı makbuz (bkz. backend/src/audit/receipt.ts). */
+export type Receipt = {
+  v: 1;
+  network: string;
+  signer: string;
+  id: string;
+  channelId: string;
+  payer: string;
+  payee: string;
+  resource: string;
+  method: string;
+  unit: string;
+  amount: string;
+  cumulative: string;
+  requestHash: string | null;
+  responseHash?: string | null;
+  attestedAt?: string | null;
+  ts: string;
+  signature: string;
 };

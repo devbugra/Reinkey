@@ -9,7 +9,8 @@
 import { ShieldCheck, TriangleAlert } from "lucide-react";
 import { clock, shortAddr, usdc } from "@/lib/format";
 import { useSize } from "@/lib/hooks";
-import type { FloatLine, FloatOverview, FloatSample } from "@/lib/types";
+import type { DemoInfo, FloatLine, FloatOverview, FloatSample } from "@/lib/types";
+import { FloatActions } from "../FloatActions";
 import { Empty, Panel, cn } from "../ui";
 
 const SCALE = 10_000_000n;
@@ -91,7 +92,19 @@ function HealthBar({ line }: { line: FloatLine }) {
   );
 }
 
-export function FloatView({ data, failed }: { data: FloatOverview | null; failed: boolean }) {
+export function FloatView({
+  data,
+  failed,
+  info,
+  wallet,
+  onRefresh,
+}: {
+  data: FloatOverview | null;
+  failed: boolean;
+  info: DemoInfo | null;
+  wallet: React.ComponentProps<typeof FloatActions>["wallet"];
+  onRefresh: () => void;
+}) {
   if (!data) return <Panel title="Reinkey Float">{<Empty>{failed ? "Havuz okunamadı. Backend çalışıyor mu?" : "Havuz zincirden okunuyor…"}</Empty>}</Panel>;
   if (!data.enabled)
     return (
@@ -173,6 +186,7 @@ export function FloatView({ data, failed }: { data: FloatOverview | null; failed
         </Panel>
 
         <div className="grid content-start gap-4">
+          <FloatActions pool={pool} info={info} wallet={wallet} positions={positions} onDone={onRefresh} />
           <Panel title="Pay fiyatı" hint="Kârla kapanan her hat pay fiyatını yükseltir; tasfiye zararı düşürür">
             <SharePriceChart samples={history} />
           </Panel>

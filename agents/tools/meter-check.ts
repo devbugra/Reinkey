@@ -8,7 +8,8 @@
  *   3. Üç kez x402Fetch ile ödenir: 402 → kupon → 200, makbuz PAYMENT-RESPONSE'ta.
  *   4. Bozuk imza facilitator'dan geçmemeli (402 VOUCHER_BAD_SIGNATURE).
  *   5. Kaynak Bazaar kataloğuna girmiş olmalı (payments >= 3).
- *   6. Saniye başı akış: dış sunucu rk.stream() ile satar, SDK streamPaid ile alır;
+ *   6. İmzalı makbuz: istek özeti eşleşiyor, satıcı yanıtı taahhüt ediyor.
+ *   7. Saniye başı akış: dış sunucu rk.stream() ile satar, SDK streamPaid ile alır;
  *      facilitator'ı 402'deki extra.facilitator'dan öğrenir, dilim başına kupon gönderir.
  *
  * Gerçek testnet işlemi yapar (kanal açılışı) ve test ucu Bazaar kataloğuna girer; demo
@@ -17,7 +18,7 @@
  * Çalıştırma: pnpm --filter @reinkey/agents exec tsx tools/meter-check.ts
  */
 import { createServer } from "node:http";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { reinkey } from "../../packages/meter/src/index.ts";
 import { ChannelSigner, streamPaid, x402Fetch } from "../../packages/sdk/src/x402.ts";
 import { API, apiHealth, bad, good, info, makeAccount, requirementsFor, step, tx, usdc } from "../common.ts";
@@ -126,7 +127,23 @@ const cat = (await (await fetch(`${API}/discovery/resources?payTo=${demo.payTo}&
 const mine = cat.items.find((i) => i.resource === url);
 check(!!mine && mine.metadata.payments >= 3, mine ? `kaynak katalogda · ${mine.metadata.payments} ödeme` : "kaynak katalogda yok");
 
-/* 6 ---------------------------------------------------------- akış */
+/* 6 ---------------------------------------------------------- makbuz */
+step("İmzalı makbuz (dış satıcının ödemesi için)");
+{
+  const { res, receipt } = await x402Fetch(url, { signer, network: demo.network });
+  const body = await res.text();
+  const r = (receipt as unknown as { receipt?: Record<string, string> })?.receipt;
+  check(!!r && !!rk.receiptSigner && r.signer === rk.receiptSigner, `makbuz ${r ? r.id.slice(0, 10) + "…" : "YOK"} · imzalayan ${rk.receiptSigner?.slice(0, 8)}…`);
+  if (r) {
+    const sha = (s: string) => createHash("sha256").update(s).digest("hex");
+    check(r.requestHash === sha(`GET\n${url}\n`), "istek özeti eşleşti");
+    await new Promise((res2) => setTimeout(res2, 800));
+    const stored = (await (await fetch(`${API}/receipts/${r.id}`)).json()) as { responseHash?: string };
+    check(stored.responseHash === sha(body), `yanıt taahhüdü elimize geçen gövdeyle aynı (${String(stored.responseHash).slice(0, 10)}…)`);
+  }
+}
+
+/* 7 ---------------------------------------------------------- akış */
 step("Saniye başı akış: dış satıcı rk.stream() ile satıyor");
 {
   const before = signer.current;

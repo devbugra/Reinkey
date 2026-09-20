@@ -5,6 +5,7 @@
  * hesabın açtığı kanallar, engellenen işlemler ve kalıcı denetim defteri.
  */
 import { Snowflake } from "lucide-react";
+import { env } from "@/lib/env";
 import { big, int, shortAddr, usdc } from "@/lib/format";
 import type { ChannelView, RejectionView, Row } from "@/lib/store";
 import type { AccountSnapshot } from "@/lib/types";
@@ -13,6 +14,45 @@ import { Meter, Stat } from "../Flow";
 import { Identity } from "../Identity";
 import { Timeline } from "../Timeline";
 import { Empty, Panel, cn } from "../ui";
+
+/**
+ * Adreste bir Reinkey hesabı yoksa: boş politika kartı göstermek yerine nasıl
+ * kurulacağı anlatılır. Hesap bir kontrattır; bugün deploy betiğiyle kurulur.
+ */
+function NoAccount({ address }: { address: string }) {
+  return (
+    <Panel title="Bu adreste Reinkey hesabı yok" hint="Adres zincirde okunamadı ya da bir hesap kontratı değil">
+      <div className="grid gap-4 px-5 py-4">
+        <p className="text-sm leading-relaxed text-fg-muted">
+          Reinkey hesabı, ajanın harcama yetkisini tutan bir Soroban kontratıdır: tavanlar, izinli alıcılar ve izinli
+          işlem çiftleri onun içinde yazılıdır. Girdiğiniz adres (<span className="font-mono text-xs">{shortAddr(address, 6, 6)}</span>)
+          böyle bir hesaba ait değil.
+        </p>
+        <div>
+          <p className="text-xs font-medium text-fg">Hesap nasıl kurulur</p>
+          <pre className="mt-2 overflow-x-auto rounded-md border border-line bg-bg px-4 py-3 font-mono text-[11.5px] leading-relaxed text-fg-muted">
+            <code>{"git clone …/Reinkey && cd Reinkey\n./scripts/deploy-testnet.sh"}</code>
+          </pre>
+          <p className="mt-2 text-[11px] leading-relaxed text-fg-subtle">
+            Betik kontratları deploy eder, hesabı testnet USDC ile fonlar ve kimlikleri{" "}
+            <span className="font-mono">deployments/testnet.json</span> dosyasına yazar. Konsoldan tek tıkla kurulum yol
+            haritasında.
+          </p>
+        </div>
+        <p className="text-xs text-fg-subtle">
+          Ayrıntı:{" "}
+          <a href={`${env.siteUrl}/docs/reins/quickstart`} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+            Reins hızlı başlangıç
+          </a>{" "}
+          ·{" "}
+          <a href={`${env.siteUrl}/docs/reins/policy`} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+            Politika ve redler
+          </a>
+        </p>
+      </div>
+    </Panel>
+  );
+}
 
 export function ReinsView({
   address,
@@ -37,6 +77,15 @@ export function ReinsView({
     .filter((c) => c.payer === address)
     .sort((a, b) => Number(b.id) - Number(a.id));
   const locked = mine.filter((c) => c.open).reduce((s, c) => s + (c.deposit > c.accepted ? c.deposit - c.accepted : 0n), 0n);
+
+  // Adres verilmiş ama hesap okunamadıysa (kayıtlı değil, yanlış tür): kurulumu anlat.
+  if (address && !account && !isDemo)
+    return (
+      <>
+        <Identity label="Reinkey hesabı" value={address} isDemo={isDemo} placeholder="Başka bir hesap: C…" onChange={onAccount} />
+        <NoAccount address={address} />
+      </>
+    );
 
   return (
     <>
@@ -102,7 +151,7 @@ export function ReinsView({
               )}
             </div>
           ) : (
-            <Empty>{address ? "Bu adreste bir Reinkey hesabı bulunamadı ya da zincirden okunuyor…" : "Hesap okunuyor…"}</Empty>
+            <Empty>Hesap zincirden okunuyor…</Empty>
           )}
         </Panel>
 

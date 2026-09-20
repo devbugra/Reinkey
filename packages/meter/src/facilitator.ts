@@ -2,6 +2,7 @@
 // `MeterDeps`'i facilitator'ın HTTP API'si üzerinden kurar (/supported, /verify, /settle).
 // İstek/yanıt biçimleri: backend/src/x402/facilitator.controller.ts.
 
+import { createHash } from "node:crypto";
 import { statusForCode } from "./codes.ts";
 import {
   meter,
@@ -55,6 +56,8 @@ export interface Reinkey {
   readonly payTo: string;
   readonly facilitator: string;
   readonly exactEnabled: boolean;
+  /** İmzalı makbuzları doğrulayacak açık anahtar; facilitator `/supported` ile ilan eder. */
+  readonly receiptSigner: string | null;
   /** Bir ucu ücretli yapan middleware. */
   meter(opts: MeterOptions): MeterMiddleware;
   /** Düşük seviye `meter(opts, deps)` için bağımlılıklar. */
@@ -156,6 +159,7 @@ export async function reinkey(options: ReinkeyOptions): Promise<Reinkey> {
   // 2) Varlık ve kanal kontratı. Öncelik: seçenekler → /supported `extra` →
   //    /demo/info (`extra` alanından eski facilitator'lar için yedek; README'ye bakın).
   const extra = isRecord(channelKind.extra) ? channelKind.extra : {};
+  const receiptSigner = str(extra.receiptSigner) ?? null;
   let asset = options.asset ?? str(extra.asset);
   let channelContract = options.channelContract ?? str(extra.channelContract);
   if (!asset || !channelContract) {
@@ -184,6 +188,7 @@ export async function reinkey(options: ReinkeyOptions): Promise<Reinkey> {
         resource: ctx.resource,
         unit: ctx.unit,
         ...(ctx.method ? { method: ctx.method } : {}),
+        ...(ctx.requestHash ? { requestHash: ctx.requestHash } : {}),
         ...(ctx.description !== undefined ? { description: ctx.description } : {}),
       },
       // Bazaar: facilitator doğrulanan ilk ödemeden sonra kaynağı kataloğa yazar.
@@ -248,6 +253,12 @@ export async function reinkey(options: ReinkeyOptions): Promise<Reinkey> {
     verifyChannel,
     verifyExact,
     toError,
+    // Makbuza yanıt özetini taahhüt et; başarısızlığı yanıtı etkilemez.
+    attest: (id, body) => {
+      void call("POST", `/receipts/${id}/attest`, {
+        responseHash: createHash("sha256").update(body).digest("hex"),
+      }).catch(() => undefined);
+    },
   });
 
   // Dış satıcı akış oturumları: POST /streams, POST /streams/:id/wait, DELETE /streams/:id
@@ -278,6 +289,7 @@ export async function reinkey(options: ReinkeyOptions): Promise<Reinkey> {
     payTo: options.payTo,
     facilitator: base,
     exactEnabled,
+    receiptSigner,
     deps,
     meter: (opts) => meter(opts, deps(opts)),
     stream: (req, res, opts) => {

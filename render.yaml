@@ -1,0 +1,88 @@
+# Reinkey facilitator — Render blueprint.
+#
+# Bu dosya Render'a "New > Blueprint" ile verilir: depo kökünden Docker imajı
+# derlenir (backend/Dockerfile) ve yanına bir Postgres kurulur. Gizli değerler
+# burada DURMAZ; `sync: false` olanlar Render panelinden girilir.
+#
+# İmaj yalnızca backend'i değil pnpm workspace'ini de içerir: demo kontrolleri
+# ajanı `agents/node_modules/.bin/tsx` ile başlatır.
+services:
+  - name: reinkey-api
+    type: web
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    region: frankfurt
+    plan: starter
+    healthCheckPath: /health
+    # Kanal önbelleği, akış oturumları ve ajan süreci bellektedir: TEK örnek çalışmalı.
+    numInstances: 1
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reinkey-db
+          property: connectionString
+      # Herkese açık adres: 402 gövdesindeki `resource`, MCP ve llms.txt buradan gelir.
+      - key: PUBLIC_URL
+        value: https://reinkey-api.onrender.com
+      # Tarayıcıdan bağlanan yüzeyler: tanıtım sitesi ve konsol.
+      - key: CORS_ORIGINS
+        value: https://reinkey.com,https://www.reinkey.com,https://reinkey.io,https://www.reinkey.io
+      - key: CHAIN_MODE
+        value: stellar
+      - key: STELLAR_RPC_URL
+        value: https://soroban-testnet.stellar.org
+      - key: STELLAR_NETWORK_PASSPHRASE
+        value: Test SDF Network ; September 2015
+      - key: X402_NETWORK
+        value: stellar:testnet
+      # Kontrat ve hesap kimlikleri imaja kopyalanan deployments/testnet.json'dan okunur.
+      - key: DEPLOYMENT_FILE
+        value: /app/deployments/testnet.json
+      - key: AGENTS_DIR
+        value: /app/agents
+      # Demo ekonomisi (bkz. backend/.env.example).
+      - key: CLAIM_THRESHOLD
+        value: "250000"
+      - key: CLAIM_INTERVAL_SECONDS
+        value: "30"
+      - key: PRICE_BOOK_PER_REQUEST
+        value: "5000"
+      - key: PRICE_TICKER_PER_SECOND
+        value: "1000"
+      - key: TICKER_SLICE_SECONDS
+        value: "1"
+      - key: PRICE_CHAT_PER_TOKEN
+        value: "200"
+      - key: CHAT_SLICE_TOKENS
+        value: "50"
+      - key: CHAT_MODE
+        value: fallback
+      # Jüri demosu için açık; sunumdan sonra kapatılabilir.
+      - key: DEMO_CONTROLS
+        value: "true"
+      # --- Gizli: Render panelinden girilir, depoda durmaz ---
+      - key: FACILITATOR_SECRET
+        sync: false
+      - key: SELLER_PAY_TO
+        sync: false
+      - key: AGENT_OWNER_SECRET
+        sync: false
+      # deployments/.secrets.env içeriği (çok satırlı): ajanın anahtarlarını taşır.
+      - key: DEPLOY_SECRETS_ENV
+        sync: false
+      # Ajanın işlem ücretlerini ödeyen G-hesabı. Verilmezse her yeniden başlatmada
+      # yenisi üretilip friendbot'tan fonlanır (sıklık sınırına takılabilir).
+      - key: RELAYER_SECRET
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_WORKSPACE_ID
+        sync: false
+
+databases:
+  - name: reinkey-db
+    plan: basic-256mb
+    postgresMajorVersion: "17"
+    databaseName: reinkey
+    user: reinkey

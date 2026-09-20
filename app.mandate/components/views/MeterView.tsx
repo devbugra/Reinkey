@@ -4,11 +4,12 @@
  * Reinkey Meter · satıcı görünümü: bu adrese ödeme yapan kanallar, tahsil edilen
  * ve bekleyen gelir, elle tahsilat ve adresle doldurulmuş entegrasyon örneği.
  */
-import { Loader2, Receipt } from "lucide-react";
+import { CheckCircle2, Loader2, Receipt } from "lucide-react";
 import { env } from "@/lib/env";
 import { clock, int, ratio, usdc } from "@/lib/format";
 import type { ChannelView, ClaimView } from "@/lib/store";
 import { Identity } from "../Identity";
+import { Receipts } from "../Receipts";
 import { Revenue } from "../Revenue";
 import { DepositBar, Empty, Panel, TxLink, cn } from "../ui";
 
@@ -18,6 +19,110 @@ function Kpi({ label, value, sub, accent }: { label: string; value: string; sub?
       <p className="text-xs text-fg-subtle">{label}</p>
       <p className={cn("tabular mt-1.5 truncate text-lg font-semibold tracking-tight sm:text-2xl", accent && "text-gradient")}>{value}</p>
       {sub && <p className="mt-1 text-[11px] text-fg-subtle">{sub}</p>}
+    </div>
+  );
+}
+
+/**
+ * İLK KOŞU. Yeni bir satıcı adresini bağladığında bu sayfa boştur: sıfır dolu
+ * kartlar göstermek yerine ne yapılacağı anlatılır. Kod örneği kullanıcının
+ * KENDİ adresiyle doldurulur; kopyalayıp yapıştırması yeter. İlk ödeme gelince
+ * sayfa kendiliğinden dolar (10 sn'de bir okunuyor).
+ */
+function FirstRun({ payTo }: { payTo: string }) {
+  const steps: { title: string; body: string; code?: string; lang?: string }[] = [
+    {
+      title: "Paketi kurun",
+      body: "Sunucunuz Express, Nest ya da düz node:http olabilir.",
+      code: "npm i @reinkey/meter",
+      lang: "bash",
+    },
+    {
+      title: "Bir ucu ücretli yapın",
+      body: "Fiyat taban birimdedir: 5000 = 0,0005 USDC. Ödeme adresiniz aşağıda hazır.",
+      code: `import { reinkey } from "@reinkey/meter";
+
+const rk = await reinkey({
+  facilitator: "${env.apiUrl}",
+  payTo: "${payTo}",
+});
+
+app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`,
+      lang: "server.ts",
+    },
+    {
+      title: "Şartların göründüğünü doğrulayın",
+      body: "Ödemesiz istek 402 döner ve fiyatı, ağı, ödeme adresinizi makinenin okuyacağı biçimde söyler.",
+      code: "curl -i localhost:8080/book",
+      lang: "bash",
+    },
+  ];
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <Panel title="İlk ödemenizi alın" hint="Üç adım · kayıt, API anahtarı ya da abonelik yok">
+        <ol className="divide-y divide-line">
+          {steps.map((s, i) => (
+            <li key={s.title} className="grid gap-2.5 px-5 py-4">
+              <p className="flex items-baseline gap-2.5">
+                <span className="tabular grid size-5 shrink-0 place-items-center rounded-full bg-surface-3 text-[10px] font-semibold text-fg-muted">
+                  {i + 1}
+                </span>
+                <span className="text-sm font-semibold">{s.title}</span>
+              </p>
+              <p className="ps-7 text-xs leading-relaxed text-fg-muted">{s.body}</p>
+              {s.code && (
+                <pre className="ms-7 overflow-x-auto rounded-md border border-line bg-bg px-4 py-3 font-mono text-[11.5px] leading-relaxed text-fg-muted">
+                  <code>{s.code}</code>
+                </pre>
+              )}
+            </li>
+          ))}
+        </ol>
+      </Panel>
+
+      <div className="grid content-start gap-4">
+        <Panel title="Bu sayfa ne zaman dolar?" hint="Adres zincirden okunuyor, 10 saniyede bir">
+          <div className="grid gap-3 px-5 py-4">
+            <p className="flex items-center gap-2 text-sm text-fg-muted">
+              <span className="pulse-dot size-2 shrink-0 rounded-full bg-warning" aria-hidden="true" />
+              İlk ödeme bekleniyor
+            </p>
+            <p className="text-xs leading-relaxed text-fg-subtle">
+              Bir alıcı size kanal açıp ödediği anda burada gelir, tahsilat ve imzalı makbuzlar görünür. Sayfayı açık
+              bırakabilirsiniz; yenilemeye gerek yok.
+            </p>
+            <ul className="grid gap-2 border-t border-line pt-3 text-xs text-fg-muted">
+              {[
+                "Ödemeler zincire gitmeden doğrulanır (ortanca 1 ms'nin altında)",
+                "Biriken yüzlerce ödeme tek zincir işlemiyle cüzdanınıza geçer",
+                "Her ödeme, ne için yapıldığını taşıyan imzalı bir makbuz üretir",
+              ].map((t) => (
+                <li key={t} className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success" aria-hidden="true" />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Panel>
+
+        <Panel title="Yardım" hint="Ayrıntılı anlatım ve referans">
+          <ul className="divide-y divide-line text-sm">
+            {[
+              ["Meter hızlı başlangıç", `${env.siteUrl}/docs/meter/quickstart`],
+              ["Birimler, 402 gövdesi, başlıklar", `${env.siteUrl}/docs/meter/reference`],
+              ["Sebep kodları", `${env.siteUrl}/docs/reason-codes`],
+            ].map(([label, href]) => (
+              <li key={href}>
+                <a href={href} target="_blank" rel="noreferrer" className="block px-5 py-2.5 text-fg-muted hover:text-fg">
+                  {label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      </div>
     </div>
   );
 }
@@ -46,6 +151,21 @@ export function MeterView({
     .sort((a, b) => Number(b.id) - Number(a.id));
   const ids = new Set(mine.map((c) => c.id));
   const myClaims = claims.filter((c) => ids.has(c.channelId));
+
+  // Henüz hiç kanal yoksa bu adres için ödeme de yoktur: sıfırlar yerine kurulum anlatılır.
+  if (seller && mine.length === 0)
+    return (
+      <>
+        <Identity
+          label="Satıcı adresi (payTo)"
+          value={seller}
+          isDemo={isDemo}
+          placeholder="Başka bir satıcı adresi: G…"
+          onChange={onSeller}
+        />
+        <FirstRun payTo={seller} />
+      </>
+    );
 
   const claimed = mine.reduce((s, c) => s + c.claimed, 0n);
   const pending = mine.reduce((s, c) => s + (c.accepted > c.claimed ? c.accepted - c.claimed : 0n), 0n);
@@ -140,6 +260,7 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`;
         </Panel>
 
         <div className="grid content-start gap-4">
+          <Receipts payee={seller} active />
           <Panel
             title="Entegrasyon"
             hint="Adresinizle doldurulmuş; kopyalayıp sunucunuza ekleyin"

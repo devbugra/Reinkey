@@ -10,6 +10,8 @@ const POLL_MS = 5000;
 export function useFloat(active: boolean) {
   const [data, setData] = useState<FloatOverview | null>(null);
   const [failed, setFailed] = useState(false);
+  /** Zincire yazan bir işlemden sonra elle tazeleme. */
+  const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     if (!active) return;
@@ -28,7 +30,7 @@ export function useFloat(active: boolean) {
       ctrl.abort();
       clearInterval(t);
     };
-  }, [active]);
+  }, [active, nonce]);
 
-  return { data, failed };
+  return { data, failed, refresh: () => setNonce((n) => n + 1) };
 }

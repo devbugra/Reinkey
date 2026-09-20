@@ -136,6 +136,7 @@ export function Shell({
   connection,
   present,
   onPresent,
+  workspace,
   children,
 }: {
   view: View;
@@ -143,6 +144,8 @@ export function Shell({
   connection: Connection;
   present: boolean;
   onPresent: () => void;
+  /** Çalışma alanı seçici (rayın tepesinde). */
+  workspace?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -166,7 +169,8 @@ export function Shell({
         <div className="px-1">
           <Brand />
         </div>
-        <div className="mt-8 flex-1 overflow-y-auto">
+        {workspace && <div className="mt-5">{workspace}</div>}
+        <div className="mt-6 flex-1 overflow-y-auto">
           <Nav view={view} onView={go} />
         </div>
         <Status connection={connection} present={present} onPresent={onPresent} />
@@ -187,6 +191,7 @@ export function Shell({
       </header>
       {open && (
         <div className="fixed inset-x-0 bottom-0 top-14 z-30 flex flex-col gap-6 overflow-y-auto bg-bg px-4 py-6 lg:hidden">
+          {workspace}
           <Nav view={view} onView={go} />
           <Status connection={connection} present={present} onPresent={onPresent} />
         </div>

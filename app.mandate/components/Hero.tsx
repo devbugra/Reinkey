@@ -38,12 +38,18 @@ export function Hero({
   const exactTx = totals?.exactTx ?? 0;
   const max = Math.max(exactTx, totals?.txs ?? 0, 1);
   const dash = totals ? null : "—";
+  /**
+   * Henüz ödeme yokken karşılaştırma çizilmez: zincir işlemi sayacı kontratları
+   * izlediği için sıfır olmayabilir ve "0 ödeme → 6 zincir işlemi" ürünün
+   * iddiasının TERSİNİ söylerdi. Boşken ne olacağı anlatılır.
+   */
+  const empty = !!totals && totals.payments === 0;
 
   return (
     <section className="card grid gap-6 rounded-xl px-6 py-7 sm:px-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
       <div>
         <p className="flex flex-wrap items-center gap-x-3 text-xs font-medium uppercase tracking-[0.14em] text-fg-subtle">
-          {totals?.scoped ? "Bu turda" : "Şu ana kadar"}
+          {empty ? "Hazır" : totals?.scoped ? "Bu turda" : "Şu ana kadar"}
           {totals?.scoped && (
             <button
               type="button"
@@ -56,15 +62,23 @@ export function Hero({
         </p>
         <p className="font-display tabular mt-2 flex flex-wrap items-baseline gap-x-3 text-4xl font-semibold tracking-tight 2xl:text-5xl" aria-live="polite">
           {/* İki yarı ayrı ayrı bölünmez: "38 zincir / işlemi" diye kırılmasın. */}
-          <span className="whitespace-nowrap">
-            <span className="text-gradient">{dash ?? int(payments)}</span>
-            <span className="text-fg-muted"> ödeme</span>
-          </span>
-          <span className="text-fg-subtle" aria-hidden="true">→</span>
-          <span className="whitespace-nowrap">
-            <span>{dash ?? int(txs)}</span>
-            <span className="text-fg-muted"> zincir işlemi</span>
-          </span>
+          {empty ? (
+            <span className="text-fg-muted">Henüz ödeme yok</span>
+          ) : (
+            <>
+              <span className="whitespace-nowrap">
+                <span className="text-gradient">{dash ?? int(payments)}</span>
+                <span className="text-fg-muted"> ödeme</span>
+              </span>
+              <span className="text-fg-subtle" aria-hidden="true">
+                →
+              </span>
+              <span className="whitespace-nowrap">
+                <span>{dash ?? int(txs)}</span>
+                <span className="text-fg-muted"> zincir işlemi</span>
+              </span>
+            </>
+          )}
         </p>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-fg-muted">
           Ajan, borsanın fiyat verisini dinlediği saniye kadar öder. Her ödeme imzalı bir kupondur ve zincire
@@ -93,18 +107,30 @@ export function Hero({
       </div>
 
       <div className="grid gap-4 rounded-lg border border-line bg-bg-alt p-5">
-        <p className="text-xs font-medium text-fg-muted">Aynı ödemeler için gereken zincir işlemi</p>
-        <Bar label="Reinkey (kanal)" value={int(totals?.txs ?? 0)} sub="işlem" ratio={(totals?.txs ?? 0) / max} tone="ours" />
-        <Bar
-          label="Klasik x402 (her ödeme ayrı işlem)"
-          value={int(exactTx)}
-          sub={`işlem · ≈ ${duration(totals?.exactSeconds ?? 0)}`}
-          ratio={exactTx / max}
-          tone="theirs"
-        />
-        <p className="text-[11px] leading-relaxed text-fg-subtle">
-          Klasik yöntemde her ödeme bir Stellar işlemidir ve yaklaşık 5 saniyede kesinleşir.
+        <p className="text-xs font-medium text-fg-muted">
+          {empty ? "Karşılaştırma ilk ödemeyle çizilir" : "Aynı ödemeler için gereken zincir işlemi"}
         </p>
+        {empty ? (
+          <p className="text-sm leading-relaxed text-fg-muted">
+            Aşağıdaki <span className="font-medium text-fg">Ajanı başlat</span> düğmesi Stellar testnet&apos;te gerçek bir
+            ajan çalıştırır: kanal açılır, saniye başı veri satın alınır, tavanı aşan işlemi zincir reddeder. Sayılar o
+            anda burada dolar.
+          </p>
+        ) : (
+          <>
+            <Bar label="Reinkey (kanal)" value={int(totals?.txs ?? 0)} sub="işlem" ratio={(totals?.txs ?? 0) / max} tone="ours" />
+            <Bar
+              label="Klasik x402 (her ödeme ayrı işlem)"
+              value={int(exactTx)}
+              sub={`işlem · ≈ ${duration(totals?.exactSeconds ?? 0)}`}
+              ratio={exactTx / max}
+              tone="theirs"
+            />
+            <p className="text-[11px] leading-relaxed text-fg-subtle">
+              Klasik yöntemde her ödeme bir Stellar işlemidir ve yaklaşık 5 saniyede kesinleşir.
+            </p>
+          </>
+        )}
       </div>
     </section>
   );

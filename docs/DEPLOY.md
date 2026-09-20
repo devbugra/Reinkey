@@ -11,6 +11,52 @@
 
 Backend'in adresi iki Next uygulamasına derleme anında gömülür (`NEXT_PUBLIC_*`); backend de CORS için onların adresini bilmek zorunda. Bu yüzden önce backend'i çıkar, sonra Next'leri, en son CORS'u güncelle.
 
+## Canlı kurulum (20 Eylül)
+
+| Yüzey | Adres |
+|---|---|
+| Tanıtım sitesi | https://reinkey.com (→ www.reinkey.com/tr) |
+| Konsol | https://reinkey.io (→ www.reinkey.io) |
+| Facilitator | https://reinkey.onrender.com |
+
+### Render'da demo kontrolleri için gereken düzeltme
+
+Canlı backend şu an demo ajanını başlatamıyor:
+
+```
+NOT_SUPPORTED: Ajan betiği bulunamadı: /opt/render/project/src/agents/trader.ts
+```
+
+Sebep: servis Docker olarak değil Node servisi olarak kurulu ve yalnızca `backend/`
+bağımlılıkları kurulmuş. Ajan `agents/node_modules/.bin/tsx` ile çalışır; `agents/`
+paketi `@reinkey/core` ve `@reinkey/sdk`'ya `workspace:*` ile bağlı olduğu için
+bağımlılıkları **pnpm** ile, depo kökünden kurulmalıdır. İki çözüm var:
+
+**A. Build komutunu genişlet (tek alan, en hızlı).** Render → servis → Settings → Build Command:
+
+```bash
+corepack enable && (cd .. && pnpm install --frozen-lockfile) && npm ci && npx prisma generate && npm run build
+```
+
+Start Command değişmez (`npx prisma migrate deploy && node dist/main` ya da mevcut hâli).
+
+**B. Docker'a geç (depodaki `render.yaml`).** Blueprint imajı depo kökünden derler;
+pnpm workspace ve `deployments/testnet.json` imaja girer, giriş betiği göçleri uygular.
+Ajanın gizli dosyaları `DEPLOY_SECRETS_ENV` ve `RELAYER_SECRET` ortam değişkenlerinden yazılır.
+
+Her iki durumda da şu gizli değerler Render panelinde tanımlı olmalı: `FACILITATOR_SECRET`,
+`SELLER_PAY_TO`, `AGENT_OWNER_SECRET` (dondurma için), `DEPLOY_SECRETS_ENV` (ajanın anahtarları),
+isteğe bağlı `RELAYER_SECRET`.
+
+### Sunumdan önce
+
+1. `curl https://reinkey.onrender.com/health` → uyanık mı (ücretsiz katmanda uyur).
+2. Konsolda bir kez **Ajanı başlat**: üretim veritabanı boşken ana sayaç "Henüz ödeme yok"
+   gösterir; ilk koşu gerçek rakamları doldurur.
+3. `GET /accounts/<demoAccountId>` → `spentToday` günlük tavanın altında mı.
+
+---
+
 ## 1. Backend
 
 İmaj depo kökünden derlenir; yalnızca `backend/` değil, `packages/` ve `agents/` de içeri girer, çünkü demo kontrolleri ajanı `agents/node_modules/.bin/tsx` ile başlatır.

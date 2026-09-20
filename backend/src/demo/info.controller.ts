@@ -14,6 +14,9 @@ export class InfoController {
     const c = this.cfg;
     return {
       network: c.network,
+      /** İstemcinin zincire doğrudan bağlanabilmesi için (cüzdanla imzalı işlemler). */
+      networkPassphrase: c.networkPassphrase,
+      rpcUrl: c.rpcUrl,
       explorerTxBase: 'https://stellar.expert/explorer/testnet/tx/',
       account: c.demoAccountId ?? null,
       seller: c.sellerPayTo,

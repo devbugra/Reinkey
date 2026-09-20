@@ -6,6 +6,8 @@ import { env } from "@/lib/env";
 import { big } from "@/lib/format";
 import { useFeed } from "@/lib/useFeed";
 import { useFloat } from "@/lib/useFloat";
+import { useWallet } from "@/lib/wallet";
+import { useWorkspaces, type Profile, type Role } from "@/lib/workspace";
 import { useView } from "@/lib/useView";
 import { Blocked } from "./Blocked";
 import { Channels } from "./Channels";
@@ -14,7 +16,9 @@ import { Flow } from "./Flow";
 import { Hero } from "./Hero";
 import { Latency } from "./Latency";
 import { Price } from "./Price";
+import { Onboarding } from "./Onboarding";
 import { Shell } from "./Shell";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { Steps } from "./Steps";
 import { Terminal } from "./Terminal";
 import { Timeline } from "./Timeline";
@@ -69,20 +73,101 @@ function Offline() {
 
 export default function Dashboard() {
   const [nav, setNav] = useView();
+  const ws = useWorkspaces();
+  const wallet = useWallet();
   const f = useFeed(nav.account);
   const { state } = f;
   const [present, togglePresent] = usePresent();
   const float = useFloat(nav.view === "float");
-  // Adres verilmediyse backend'in demo hesabı ve demo satıcısı gösterilir.
+  const [adding, setAdding] = useState(false);
+
+  /**
+   * Adres çözümü: URL > demo. URL tek gerçek kaynaktır, böylece her görünüm
+   * paylaşılabilir bir bağlantıdır; kayıtlı alanlar yalnızca "adreslerim" listesi.
+   */
   const accountAddr = nav.account ?? state.info?.account ?? null;
   const sellerAddr = nav.seller ?? state.info?.seller ?? null;
   const demoAccount = nav.account === null || nav.account === state.info?.account;
+  const activeProfile =
+    ws.profiles.find((p) => (p.role === "agent" ? p.address === nav.account : p.address === nav.seller)) ?? null;
+  /** URL'den gelen ama kayıtlı olmayan adres: seçicide "kaydet" olarak sunulur. */
+  const unsaved: { role: Role; address: string } | null = activeProfile
+    ? null
+    : nav.account
+      ? { role: "agent", address: nav.account }
+      : nav.seller
+        ? { role: "seller", address: nav.seller }
+        : null;
+
+  /** Bir alana geçiş: adresi URL'ye yazar ve o rolün görünümünü açar. */
+  const openProfile = (p: Profile) => {
+    setNav(
+      p.role === "agent"
+        ? { view: "reins", account: p.address, seller: null }
+        : { view: "meter", seller: p.address, account: null },
+    );
+    window.scrollTo({ top: 0 });
+  };
+  const pick = (role: Role, address: string) => {
+    const label = `${role === "agent" ? "Ajan" : "Satıcı"} ${address.slice(0, 4)}…${address.slice(-4)}`;
+    openProfile(ws.add({ role, address, label }));
+    setAdding(false);
+  };
+  const showDemo = () => {
+    ws.dismiss();
+    setAdding(false);
+    setNav({ view: "live", account: null, seller: null });
+  };
+
+  /**
+   * Karşılama yalnızca "çıplak" ilk girişte: URL'de adres ya da görünüm belirtilmişse
+   * (paylaşılan bir bağlantı) doğrudan o sayfa açılır.
+   */
+  const welcome = (!ws.onboarded && !nav.account && !nav.seller && nav.view === "live") || adding;
   const perSecond = state.info ? big(state.info.prices.tickerPerSecond) : 1000n;
   const live = f.connection === "live";
   const streaming = Object.values(state.streams).some((s) => s.unit === "second" && !s.ended);
 
   return (
-    <Shell view={nav.view} onView={(view) => setNav({ view })} connection={f.connection} present={present} onPresent={togglePresent}>
+    <Shell
+      view={nav.view}
+      onView={(view) => setNav({ view })}
+      connection={f.connection}
+      present={present}
+      onPresent={togglePresent}
+      workspace={
+        <WorkspaceSwitcher
+          profiles={ws.profiles}
+          activeId={activeProfile?.id ?? null}
+          demoLabel="Reinkey demosu"
+          unsaved={unsaved}
+          onSelect={openProfile}
+          onDemo={showDemo}
+          onAdd={() => setAdding(true)}
+          onRemove={ws.remove}
+          onSave={(p) => pick(p.role, p.address)}
+          wallet={{
+            address: wallet.address,
+            connecting: wallet.connecting,
+            connect: () => void wallet.connect(),
+            disconnect: () => void wallet.disconnect(),
+          }}
+        />
+      }
+    >
+      {welcome ? (
+        <Onboarding
+          wallet={wallet}
+          onPick={pick}
+          onDemo={showDemo}
+          onFloat={() => {
+            ws.dismiss();
+            setAdding(false);
+            setNav({ view: "float" });
+          }}
+        />
+      ) : (
+        <>
       {f.connection === "offline" && <Offline />}
 
       {f.actionError && nav.view !== "live" && (
@@ -126,7 +211,7 @@ export default function Dashboard() {
           />
           {/* Görünüm içi bloklar sıkı dizilir; geniş boşluk yalnızca başlık ile gövde arasındadır. */}
           <div className="grid gap-4">
-            <FloatView data={float.data} failed={float.failed} />
+            <FloatView data={float.data} failed={float.failed} info={state.info} wallet={wallet} onRefresh={float.refresh} />
           </div>
         </>
       )}
@@ -215,6 +300,8 @@ export default function Dashboard() {
             </div>
             <Channels channels={state.channels} />
           </Section>
+        </>
+      )}
         </>
       )}
     </Shell>

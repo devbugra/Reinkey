@@ -1,6 +1,7 @@
 // meter(): x402 ile korunan uçlar için middleware. Framework'e bağımlı DEĞİL;
 // bağımlılıklar `MeterDeps` ile verilir. Kaynak: backend/src/x402/meter.ts.
 
+import { createHash } from "node:crypto";
 import {
   HEADER_REQUIRED,
   HEADER_RESPONSE,
@@ -33,6 +34,8 @@ export interface MeterContext {
   payTo: string;
   resource: string;
   unit: string;
+  /** İstek özeti (sha256 hex): makbuza girer, "ne için ödendi"yi sabitler. */
+  requestHash?: string;
   /** Facilitator kataloğu için: HTTP yöntemi, açıklama ve 402'deki uzantılar. */
   method?: string;
   description?: string;
@@ -49,6 +52,11 @@ export interface MeterError {
 }
 
 export interface MeterDeps {
+  /**
+   * Satıcı yanıtı gönderdikten sonra çağrılır: teslim edilen gövdenin özeti
+   * makbuza taahhüt edilir. Yalnızca tek gövdeli yanıtlarda (`unit: request`).
+   */
+  attest?(receiptId: string, body: Buffer): void;
   network: string;
   asset: string;
   payTo: string;
@@ -179,6 +187,52 @@ function sendJson(res: MeterResponse, status: number, body: unknown) {
   res.end?.(JSON.stringify(body));
 }
 
+/**
+ * İstek özeti: alıcının NE istediğini sabitler. Yöntem, sorgu dizesi dahil tam
+ * adres ve (varsa) gövde; başlıklar girmez, ödeme başlığı her çağrıda değişir.
+ */
+export function requestHashOf(req: MeterRequest & { body?: unknown }, resource: string): string {
+  const url = req.originalUrl ?? req.url ?? "";
+  const query = url.includes("?") ? url.slice(url.indexOf("?")) : "";
+  const body =
+    req.body && typeof req.body === "object" && Object.keys(req.body as object).length > 0
+      ? JSON.stringify(req.body)
+      : "";
+  return createHash("sha256")
+    .update(`${(req.method ?? "GET").toUpperCase()}\n${resource}${query}\n${body}`)
+    .digest("hex");
+}
+
+/** Yanıt gövdesini yakalar; yanıtın kendisine dokunmaz. */
+function captureBody(res: MeterResponse, done: (body: Buffer) => void) {
+  const chunks: Buffer[] = [];
+  const push = (c: unknown) => {
+    if (typeof c === "string") chunks.push(Buffer.from(c, "utf8"));
+    else if (Buffer.isBuffer(c)) chunks.push(c);
+  };
+  // Express `res.json` gövdeyi `res.send` üzerinden yazar; ikisini de sarmak yerine
+  // en alttaki `write`/`end` sarılır: her iki yolda da aynı baytlar geçer.
+  const origWrite = res.write?.bind(res);
+  const origEnd = res.end?.bind(res);
+  if (origWrite) {
+    res.write = ((chunk: unknown, ...rest: unknown[]) => {
+      push(chunk);
+      return (origWrite as (...a: unknown[]) => unknown)(chunk, ...rest);
+    }) as MeterResponse["write"];
+  }
+  if (origEnd) {
+    res.end = ((chunk: unknown, ...rest: unknown[]) => {
+      push(chunk);
+      try {
+        done(Buffer.concat(chunks));
+      } catch {
+        /* taahhüt yazılamadı: yanıtı etkilemez */
+      }
+      return (origEnd as (...a: unknown[]) => unknown)(chunk, ...rest);
+    }) as MeterResponse["end"];
+  }
+}
+
 export function meter(opts: MeterOptions, deps: MeterDeps): MeterMiddleware {
   if (opts.price <= 0n) throw new RangeError("meter(): price must be a positive bigint (base units)");
   return async (req, res, next) => {
@@ -234,6 +288,7 @@ export function meter(opts: MeterOptions, deps: MeterDeps): MeterMiddleware {
       method,
       description: opts.description,
       extensions,
+      requestHash: requestHashOf(req, resource),
     };
     let receipt: object;
     try {
@@ -253,6 +308,8 @@ export function meter(opts: MeterOptions, deps: MeterDeps): MeterMiddleware {
     const encoded = encodeHeader(receipt);
     res.setHeader(HEADER_RESPONSE, encoded);
     if (header.version === 1) res.setHeader(HEADER_RESPONSE_V1, encoded);
+    const id = (receipt as { receipt?: { id?: string } }).receipt?.id;
+    if (id && deps.attest && opts.unit === "request") captureBody(res, (body) => deps.attest!(id, body));
     next();
   };
 }
