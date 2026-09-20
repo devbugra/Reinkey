@@ -1,4 +1,7 @@
-/** Zincirin ve facilitator'ın engellediği işlemler. Demonun "sınırı zincir koyar" kanıtı. */
+"use client";
+
+/** Zincirin ve facilitator'ın engellediği işlemler: sınırın nerede uygulandığını gösterir. */
+import { useTranslations } from "next-intl";
 import { ShieldCheck } from "lucide-react";
 import { describeCode } from "@/lib/codes";
 import { clock } from "@/lib/format";
@@ -6,15 +9,13 @@ import type { RejectionView } from "@/lib/store";
 import { Code, Panel, SourceTag, TxLink, cn } from "./ui";
 
 export function Blocked({ items }: { items: RejectionView[] }) {
+  const t = useTranslations("blocked");
   const chain = items.filter((r) => r.source === "chain").length;
   return (
-    <Panel
-      title="Engellenen işlemler"
-      hint={chain > 0 ? `${chain} tanesini sunucu değil, Stellar ağı reddetti` : "Sınırı aşan her işlem sebebiyle burada görünür"}
-    >
+    <Panel title={t("title")} hint={chain > 0 ? t("hintChain", { count: chain }) : t("hint")}>
       {items.length === 0 ? (
         <p className="flex items-center justify-center gap-2 px-5 py-8 text-sm text-fg-subtle">
-          <ShieldCheck className="size-4" aria-hidden="true" /> Henüz engellenen işlem yok.
+          <ShieldCheck className="size-4" aria-hidden="true" /> {t("empty")}
         </p>
       ) : (
         <ul className="divide-y divide-line" aria-live="polite">

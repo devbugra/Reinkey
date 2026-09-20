@@ -10,6 +10,7 @@
  * hat kapanınca ya da tasfiyeyle döner. Bunu gizlemiyoruz, ekranda yazıyoruz.
  */
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { ArrowDownToLine, ArrowUpFromLine, ExternalLink, Loader2, Wallet } from "lucide-react";
 import { invoke, tokenBalance, type ChainEnv } from "@/lib/chain";
 import { big, txUrl, usdc } from "@/lib/format";
@@ -48,6 +49,7 @@ export function FloatActions({
   /** İşlem kesinleşince havuzu yeniden okut. */
   onDone: () => void;
 }) {
+  const t = useTranslations("floatActions");
   const [mode, setMode] = useState<"deposit" | "withdraw">("deposit");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
@@ -83,11 +85,8 @@ export function FloatActions({
   if (!wallet.address)
     return (
       <div className="card grid gap-3 rounded-lg px-5 py-4">
-        <p className="text-sm font-semibold">Havuza katılın</p>
-        <p className="text-xs leading-relaxed text-fg-muted">
-          Cüzdanınızı bağlayın: payınızı görün, USDC yatırın ya da çekin. İşlem sizin cüzdanınızda imzalanır; anahtarınız
-          bize gelmez, paranız bizde durmaz.
-        </p>
+        <p className="text-sm font-semibold">{t("joinTitle")}</p>
+        <p className="text-xs leading-relaxed text-fg-muted">{t("joinBody")}</p>
         <button
           type="button"
           disabled={wallet.connecting}
@@ -95,7 +94,7 @@ export function FloatActions({
           className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-accent px-3 text-sm font-medium text-accent-contrast hover:opacity-90 disabled:opacity-50"
         >
           {wallet.connecting ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Wallet className="size-4" aria-hidden="true" />}
-          Cüzdan bağla
+          {t("connect")}
         </button>
       </div>
     );
@@ -138,25 +137,25 @@ export function FloatActions({
   return (
     <div className="card grid gap-4 rounded-lg px-5 py-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm font-semibold">Pozisyonunuz</p>
+        <p className="text-sm font-semibold">{t("position")}</p>
         <p className="tabular text-xs text-fg-subtle">
           <span className="font-mono">{wallet.address.slice(0, 4)}…{wallet.address.slice(-4)}</span>
-          {balance !== null && <> · cüzdanda {usdc(balance, 2)} USDC</>}
+          {balance !== null && t("inWallet", { amount: usdc(balance, 2) })}
         </p>
       </div>
 
       <dl className="tabular grid grid-cols-2 gap-x-4">
         <div>
-          <dt className="text-[11px] text-fg-subtle">Bugünkü değeri</dt>
+          <dt className="text-[11px] text-fg-subtle">{t("valueToday")}</dt>
           <dd className="mt-0.5 text-xl font-semibold">{usdc((shares * sharePrice) / SCALE, 2)} USDC</dd>
         </div>
         <div>
-          <dt className="text-[11px] text-fg-subtle">Payınız</dt>
+          <dt className="text-[11px] text-fg-subtle">{t("yourShares")}</dt>
           <dd className="mt-0.5 text-xl font-semibold">{usdc(shares, 2)}</dd>
         </div>
       </dl>
 
-      <div className="flex rounded-md border border-line p-0.5 text-xs" role="tablist" aria-label="İşlem">
+      <div className="flex rounded-md border border-line p-0.5 text-xs" role="tablist" aria-label={t("tabAria")}>
         {(["deposit", "withdraw"] as const).map((m) => (
           <button
             key={m}
@@ -170,14 +169,14 @@ export function FloatActions({
             }}
             className={cn("flex-1 rounded-[5px] px-3 py-1.5", mode === m ? "bg-surface-3 text-fg" : "text-fg-muted hover:text-fg")}
           >
-            {m === "deposit" ? "Yatır" : "Çek"}
+            {m === "deposit" ? t("deposit") : t("withdraw")}
           </button>
         ))}
       </div>
 
       <div className="grid gap-2">
         <label className="grid gap-1.5">
-          <span className="sr-only">Tutar (USDC)</span>
+          <span className="sr-only">{t("amount")}</span>
           <div className="flex items-center gap-2">
             <input
               value={amount}
@@ -195,19 +194,19 @@ export function FloatActions({
               onClick={() => setAmount((Number(max) / Number(SCALE)).toFixed(2))}
               className="rounded-md border border-line px-2 py-1 text-[11px] text-fg-muted hover:text-fg"
             >
-              en çok
+              {t("max")}
             </button>
           </div>
         </label>
         <p className="text-[11px] text-fg-subtle">
           {mode === "deposit"
-            ? `Karşılığında ${value ? usdc((value * SCALE) / sharePrice, 2) : "0.00"} pay alırsınız (pay fiyatı ${usdc(sharePrice, 5)}).`
-            : `Havuzda boşta duran ${usdc(idle, 2)} USDC kadar çekilebilir; kredidekiler hat kapanınca döner.`}
+            ? t("depositHint", { shares: value ? usdc((value * SCALE) / sharePrice, 2) : "0.00", price: usdc(sharePrice, 5) })
+            : t("withdrawHint", { idle: usdc(idle, 2) })}
         </p>
       </div>
 
-      {tooMuch && <p className="text-xs text-danger">{mode === "deposit" ? "Cüzdanınızdaki USDC yetmiyor." : "Bu kadar payınız yok."}</p>}
-      {shortLiquidity && !tooMuch && <p className="text-xs text-warning">Havuzda o kadar boşta USDC yok; çekim zincirde reddedilir.</p>}
+      {tooMuch && <p className="text-xs text-danger">{mode === "deposit" ? t("tooMuchDeposit") : t("tooMuchWithdraw")}</p>}
+      {shortLiquidity && !tooMuch && <p className="text-xs text-warning">{t("shortLiquidity")}</p>}
       {error && (
         <p className="rounded-md bg-danger-bg px-3 py-2 text-xs text-danger" role="alert">
           {error}
@@ -215,7 +214,7 @@ export function FloatActions({
       )}
       {done && (
         <p className="flex items-center gap-2 rounded-md bg-success-bg px-3 py-2 text-xs text-success">
-          İşlem zincirde kesinleşti.
+          {t("done")}
           {txUrl(done) && (
             <a href={txUrl(done)!} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 underline underline-offset-2">
               tx <ExternalLink className="size-3" aria-hidden="true" />
@@ -237,11 +236,9 @@ export function FloatActions({
         ) : (
           <ArrowUpFromLine className="size-4" aria-hidden="true" />
         )}
-        {busy ? "Cüzdanda imzalayın…" : mode === "deposit" ? "Yatır" : "Çek"}
+        {busy ? t("signing") : mode === "deposit" ? t("deposit") : t("withdraw")}
       </button>
-      <p className="text-[11px] leading-relaxed text-fg-subtle">
-        İşlem cüzdanınızda imzalanır ve doğrudan Stellar testnet&apos;e gider. Testnet: gerçek para yatırmayın.
-      </p>
+      <p className="text-[11px] leading-relaxed text-fg-subtle">{t("note")}</p>
     </div>
   );
 }

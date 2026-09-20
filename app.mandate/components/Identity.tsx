@@ -1,7 +1,8 @@
 "use client";
 
-/** Hangi adrese bakıldığını gösteren ve değiştiren çubuk. Boş bırakılırsa demo adresine dönülür. */
+/** Hangi adrese bakıldığını gösteren ve değiştiren çubuk. Boş bırakılırsa örnek adrese dönülür. */
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Search, Undo2 } from "lucide-react";
 import { shortAddr } from "@/lib/format";
 import { isAddress } from "@/lib/useView";
@@ -10,17 +11,19 @@ import { cn } from "./ui";
 export function Identity({
   label,
   value,
-  isDemo,
+  isExample,
   placeholder,
   onChange,
 }: {
   label: string;
-  /** Şu an gösterilen adres (demo ya da kullanıcının girdiği). */
+  /** Şu an gösterilen adres (örnek ya da kullanıcının girdiği). */
   value: string | null;
-  isDemo: boolean;
+  isExample: boolean;
   placeholder: string;
   onChange: (address: string | null) => void;
 }) {
+  const t = useTranslations("identity");
+  const tc = useTranslations("common");
   const [draft, setDraft] = useState("");
   const [invalid, setInvalid] = useState(false);
 
@@ -31,7 +34,9 @@ export function Identity({
         <p className="mt-0.5 flex items-center gap-2 font-mono text-sm">
           <span className="hidden sm:inline">{value ?? "—"}</span>
           <span className="sm:hidden">{shortAddr(value ?? undefined, 6, 6)}</span>
-          {isDemo && <span className="rounded-full bg-surface-3 px-2 py-0.5 font-sans text-[11px] text-fg-muted">demo</span>}
+          {isExample && (
+            <span className="rounded-full bg-surface-3 px-2 py-0.5 font-sans text-[11px] text-fg-muted">{t("example")}</span>
+          )}
         </p>
       </div>
 
@@ -65,21 +70,21 @@ export function Identity({
           />
         </label>
         <button type="submit" className="h-9 rounded-md border border-line-strong bg-surface-2 px-3 text-xs font-medium hover:bg-surface-3">
-          Göster
+          {tc("show")}
         </button>
-        {!isDemo && (
+        {!isExample && (
           <button
             type="button"
             onClick={() => onChange(null)}
             className="inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-xs text-fg-muted hover:text-fg"
           >
-            <Undo2 className="size-3.5" aria-hidden="true" /> Demoya dön
+            <Undo2 className="size-3.5" aria-hidden="true" /> {t("back")}
           </button>
         )}
       </form>
       {invalid && (
         <p className="w-full text-xs text-danger" role="alert">
-          Geçerli bir Stellar adresi girin: G… ya da C… ile başlayan 56 karakter.
+          {t("invalid")}
         </p>
       )}
     </section>

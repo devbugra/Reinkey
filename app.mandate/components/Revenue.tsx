@@ -6,9 +6,11 @@
  * defteridir; rapor ile defter ayrışamaz.
  */
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Download } from "lucide-react";
 import { env } from "@/lib/env";
 import { duration, int, shortAddr, usdc } from "@/lib/format";
+import { currentLocale } from "@/lib/locale";
 import { useRevenue } from "@/lib/useRevenue";
 import { Empty, Panel, cn } from "./ui";
 
@@ -20,16 +22,21 @@ const label = (resource: string) => {
     return resource;
   }
 };
-const UNIT: Record<string, string> = { request: "çağrı", token: "token dilimi", second: "saniye dilimi" };
+const UNIT: Record<string, "unitRequest" | "unitToken" | "unitSecond"> = {
+  request: "unitRequest",
+  token: "unitToken",
+  second: "unitSecond",
+};
 
 export function Revenue({ seller, active }: { seller: string | null; active: boolean }) {
+  const t = useTranslations("revenue");
   const [bucket, setBucket] = useState<"hour" | "day">("hour");
   const r = useRevenue(seller, active, bucket);
 
   if (!r)
     return (
-      <Panel title="Gelir raporu">
-        <Empty>{seller ? "Rapor defterden hesaplanıyor…" : "Satıcı adresi okunuyor…"}</Empty>
+      <Panel title={t("title")}>
+        <Empty>{seller ? t("loading") : t("noSeller")}</Empty>
       </Panel>
     );
 
@@ -37,16 +44,16 @@ export function Revenue({ seller, active }: { seller: string | null; active: boo
   const peak = r.series.reduce((m, s) => Math.max(m, Number(BigInt(s.earned)), Number(BigInt(s.settled))), 1);
   const topResource = r.byResource.reduce((m, x) => Math.max(m, Number(BigInt(x.amount))), 1);
   const fmtT = (iso: string) =>
-    new Date(iso).toLocaleString("tr-TR", bucket === "hour" ? { hour: "2-digit", minute: "2-digit" } : { day: "2-digit", month: "short" });
+    new Date(iso).toLocaleString(currentLocale(), bucket === "hour" ? { hour: "2-digit", minute: "2-digit" } : { day: "2-digit", month: "short" });
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
       <Panel
-        title="Gelir raporu"
-        hint={`Son ${r.window.days} gün · denetim defterinden · ${int(r.totals.payments)} ödeme, ${int(r.totals.buyers)} alıcı`}
+        title={t("title")}
+        hint={t("hint", { days: r.window.days, payments: int(r.totals.payments), buyers: int(r.totals.buyers) })}
         action={
           <div className="flex shrink-0 items-center gap-2">
-            <div className="flex rounded-md border border-line p-0.5 text-xs" role="tablist" aria-label="Zaman aralığı">
+            <div className="flex rounded-md border border-line p-0.5 text-xs" role="tablist" aria-label={t("rangeAria")}>
               {(["hour", "day"] as const).map((b) => (
                 <button
                   key={b}
@@ -56,14 +63,14 @@ export function Revenue({ seller, active }: { seller: string | null; active: boo
                   onClick={() => setBucket(b)}
                   className={cn("rounded-[5px] px-2.5 py-1", bucket === b ? "bg-surface-3 text-fg" : "text-fg-muted hover:text-fg")}
                 >
-                  {b === "hour" ? "Saatlik" : "Günlük"}
+                  {b === "hour" ? t("hourly") : t("daily")}
                 </button>
               ))}
             </div>
             <a
               href={`${env.apiUrl}/sellers/${r.payTo}/settlements.csv`}
               className="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-xs text-fg-muted hover:text-fg"
-              title="Tahsilat başına bir satır: tarih, tx, kanal, alıcı, tutar"
+              title={t("csvTitle")}
             >
               <Download className="size-3.5" aria-hidden="true" /> CSV
             </a>
@@ -72,33 +79,37 @@ export function Revenue({ seller, active }: { seller: string | null; active: boo
       >
         <dl className="tabular grid grid-cols-2 gap-x-6 gap-y-4 border-b border-line px-5 py-4 sm:grid-cols-4">
           <div>
-            <dt className="text-[11px] text-fg-subtle">Kazanılan</dt>
+            <dt className="text-[11px] text-fg-subtle">{t("earned")}</dt>
             <dd className="mt-0.5 text-base font-semibold">{usdc(r.totals.earned)} USDC</dd>
           </div>
           <div>
-            <dt className="text-[11px] text-fg-subtle">Tahsil edilen</dt>
+            <dt className="text-[11px] text-fg-subtle">{t("settled")}</dt>
             <dd className="mt-0.5 text-base font-semibold">{usdc(r.totals.settled)} USDC</dd>
           </div>
           <div>
-            <dt className="text-[11px] text-fg-subtle">Alacak</dt>
+            <dt className="text-[11px] text-fg-subtle">{t("receivable")}</dt>
             <dd className={cn("mt-0.5 text-base font-semibold", BigInt(r.totals.receivable) > 0n && "text-accent")}>{usdc(r.totals.receivable)} USDC</dd>
           </div>
           <div>
-            <dt className="text-[11px] text-fg-subtle">Zincir işlemi başına ödeme</dt>
+            <dt className="text-[11px] text-fg-subtle">{t("perSettlement")}</dt>
             <dd className="mt-0.5 text-base font-semibold">
               {r.totals.paymentsPerSettlement ?? "—"}
-              <span className="ml-1.5 text-xs font-normal text-fg-subtle">{int(r.totals.settlements)} tahsilat</span>
+              <span className="ml-1.5 text-xs font-normal text-fg-subtle">{t("settlements", { count: r.totals.settlements })}</span>
             </dd>
           </div>
         </dl>
 
         {r.series.length === 0 ? (
-          <Empty>Bu pencerede gelir yok.</Empty>
+          <Empty>{t("emptyWindow")}</Empty>
         ) : (
           <div className="px-5 py-4">
-            <div className="flex h-32 items-end gap-2" role="img" aria-label="Zaman içinde kazanılan ve tahsil edilen gelir">
+            <div className="flex h-32 items-end gap-2" role="img" aria-label={t("chartAria")}>
               {r.series.map((s) => (
-                <div key={s.t} className="flex h-full min-w-0 flex-1 flex-col justify-end" title={`${fmtT(s.t)} · kazanılan ${usdc(s.earned)} · tahsil ${usdc(s.settled)} · ${int(s.payments)} ödeme`}>
+                <div
+                  key={s.t}
+                  className="flex h-full min-w-0 flex-1 flex-col justify-end"
+                  title={t("bar", { time: fmtT(s.t), earned: usdc(s.earned), settled: usdc(s.settled), payments: int(s.payments) })}
+                >
                   <div className="flex h-full items-end justify-center gap-0.5">
                     <div className="w-1/2 max-w-5 rounded-t-[4px] bg-brand-sky" style={{ height: `${(Number(BigInt(s.earned)) / peak) * 100}%` }} />
                     <div className="w-1/2 max-w-5 rounded-t-[4px] bg-brand-lavender" style={{ height: `${(Number(BigInt(s.settled)) / peak) * 100}%` }} />
@@ -109,10 +120,10 @@ export function Revenue({ seller, active }: { seller: string | null; active: boo
             </div>
             <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-fg-muted">
               <li className="flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-brand-sky" aria-hidden="true" /> kazanılan (imzalı kupon)
+                <span className="size-2 rounded-full bg-brand-sky" aria-hidden="true" /> {t("legendEarned")}
               </li>
               <li className="flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-brand-lavender" aria-hidden="true" /> tahsil edilen (zincirde)
+                <span className="size-2 rounded-full bg-brand-lavender" aria-hidden="true" /> {t("legendSettled")}
               </li>
             </ul>
           </div>
@@ -120,9 +131,9 @@ export function Revenue({ seller, active }: { seller: string | null; active: boo
       </Panel>
 
       <div className="grid content-start gap-4">
-        <Panel title="Kaynak bazında gelir" hint="Hangi uç ne kadar kazandırdı">
+        <Panel title={t("byResource")} hint={t("byResourceHint")}>
           {r.byResource.length === 0 ? (
-            <Empty>Henüz ücretli çağrı yok.</Empty>
+            <Empty>{t("byResourceEmpty")}</Empty>
           ) : (
             <ul className="divide-y divide-line">
               {r.byResource.slice(0, 6).map((x) => (
@@ -135,7 +146,11 @@ export function Revenue({ seller, active }: { seller: string | null; active: boo
                     <div className="h-full rounded-full bg-brand-sky" style={{ width: `${(Number(BigInt(x.amount)) / topResource) * 100}%` }} />
                   </div>
                   <p className="tabular text-[11px] text-fg-subtle">
-                    {int(x.payments)} {UNIT[x.unit] ?? x.unit} · gelirin {earned > 0n ? Math.round(Number((BigInt(x.amount) * 1000n) / earned) / 10) : 0}%&apos;i
+                    {t("share", {
+                      count: int(x.payments),
+                      unit: UNIT[x.unit] ? t(UNIT[x.unit]) : x.unit,
+                      percent: earned > 0n ? Math.round(Number((BigInt(x.amount) * 1000n) / earned) / 10) : 0,
+                    })}
                   </p>
                 </li>
               ))}
@@ -143,9 +158,9 @@ export function Revenue({ seller, active }: { seller: string | null; active: boo
           )}
         </Panel>
 
-        <Panel title="Alacak yaşlandırma" hint="Kuponla kanıtlı, henüz zincirde tahsil edilmemiş">
+        <Panel title={t("aging")} hint={t("agingHint")}>
           {r.receivables.length === 0 ? (
-            <Empty>Bekleyen alacak yok: kazanılanın tamamı tahsil edilmiş.</Empty>
+            <Empty>{t("agingEmpty")}</Empty>
           ) : (
             <ul className="divide-y divide-line">
               {r.receivables.map((x) => (
@@ -153,8 +168,8 @@ export function Revenue({ seller, active }: { seller: string | null; active: boo
                   <span className="font-mono text-xs">#{x.channelId}</span>
                   <span className="font-mono text-xs text-fg-muted">{shortAddr(x.payer, 4, 4)}</span>
                   <span className="text-[11px] text-fg-subtle">
-                    {x.ageSeconds !== null ? `${duration(x.ageSeconds)} önce` : "—"}
-                    {x.expiresInSeconds !== null && ` · kanal ${duration(x.expiresInSeconds)} sonra doluyor`}
+                    {x.ageSeconds !== null ? t("ago", { age: duration(x.ageSeconds) }) : "—"}
+                    {x.expiresInSeconds !== null && t("expires", { in: duration(x.expiresInSeconds) })}
                   </span>
                   <span className="ml-auto font-semibold">{usdc(x.amount)} USDC</span>
                 </li>

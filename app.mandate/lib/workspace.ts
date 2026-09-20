@@ -25,8 +25,6 @@ export type Profile = {
 const KEY = "reinkey.profiles";
 const ONBOARDED = "reinkey.onboarded";
 
-export const ROLE_LABEL: Record<Role, string> = { seller: "Satıcı", agent: "Ajan hesabı" };
-
 function read(): Profile[] {
   try {
     const raw = localStorage.getItem(KEY);

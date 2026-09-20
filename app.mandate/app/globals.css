@@ -5,8 +5,8 @@
 
    Değerler tanıtım sitesinin (landing-page/app/globals.css) KOYU
    temasından birebir alındı: panel ile site aynı markanın iki yüzü.
-   Panel yalnızca koyu temada çalışır; sahnede projeksiyonda koyu
-   zemin daha iyi okunur ve tema geçişi burada bir kazanç sağlamaz.
+   Panel yalnızca koyu temada çalışır: uzun süre açık kalan bir izleme
+   ekranında koyu zemin daha az yorar.
 
    Bileşenlerde sabit renk yazılmaz; hepsi buradan gelir.
    ============================================================ */
@@ -268,11 +268,6 @@ h2,
 }
 .flow-ping {
   animation: flow-ping 800ms ease-out;
-}
-
-/* Sunum modu: projeksiyonda arka sıradan okunsun diye tüm panel büyür. */
-.present {
-  zoom: 1.25;
 }
 
 @media (prefers-reduced-motion: reduce) {

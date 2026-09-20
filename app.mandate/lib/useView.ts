@@ -8,10 +8,10 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export type View = "live" | "meter" | "reins" | "float";
+export type View = "live" | "meter" | "reins" | "float" | "dex";
 export type ViewState = { view: View; account: string | null; seller: string | null };
 
-const VIEWS: View[] = ["live", "meter", "reins", "float"];
+const VIEWS: View[] = ["live", "meter", "reins", "float", "dex"];
 /** Stellar adresi: G… (hesap) ya da C… (kontrat), 56 karakter base32. */
 export const isAddress = (v: string) => /^[GC][A-Z2-7]{55}$/.test(v);
 

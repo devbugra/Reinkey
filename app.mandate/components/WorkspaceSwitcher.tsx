@@ -2,50 +2,51 @@
 
 /**
  * ÇALIŞMA ALANI SEÇİCİ. Rayın tepesinde durur ve "şu an kimin verisine
- * bakıyorum" sorusunu cevaplar: demo mu, benim adresim mi. Liste açıkken
+ * bakıyorum" sorusunu cevaplar: örnek hesap mı, benim adresim mi. Liste açıkken
  * içeriği aşağı iter; kenar çubuğunda bu, üstte yüzen bir menüden daha az
  * kayboluyor ve dokunmatikte de sorunsuz.
  */
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { BookmarkPlus, Check, ChevronDown, Loader2, Plus, Trash2, Wallet } from "lucide-react";
 import { shortAddr } from "@/lib/format";
-import { ROLE_LABEL, type Profile } from "@/lib/workspace";
+import type { Profile } from "@/lib/workspace";
 import { cn } from "./ui";
 
 export function WorkspaceSwitcher({
   profiles,
   activeId,
-  demoLabel,
   unsaved,
   onSelect,
-  onDemo,
+  onExample,
   onAdd,
   onRemove,
   onSave,
   wallet,
 }: {
   profiles: Profile[];
-  /** Etkin alanın kimliği; demo ya da kaydedilmemiş bir adres izleniyorsa null. */
+  /** Etkin alanın kimliği; örnek hesap ya da kaydedilmemiş bir adres izleniyorsa null. */
   activeId: string | null;
-  demoLabel: string;
   /** URL'den gelen, henüz kaydedilmemiş adres. */
   unsaved: { role: Profile["role"]; address: string } | null;
   onSelect: (p: Profile) => void;
-  onDemo: () => void;
+  onExample: () => void;
   onAdd: () => void;
   onRemove: (id: string) => void;
   onSave: (p: { role: Profile["role"]; address: string }) => void;
   /** Cüzdandan adres okuma; bağlıysa adres gösterilir. */
   wallet: { address: string | null; connecting: boolean; connect: () => void; disconnect: () => void };
 }) {
+  const t = useTranslations("workspace");
   const [open, setOpen] = useState(false);
   const active = profiles.find((p) => p.id === activeId) ?? null;
-  const title = active ? active.label : unsaved ? shortAddr(unsaved.address, 5, 5) : demoLabel;
+  const role = (r: Profile["role"]) => t(r === "agent" ? "roleAgent" : "roleSeller");
+  const title = active ? active.label : unsaved ? shortAddr(unsaved.address, 5, 5) : t("example");
   const subtitle = active
-    ? `${ROLE_LABEL[active.role]} · ${shortAddr(active.address, 4, 4)}`
+    ? `${role(active.role)} · ${shortAddr(active.address, 4, 4)}`
     : unsaved
-      ? `${ROLE_LABEL[unsaved.role]} · kaydedilmedi`
-      : "canlı testnet demosu";
+      ? t("unsavedSub", { role: role(unsaved.role) })
+      : t("exampleSub");
 
   return (
     <div className="grid gap-1">
@@ -75,7 +76,7 @@ export function WorkspaceSwitcher({
                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-start text-xs text-accent hover:bg-surface-2"
               >
                 <BookmarkPlus className="size-3.5 shrink-0" aria-hidden="true" />
-                <span className="min-w-0 flex-1 truncate">Bu adresi kaydet</span>
+                <span className="min-w-0 flex-1 truncate">{t("save")}</span>
               </button>
             </li>
           )}
@@ -84,12 +85,12 @@ export function WorkspaceSwitcher({
               type="button"
               onClick={() => {
                 setOpen(false);
-                onDemo();
+                onExample();
               }}
               className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-start text-xs text-fg-muted hover:bg-surface-2 hover:text-fg"
             >
               {!active && !unsaved && <Check className="size-3.5 text-accent" aria-hidden="true" />}
-              <span className={cn("min-w-0 flex-1 truncate", !active && !unsaved && "text-fg")}>{demoLabel}</span>
+              <span className={cn("min-w-0 flex-1 truncate", !active && !unsaved && "text-fg")}>{t("example")}</span>
             </button>
           </li>
           {profiles.map((p) => (
@@ -111,8 +112,8 @@ export function WorkspaceSwitcher({
               <button
                 type="button"
                 onClick={() => onRemove(p.id)}
-                aria-label={`${p.label} adresini listeden çıkar`}
-                title="Listeden çıkar (zincirdeki hiçbir şey silinmez)"
+                aria-label={t("removeLabel", { label: p.label })}
+                title={t("removeTitle")}
                 className="grid size-6 shrink-0 place-items-center rounded-sm text-fg-subtle opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
               >
                 <Trash2 className="size-3.5" aria-hidden="true" />
@@ -129,7 +130,7 @@ export function WorkspaceSwitcher({
               className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-start text-xs text-accent hover:bg-surface-2"
             >
               <Plus className="size-3.5" aria-hidden="true" />
-              Adres ekle
+              {t("add")}
             </button>
           </li>
           <li className="border-t border-line pt-0.5">
@@ -148,7 +149,7 @@ export function WorkspaceSwitcher({
                 <Wallet className="size-3.5 shrink-0" aria-hidden="true" />
               )}
               <span className="min-w-0 flex-1 truncate">
-                {wallet.address ? `Cüzdanı ayır (${shortAddr(wallet.address, 3, 3)})` : "Cüzdan bağla"}
+                {wallet.address ? t("disconnect", { address: shortAddr(wallet.address, 3, 3) }) : t("connect")}
               </span>
             </button>
           </li>

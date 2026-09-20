@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { PlugZap } from "lucide-react";
 import { env } from "@/lib/env";
 import { big } from "@/lib/format";
@@ -24,46 +25,20 @@ import { Terminal } from "./Terminal";
 import { Timeline } from "./Timeline";
 import { Trades } from "./Trades";
 import { PageHeader, Section, cn } from "./ui";
+import { DexView } from "./views/DexView";
 import { FloatView } from "./views/FloatView";
 import { MeterView } from "./views/MeterView";
 import { ReinsView } from "./views/ReinsView";
 
-const PRESENT_KEY = "reinkey.present";
-
-/** Sunum modu: panel büyür ve tam ekrana geçer; tercih bu tarayıcıda hatırlanır. */
-function usePresent() {
-  const [present, setPresent] = useState(() => {
-    try {
-      return localStorage.getItem(PRESENT_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(PRESENT_KEY, present ? "1" : "0");
-    } catch {
-      /* depolama kapalı */
-    }
-  }, [present]);
-  const toggle = () => {
-    const next = !present;
-    setPresent(next);
-    // Tam ekran reddedilebilir (izin, iframe); büyütme yine de çalışır.
-    if (next) void document.documentElement.requestFullscreen?.().catch(() => {});
-    else if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-  };
-  return [present, toggle] as const;
-}
-
 function Offline() {
+  const t = useTranslations("offline");
   return (
     <div className="flex items-start gap-3 rounded-lg border border-danger/30 bg-danger-bg px-5 py-4 text-sm" role="alert">
       <PlugZap className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden="true" />
       <div>
-        <p className="font-medium text-fg">Backend&apos;e ulaşılamıyor: {env.apiUrl}</p>
+        <p className="font-medium text-fg">{t("title", { api: env.apiUrl })}</p>
         <p className="mt-1 text-fg-muted">
-          Bu panel yalnızca gerçek veriyi gösterir; örnek ya da üretilmiş veri yoktur. Backend&apos;i başlatın:{" "}
+          {t("body")}{" "}
           <code className="rounded-sm bg-bg px-1.5 py-0.5 font-mono text-xs">cd backend &amp;&amp; npm run start:dev</code>
         </p>
       </div>
@@ -72,22 +47,23 @@ function Offline() {
 }
 
 export default function Dashboard() {
+  const t = useTranslations();
   const [nav, setNav] = useView();
   const ws = useWorkspaces();
   const wallet = useWallet();
   const f = useFeed(nav.account);
   const { state } = f;
-  const [present, togglePresent] = usePresent();
   const float = useFloat(nav.view === "float");
   const [adding, setAdding] = useState(false);
 
   /**
-   * Adres çözümü: URL > demo. URL tek gerçek kaynaktır, böylece her görünüm
-   * paylaşılabilir bir bağlantıdır; kayıtlı alanlar yalnızca "adreslerim" listesi.
+   * Adres çözümü: URL > örnek hesap. URL tek gerçek kaynaktır, böylece her
+   * görünüm paylaşılabilir bir bağlantıdır; kayıtlı alanlar yalnızca
+   * "adreslerim" listesi.
    */
   const accountAddr = nav.account ?? state.info?.account ?? null;
   const sellerAddr = nav.seller ?? state.info?.seller ?? null;
-  const demoAccount = nav.account === null || nav.account === state.info?.account;
+  const isExample = nav.account === null || nav.account === state.info?.account;
   const activeProfile =
     ws.profiles.find((p) => (p.role === "agent" ? p.address === nav.account : p.address === nav.seller)) ?? null;
   /** URL'den gelen ama kayıtlı olmayan adres: seçicide "kaydet" olarak sunulur. */
@@ -109,11 +85,11 @@ export default function Dashboard() {
     window.scrollTo({ top: 0 });
   };
   const pick = (role: Role, address: string) => {
-    const label = `${role === "agent" ? "Ajan" : "Satıcı"} ${address.slice(0, 4)}…${address.slice(-4)}`;
+    const label = `${t(role === "agent" ? "workspace.roleAgent" : "workspace.roleSeller")} ${address.slice(0, 4)}…${address.slice(-4)}`;
     openProfile(ws.add({ role, address, label }));
     setAdding(false);
   };
-  const showDemo = () => {
+  const showExample = () => {
     ws.dismiss();
     setAdding(false);
     setNav({ view: "live", account: null, seller: null });
@@ -133,16 +109,13 @@ export default function Dashboard() {
       view={nav.view}
       onView={(view) => setNav({ view })}
       connection={f.connection}
-      present={present}
-      onPresent={togglePresent}
       workspace={
         <WorkspaceSwitcher
           profiles={ws.profiles}
           activeId={activeProfile?.id ?? null}
-          demoLabel="Reinkey demosu"
           unsaved={unsaved}
           onSelect={openProfile}
-          onDemo={showDemo}
+          onExample={showExample}
           onAdd={() => setAdding(true)}
           onRemove={ws.remove}
           onSave={(p) => pick(p.role, p.address)}
@@ -159,7 +132,7 @@ export default function Dashboard() {
         <Onboarding
           wallet={wallet}
           onPick={pick}
-          onDemo={showDemo}
+          onExample={showExample}
           onFloat={() => {
             ws.dismiss();
             setAdding(false);
@@ -168,140 +141,139 @@ export default function Dashboard() {
         />
       ) : (
         <>
-      {f.connection === "offline" && <Offline />}
+          {f.connection === "offline" && <Offline />}
 
-      {f.actionError && nav.view !== "live" && (
-        <p className="flex items-center justify-between gap-3 rounded-md bg-danger-bg px-4 py-2.5 text-xs text-danger" role="alert">
-          {f.actionError}
-          <button type="button" onClick={f.clearError} className="underline underline-offset-2">
-            Kapat
-          </button>
-        </p>
-      )}
+          {f.actionError && nav.view !== "live" && (
+            <p className="flex items-center justify-between gap-3 rounded-md bg-danger-bg px-4 py-2.5 text-xs text-danger" role="alert">
+              {f.actionError}
+              <button type="button" onClick={f.clearError} className="underline underline-offset-2">
+                {t("common.close")}
+              </button>
+            </p>
+          )}
 
-      {nav.view === "meter" && (
-        <>
-          <PageHeader
-            eyebrow="Reinkey Meter · satıcı"
-            title="Gelir ve tahsilat"
-            lead="Bir ödeme adresine (payTo) gelen her şey: ne kazanıldı, ne kadarı zincirde cüzdana geçti, ne kadarı imzalı kupon olarak bekliyor."
-          />
-          {/* Görünüm içi bloklar sıkı dizilir; geniş boşluk yalnızca başlık ile gövde arasındadır. */}
-          <div className="grid gap-4">
-            <MeterView
-              seller={sellerAddr}
-              isDemo={nav.seller === null || nav.seller === state.info?.seller}
-              channels={state.channels}
-              claims={state.claims}
-              canClaim={live}
-              claiming={f.pending === "claim"}
-              onClaim={(id) => void f.claim(id)}
-              onSeller={(seller) => setNav({ seller })}
-            />
-          </div>
-        </>
-      )}
-
-      {nav.view === "float" && (
-        <>
-          <PageHeader
-            eyebrow="Reinkey Float · sermaye"
-            title="Kredi havuzu"
-            lead="Ajanların çalıştığı teminatsız döner sermaye. Hesap havuza devredildiği için para politikanın dışına çıkamaz; risk zincirde hesaplanır."
-          />
-          {/* Görünüm içi bloklar sıkı dizilir; geniş boşluk yalnızca başlık ile gövde arasındadır. */}
-          <div className="grid gap-4">
-            <FloatView data={float.data} failed={float.failed} info={state.info} wallet={wallet} onRefresh={float.refresh} />
-          </div>
-        </>
-      )}
-
-      {nav.view === "reins" && (
-        <>
-          <PageHeader
-            eyebrow="Reinkey Reins · ajan hesabı"
-            title="Sınırlar ve harcama"
-            lead="Ajanın zincirde yazılı politikası: ne kadar, kime ve hangi çiftte. Sınırı sunucu değil Stellar ağı uygular; her red sebep koduyla burada görünür."
-          />
-          {/* Görünüm içi bloklar sıkı dizilir; geniş boşluk yalnızca başlık ile gövde arasındadır. */}
-          <div className="grid gap-4">
-            <ReinsView
-              address={accountAddr}
-              isDemo={demoAccount}
-              account={state.account}
-              channels={state.channels}
-              rejections={state.rejections}
-              rows={state.rows}
-              perSecond={perSecond}
-              onAccount={(account) => setNav({ account })}
-            />
-          </div>
-        </>
-      )}
-
-      {nav.view === "live" && (
-        <>
-          <PageHeader
-            eyebrow="Canlı akış"
-            title="Şu an ne oluyor"
-            lead="Ödemeler, zincir işlemleri ve redler tek akışta. Her sayı gerçek testnet verisidir; örnek ya da üretilmiş veri yoktur."
-          />
-
-          <Section index={1} title="Özet" hint="Kaç ödeme, kaç zincir işlemi">
-            <Hero totals={f.totals} dataSeconds={state.local.dataSeconds} onShowAll={f.showAll} />
-            <Steps state={state} />
-            <Controls
-              disabled={!live}
-              agentRunning={state.agent.running}
-              scenario={state.agent.scenario}
-              frozen={demoAccount && state.account ? state.account.frozen : null}
-              pending={f.pending}
-              error={f.actionError}
-              onRun={(s) => void f.runAgent(s)}
-              onFreeze={(v) => void f.setFrozen(v)}
-              canClear={state.rows.length > 0 || state.logs.length > 0}
-              onClear={() => void f.clear()}
-              onDismiss={f.clearError}
-            />
-          </Section>
-
-          <Section index={2} title="Paranın yolu" hint="Hesap → kanal → satıcı">
-            <Flow
-              account={state.account}
-              channels={state.channels}
-              streams={state.streams}
-              claims={state.claims}
-              dataSeconds={state.local.dataSeconds}
-              rejection={state.rejections.find((r) => r.source === "chain")}
-              canClaim={live}
-              claiming={f.pending === "claim"}
-              onClaim={(id) => void f.claim(id)}
-            />
-          </Section>
-
-          <Section index={3} title="Piyasa ve işlem" hint="Satın alınan veri, DEX işlemleri, onay süresi">
-            {/* Grafik boşken sütun boyuna uzamasın: boş bir kutu sayfanın en büyük öğesi olmamalı. */}
-            <div className={cn("grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]", state.ticks.length === 0 && "xl:items-start")}>
-              <Price ticks={state.ticks} swaps={state.swaps} streaming={streaming} />
-              <div className="grid content-start gap-4">
-                <Trades items={state.swaps} />
-                <Latency samples={state.local.latencies} />
+          {nav.view === "meter" && (
+            <>
+              <PageHeader eyebrow={t("meter.eyebrow")} title={t("meter.title")} lead={t("meter.lead")} />
+              {/* Görünüm içi bloklar sıkı dizilir; geniş boşluk yalnızca başlık ile gövde arasındadır. */}
+              <div className="grid gap-4">
+                <MeterView
+                  seller={sellerAddr}
+                  isExample={nav.seller === null || nav.seller === state.info?.seller}
+                  channels={state.channels}
+                  claims={state.claims}
+                  canClaim={live}
+                  claiming={f.pending === "claim"}
+                  onClaim={(id) => void f.claim(id)}
+                  onSeller={(seller) => setNav({ seller })}
+                />
               </div>
-            </div>
-          </Section>
+            </>
+          )}
 
-          <Section index={4} title="Olaylar" hint="Düz cümlelerle akış, engellenenler, ajanın terminali">
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-              <Timeline rows={state.rows} perSecond={perSecond} account={accountAddr} />
-              <div className="grid content-start gap-4">
-                <Blocked items={state.rejections} />
-                <Terminal logs={state.logs} running={state.agent.running} />
+          {nav.view === "dex" && (
+            <>
+              <PageHeader eyebrow={t("dex.eyebrow")} title={t("dex.title")} lead={t("dex.lead")} />
+              <DexView account={accountAddr} />
+            </>
+          )}
+
+          {nav.view === "float" && (
+            <>
+              <PageHeader eyebrow={t("float.eyebrow")} title={t("float.title")} lead={t("float.lead")} />
+              <div className="grid gap-4">
+                <FloatView data={float.data} failed={float.failed} info={state.info} wallet={wallet} onRefresh={float.refresh} />
               </div>
-            </div>
-            <Channels channels={state.channels} />
-          </Section>
-        </>
-      )}
+            </>
+          )}
+
+          {nav.view === "reins" && (
+            <>
+              <PageHeader eyebrow={t("reins.eyebrow")} title={t("reins.title")} lead={t("reins.lead")} />
+              <div className="grid gap-4">
+                <ReinsView
+                  address={accountAddr}
+                  isExample={isExample}
+                  account={state.account}
+                  channels={state.channels}
+                  rejections={state.rejections}
+                  rows={state.rows}
+                  perSecond={perSecond}
+                  onAccount={(account) => setNav({ account })}
+                />
+              </div>
+            </>
+          )}
+
+          {nav.view === "live" && (
+            <>
+              <PageHeader eyebrow={t("live.eyebrow")} title={t("live.title")} lead={t("live.lead")} />
+
+              <Section index={1} title={t("live.summary")} hint={t("live.summaryHint")}>
+                <Hero totals={f.totals} dataSeconds={state.local.dataSeconds} onShowAll={f.showAll} />
+                {/*
+                 * Örnek akış kontrolleri YALNIZCA örnek hesapta. Kendi adresini
+                 * bağlayan biri için bu düğmeler hem çalışmaz (backend onları
+                 * yalnızca örnek hesap için kabul eder) hem de anlamsızdır:
+                 * konsol onun verisini izler, senaryo oynatmaz.
+                 */}
+                {isExample && (
+                  <>
+                    <Steps state={state} />
+                    <Controls
+                      disabled={!live}
+                      agentRunning={state.agent.running}
+                      scenario={state.agent.scenario}
+                      frozen={state.account ? state.account.frozen : null}
+                      pending={f.pending}
+                      error={f.actionError}
+                      onRun={(s) => void f.runAgent(s)}
+                      onFreeze={(v) => void f.setFrozen(v)}
+                      canClear={state.rows.length > 0 || state.logs.length > 0}
+                      onClear={() => void f.clear()}
+                      onDismiss={f.clearError}
+                    />
+                  </>
+                )}
+              </Section>
+
+              <Section index={2} title={t("live.flow")} hint={t("live.flowHint")}>
+                <Flow
+                  account={state.account}
+                  channels={state.channels}
+                  streams={state.streams}
+                  claims={state.claims}
+                  dataSeconds={state.local.dataSeconds}
+                  rejection={state.rejections.find((r) => r.source === "chain")}
+                  canClaim={live}
+                  claiming={f.pending === "claim"}
+                  onClaim={(id) => void f.claim(id)}
+                />
+              </Section>
+
+              <Section index={3} title={t("live.market")} hint={t("live.marketHint")}>
+                {/* Grafik boşken sütun boyuna uzamasın: boş bir kutu sayfanın en büyük öğesi olmamalı. */}
+                <div className={cn("grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]", state.ticks.length === 0 && "xl:items-start")}>
+                  <Price ticks={state.ticks} swaps={state.swaps} streaming={streaming} />
+                  <div className="grid content-start gap-4">
+                    <Trades items={state.swaps} />
+                    <Latency samples={state.local.latencies} />
+                  </div>
+                </div>
+              </Section>
+
+              <Section index={4} title={t("live.events")} hint={t("live.eventsHint")}>
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+                  <Timeline rows={state.rows} perSecond={perSecond} account={accountAddr} />
+                  <div className="grid content-start gap-4">
+                    <Blocked items={state.rejections} />
+                    {isExample && <Terminal logs={state.logs} running={state.agent.running} />}
+                  </div>
+                </div>
+                <Channels channels={state.channels} />
+              </Section>
+            </>
+          )}
         </>
       )}
     </Shell>

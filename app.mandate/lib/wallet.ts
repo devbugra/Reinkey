@@ -14,6 +14,7 @@
  * tarayıcıda çalışır; bu yüzden ilk kullanımda dinamik olarak yüklenir.
  */
 import { useCallback, useEffect, useState } from "react";
+import { t } from "./t";
 
 const KEY = "reinkey.wallet";
 
@@ -93,7 +94,7 @@ export function useWallet() {
       setState({ address, connecting: false, error: null });
       return address;
     } catch (e) {
-      const msg = (e as { message?: string })?.message ?? "Cüzdan bağlanamadı";
+      const msg = (e as { message?: string })?.message ?? t()("errors.wallet");
       // Kullanıcı pencereyi kapattıysa hata göstermeye gerek yok.
       setState({ address: null, connecting: false, error: /clos|cancel|reject/i.test(msg) ? null : msg });
       return null;

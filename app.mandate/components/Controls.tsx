@@ -1,8 +1,14 @@
+"use client";
+
 /**
- * Demo kontrolleri. Düğmeler GERÇEK işlem başlatır: ajan süreci backend'de
- * çalışır ve Stellar testnet'e işlem gönderir; dondurma sahibin anahtarıyla
- * zincirde yapılır.
+ * ÖRNEK HESABIN KONTROLLERİ.
+ *
+ * Yalnızca örnek hesapta görünür (bkz. Dashboard.tsx): kendi adresini bağlayan
+ * birinin konsolunda senaryo düğmesi işi yoktur. Düğmeler GERÇEK işlem başlatır:
+ * ajan süreci backend'de çalışır ve Stellar testnet'e işlem gönderir; dondurma
+ * sahibin anahtarıyla zincirde yapılır.
  */
+import { useTranslations } from "next-intl";
 import { Eraser, Loader2, MessageSquareWarning, Play, ShieldAlert, Snowflake, Sun } from "lucide-react";
 import type { Scenario } from "@/lib/types";
 import { cn } from "./ui";
@@ -57,38 +63,33 @@ function Btn({
 }
 
 export function Controls(p: Props) {
+  const t = useTranslations("controls");
+  const tc = useTranslations("common");
   const blocked = p.disabled || p.agentRunning;
+  const scenario =
+    p.scenario === "compromised"
+      ? t("scenarioCompromised")
+      : p.scenario === "injected"
+        ? t("scenarioInjected")
+        : "";
+
   return (
-    <section aria-label="Demo kontrolleri" className="rounded-lg border border-dashed border-line-strong bg-bg-alt/60 px-4 py-3">
+    <section aria-label={t("aria")} className="rounded-lg border border-line bg-bg-alt/60 px-4 py-3">
       <div className="flex flex-wrap items-center gap-2.5">
-        <span className="me-1 rounded-sm bg-surface-3 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-fg-muted">Demo</span>
-        <Btn
-          tone="primary"
-          onClick={() => p.onRun("trader")}
-          disabled={blocked}
-          busy={p.pending === "trader"}
-          title="Ajan kanal açar, fiyat verisini saniye başı satın alır, DEX'te işlem yapar"
-        >
+        <span className="me-1 rounded-sm bg-surface-3 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-fg-muted">
+          {t("badge")}
+        </span>
+        <Btn tone="primary" onClick={() => p.onRun("trader")} disabled={blocked} busy={p.pending === "trader"} title={t("runTitle")}>
           {p.pending !== "trader" && <Play className="size-4" aria-hidden="true" />}
-          Ajanı başlat
+          {t("run")}
         </Btn>
-        <Btn
-          onClick={() => p.onRun("compromised")}
-          disabled={blocked}
-          busy={p.pending === "compromised"}
-          title="Anahtarı çalınmış ajan parayı kendi cüzdanına göndermeye çalışır"
-        >
+        <Btn onClick={() => p.onRun("compromised")} disabled={blocked} busy={p.pending === "compromised"} title={t("compromisedTitle")}>
           {p.pending !== "compromised" && <ShieldAlert className="size-4" aria-hidden="true" />}
-          Ele geçirilmiş ajan
+          {t("compromised")}
         </Btn>
-        <Btn
-          onClick={() => p.onRun("injected")}
-          disabled={blocked}
-          busy={p.pending === "injected"}
-          title="Ajan zehirli bir yanıtı okur ve üç zararlı işlemi gerçekten imzalar; üçünü de zincir reddeder"
-        >
+        <Btn onClick={() => p.onRun("injected")} disabled={blocked} busy={p.pending === "injected"} title={t("injectedTitle")}>
           {p.pending !== "injected" && <MessageSquareWarning className="size-4" aria-hidden="true" />}
-          Prompt injection
+          {t("injected")}
         </Btn>
 
         <span className="mx-1 hidden h-6 w-px bg-line sm:block" aria-hidden="true" />
@@ -96,7 +97,7 @@ export function Controls(p: Props) {
         {p.frozen ? (
           <Btn onClick={() => p.onFreeze(false)} disabled={p.disabled} busy={p.pending === "unfreeze"}>
             {p.pending !== "unfreeze" && <Sun className="size-4" aria-hidden="true" />}
-            Dondurmayı kaldır
+            {t("unfreeze")}
           </Btn>
         ) : (
           <Btn
@@ -104,30 +105,26 @@ export function Controls(p: Props) {
             onClick={() => p.onFreeze(true)}
             disabled={p.disabled || p.frozen === null}
             busy={p.pending === "freeze"}
-            title="Sahip, hesabı zincirde dondurur; ajanın sonraki işlemi reddedilir"
+            title={t("freezeTitle")}
           >
             {p.pending !== "freeze" && <Snowflake className="size-4" aria-hidden="true" />}
-            Ajanı dondur
+            {t("freeze")}
           </Btn>
         )}
 
-        <Btn
-          onClick={p.onClear}
-          disabled={p.disabled || !p.canClear}
-          title="Yeni tur için ekranı ve sayaçları sıfırlar. Veri silinmez; Defter'de ve 'tümünü göster' ile geri gelir"
-        >
+        <Btn onClick={p.onClear} disabled={p.disabled || !p.canClear} title={t("clearTitle")}>
           <Eraser className="size-4" aria-hidden="true" />
-          Ekranı temizle
+          {t("clear")}
         </Btn>
 
         <p className="ml-auto flex items-center gap-2 text-xs text-fg-muted" role="status">
           {p.agentRunning ? (
             <>
               <span className="pulse-dot size-2 rounded-full bg-success" aria-hidden="true" />
-              Ajan çalışıyor{p.scenario === "compromised" ? " (ele geçirilmiş senaryo)" : p.scenario === "injected" ? " (prompt injection senaryosu)" : ""} · işlemler testnet&apos;e gidiyor
+              {t("running", { scenario })}
             </>
           ) : (
-            "Düğmeler gerçek işlem başlatır: Stellar testnet"
+            t("idle")
           )}
         </p>
       </div>
@@ -136,7 +133,7 @@ export function Controls(p: Props) {
         <p className="mt-3 flex items-center justify-between gap-3 rounded-md bg-danger-bg px-3 py-2 text-xs text-danger" role="alert">
           {p.error}
           <button type="button" onClick={p.onDismiss} className="underline underline-offset-2">
-            Kapat
+            {tc("close")}
           </button>
         </p>
       )}

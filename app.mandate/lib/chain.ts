@@ -12,6 +12,8 @@
  *
  * stellar-sdk ağırdır: yalnızca bu akış kullanıldığında dinamik yüklenir.
  */
+import { t } from "./t";
+
 export type ChainEnv = { rpcUrl: string; networkPassphrase: string };
 
 export type SubmitResult = { hash: string };
@@ -76,9 +78,9 @@ export async function invoke(opts: {
 function reason(text: string): string {
   const m = /Error\(Contract, #(\d+)\)/.exec(text);
   if (m) return `Kontrat reddetti (kod ${m[1]})`;
-  if (/InsufficientLiquidity|#5\b/.test(text)) return "Havuzda boşta duran USDC yetersiz";
-  if (/trustline|TrustLine/i.test(text)) return "USDC trustline yok: cüzdanınızda USDC varlığı tanımlı değil";
-  if (/insufficient|balance/i.test(text)) return "Bakiye yetersiz";
+  if (/InsufficientLiquidity|#5\b/.test(text)) return t()("errors.liquidity");
+  if (/trustline|TrustLine/i.test(text)) return t()("errors.trustline");
+  if (/insufficient|balance/i.test(text)) return t()("errors.balance");
   return text.length > 200 ? `${text.slice(0, 200)}…` : text;
 }
 

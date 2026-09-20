@@ -24,6 +24,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { getJson, postJson } from "./api";
 import { env } from "./env";
 import { big } from "./format";
+import { t } from "./t";
 import { initialState, median, reducer, type Local } from "./store";
 import {
   EVENT_TYPES,
@@ -248,7 +249,7 @@ export function useFeed(accountOverride: string | null = null) {
     const res = await postJson<{ runId?: string; tx?: string } & ClaimResult>(path, body);
     setPending(null);
     if (!res.ok) setActionError(res.error);
-    else if (res.data.claimed === false) setActionError(res.data.reason ?? "Tahsil edilecek kupon yok");
+    else if (res.data.claimed === false) setActionError(res.data.reason ?? t()("errors.nothingToClaim"));
     return res.ok;
   }, []);
 
@@ -268,7 +269,7 @@ export function useFeed(accountOverride: string | null = null) {
   const clear = useCallback(async () => {
     const base = await getJson<Stats>("/stats");
     if (!base) {
-      setActionError("Backend'e ulaşılamadı");
+      setActionError(t()("errors.backend"));
       return;
     }
     const next: Cut = { ts: lastTs.current ?? new Date().toISOString(), base };

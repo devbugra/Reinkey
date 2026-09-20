@@ -1,4 +1,13 @@
-/** Görüntüleme yardımcıları. Para her zaman BigInt; number'a yalnızca oran için çevrilir. */
+/**
+ * Görüntüleme yardımcıları. Para her zaman BigInt; number'a yalnızca oran için
+ * çevrilir.
+ *
+ * Sayı, süre ve saat biçimi seçili dile uyar (`lib/locale.ts`). Para biçimi
+ * uymaz: USDC tutarı protokol metnidir ve her dilde `1,234.5678` yazılır —
+ * aynı tutarın iki farklı yazımı, kopyalanıp zincire bakılan bir sayıda
+ * kazançtan çok hata üretir.
+ */
+import { currentLocale } from "./locale";
 
 export const USDC_DECIMALS = 7n;
 const SCALE = 10n ** USDC_DECIMALS;
@@ -38,31 +47,48 @@ export function shortHash(h: string | undefined): string {
   return h ? `${h.slice(0, 6)}…${h.slice(-4)}` : "—";
 }
 
-/** Saniyeyi okunur süreye: 2060 → "34 dk 20 sn". */
+/**
+ * Saniyeyi okunur süreye: 2060 → "34 dk 20 sn" / "34 min 20 s".
+ * Kısaltmalar sözlükte değil burada: üç harflik birimlerin ICU karşılığı yok
+ * ve `Intl.DurationFormat` her tarayıcıda bulunmuyor.
+ */
+const UNITS: Record<"tr" | "en", { h: string; m: string; s: string }> = {
+  tr: { h: "sa", m: "dk", s: "sn" },
+  en: { h: "h", m: "min", s: "s" },
+};
+
 export function duration(seconds: number): string {
-  if (seconds < 60) return `${seconds} sn`;
+  const u = UNITS[currentLocale()];
+  if (seconds < 60) return `${int(seconds)} ${u.s}`;
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
-  if (h > 0) return `${h} sa ${m} dk`;
-  return s ? `${m} dk ${s} sn` : `${m} dk`;
+  if (h > 0) return `${int(h)} ${u.h} ${int(m)} ${u.m}`;
+  return s ? `${int(m)} ${u.m} ${int(s)} ${u.s}` : `${int(m)} ${u.m}`;
 }
 
 export function clock(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime())
-    ? "—"
-    : d.toLocaleTimeString("tr-TR", { hour12: false });
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleTimeString(currentLocale(), { hour12: false });
 }
 
 /** Milisaniye: 1'in altı iki, 10'un altı tek ondalıkla; kupon doğrulaması çoğu zaman 1 ms'den kısadır. */
 export function ms(n: number): string {
   const digits = n < 1 ? 2 : n < 10 ? 1 : 0;
-  return n.toLocaleString("tr-TR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  return n.toLocaleString(currentLocale(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
 export function int(n: number): string {
-  return n.toLocaleString("tr-TR");
+  return n.toLocaleString(currentLocale());
+}
+
+/** Yüzde: 1234 baz puan → "%12,34" / "12.34%". */
+export function percent(bps: number, digits = 2): string {
+  return (bps / 10_000).toLocaleString(currentLocale(), {
+    style: "percent",
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
 }
 
 /** Yalnızca gerçek işlem hash'i (64 hex) explorer'a bağlanır. */

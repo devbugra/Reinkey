@@ -273,3 +273,25 @@ export type Receipt = {
   ts: string;
   signature: string;
 };
+
+/** GET /dex/quote: rota, fiyat etkisi ve politika ön kararı. */
+export type DexSide = "USDC_XLM" | "XLM_USDC";
+export type DexQuote = {
+  pair: string;
+  side: DexSide;
+  sell: { asset: string; contract: string };
+  buy: { asset: string; contract: string };
+  amountIn: string;
+  amountOut: string;
+  minOut: string;
+  slippageBps: number;
+  price: { execution: string; pool: string; conservative: string | null; impactBps: number };
+  liquidity: { source: string; pair: string; reserveUsdc: string; reserveXlm: string; ledger: number };
+  call: { contract: string | null; method: string; args: Record<string, string | string[]> };
+  policy: {
+    allowed: boolean;
+    code: string | null;
+    message: string | null;
+    caps: { perTxCap: string; dailyCap: string; spentToday: string; remainingToday: string; counted: string } | null;
+  };
+};

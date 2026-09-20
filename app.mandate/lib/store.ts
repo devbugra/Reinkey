@@ -239,7 +239,7 @@ function apply(s: State, e: FeedEvent, touched: Touched) {
       c.openedTx = e.tx;
       c.updatedAt = e.ts;
       s.local.chainTxCount++;
-      s.rows.unshift(row(e, { amount: c.deposit, text: "Kanal açıldı" }));
+      s.rows.unshift(row(e, { amount: c.deposit }));
       break;
     }
     case "channel.topped_up": {
@@ -247,7 +247,7 @@ function apply(s: State, e: FeedEvent, touched: Touched) {
       c.deposit = big(e.deposit);
       c.updatedAt = e.ts;
       s.local.chainTxCount++;
-      s.rows.unshift(row(e, { amount: big(e.amount), text: "Depozito artırıldı" }));
+      s.rows.unshift(row(e, { amount: big(e.amount) }));
       break;
     }
     case "voucher.accepted": {
@@ -298,7 +298,7 @@ function apply(s: State, e: FeedEvent, touched: Touched) {
         ts: e.ts,
         code: e.code,
         source: e.source,
-        subject: e.channelId ? `Kanal #${e.channelId}` : e.resource,
+        subject: e.channelId ? `#${e.channelId}` : e.resource,
         tx: null,
       });
       s.rows.unshift(row(e, { code: e.code, text: e.resource }));
@@ -333,7 +333,7 @@ function apply(s: State, e: FeedEvent, touched: Touched) {
         tx: e.tx,
       });
       s.rows.unshift(
-        row(e, { amount: big(e.amount), count: e.vouchersCovered, text: "Tahsil edildi" }),
+        row(e, { amount: big(e.amount), count: e.vouchersCovered }),
       );
       break;
     }
@@ -343,13 +343,13 @@ function apply(s: State, e: FeedEvent, touched: Touched) {
       c.refunded = big(e.refunded);
       c.updatedAt = e.ts;
       s.local.chainTxCount++;
-      s.rows.unshift(row(e, { amount: big(e.refunded), text: "Kanal kapandı" }));
+      s.rows.unshift(row(e, { amount: big(e.refunded) }));
       break;
     }
     case "payment.exact": {
       s.local.chainTxCount++;
       s.local.volume += big(e.amount);
-      s.rows.unshift(row(e, { amount: big(e.amount), text: "exact ödeme" }));
+      s.rows.unshift(row(e, { amount: big(e.amount) }));
       break;
     }
     case "chain.rejected": {
@@ -377,7 +377,7 @@ function apply(s: State, e: FeedEvent, touched: Touched) {
         startedAt: e.ts,
       };
       s.rows.unshift(
-        row(e, { unit: e.unit ?? "token", text: e.unit === "second" ? "Fiyat akışı" : "Yanıt akışı" }),
+        row(e, { unit: e.unit ?? "token" }),
       );
       break;
     }
@@ -398,7 +398,7 @@ function apply(s: State, e: FeedEvent, touched: Touched) {
           amount: big(e.charged),
           code: e.reason === "done" ? null : e.reason,
           unit: e.unit ?? null,
-          text: secs !== null ? `${secs} sn veri` : `${e.tokens} token`,
+          count: secs ?? e.tokens,
         }),
       );
       break;
@@ -432,7 +432,7 @@ function apply(s: State, e: FeedEvent, touched: Touched) {
     }
     case "agent.exited": {
       s.agent = { ...s.agent, running: false, exitCode: e.code };
-      s.rows.unshift(row(e, { text: e.code === 0 ? "ok" : `kod ${e.code}` }));
+      s.rows.unshift(row(e, { text: e.code === 0 ? "ok" : `exit ${e.code}` }));
       break;
     }
     case "ticker.tick": {

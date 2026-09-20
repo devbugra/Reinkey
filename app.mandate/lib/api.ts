@@ -1,6 +1,7 @@
 /** Backend çağrıları. Hata yanıtları BACKEND.md §3.3 biçimindedir: { error, source, message }. */
 import { describeCode } from "./codes";
 import { env } from "./env";
+import { t } from "./t";
 
 export async function getJson<T>(path: string, signal?: AbortSignal): Promise<T | null> {
   try {
@@ -28,6 +29,6 @@ export async function postJson<T>(path: string, body: unknown): Promise<PostResu
     }
     return { ok: true, data: data as T };
   } catch {
-    return { ok: false, error: "Backend'e ulaşılamadı" };
+    return { ok: false, error: t()("errors.backend") };
   }
 }

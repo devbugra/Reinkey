@@ -5,19 +5,43 @@
 | # | Ne | Nerede | Adres (örnek) |
 |---|---|---|---|
 | 1 | Postgres | Railway / Fly Postgres / Neon / Supabase | `DATABASE_URL` |
-| 2 | **backend** (facilitator) | Dockerfile alan herhangi bir yer: Railway, Fly.io, Render | `https://api.reinkey.xyz` |
-| 3 | **landing-page** (site + `/docs`) | Vercel | `https://reinkey.xyz` |
-| 4 | **app.mandate** (konsol) | Vercel | `https://console.reinkey.xyz` |
+| 2 | **backend** (facilitator) | Dockerfile alan herhangi bir yer: Railway, Fly.io, Render | `https://reinkey.onrender.com` |
+| 3 | **landing-page** (site + `/docs`) | Vercel | `https://reinkey.com` |
+| 4 | **app.mandate** (konsol) | Vercel | `https://reinkey.io` |
 
 Backend'in adresi iki Next uygulamasına derleme anında gömülür (`NEXT_PUBLIC_*`); backend de CORS için onların adresini bilmek zorunda. Bu yüzden önce backend'i çıkar, sonra Next'leri, en son CORS'u güncelle.
 
 ## Canlı kurulum (20 Eylül)
 
-| Yüzey | Adres |
-|---|---|
-| Tanıtım sitesi | https://reinkey.com (→ www.reinkey.com/tr) |
-| Konsol | https://reinkey.io (→ www.reinkey.io) |
-| Facilitator | https://reinkey.onrender.com |
+| Yüzey | Kanonik adres | Yönlendirme |
+|---|---|---|
+| Tanıtım sitesi | `https://www.reinkey.com` | çıplak `reinkey.com` → 308 → www → 307 → `/tr` |
+| Konsol | `https://www.reinkey.io` | çıplak `reinkey.io` → 308 → www |
+| Facilitator | `https://reinkey.onrender.com` | — |
+
+İki alan adı da bizim: **reinkey.com tanıtım sitesi, reinkey.io konsol.** Her iki
+alanda da sunulan ana bilgisayar adı `www`'dür; env değerlerine bu yüzden şema ve
+`www` ile tam yazılmalıdır.
+
+### Env değerleri (canlı)
+
+| Uygulama | Değişken | Değer |
+|---|---|---|
+| landing-page (Vercel) | `NEXT_PUBLIC_SITE_URL` | `https://www.reinkey.com` |
+| landing-page | `NEXT_PUBLIC_API_URL` | `https://reinkey.onrender.com` |
+| landing-page | `NEXT_PUBLIC_APP_URL` | `https://www.reinkey.io` |
+| app.mandate (Vercel) | `NEXT_PUBLIC_SITE_URL` | `https://www.reinkey.com` |
+| app.mandate | `NEXT_PUBLIC_API_URL` | `https://reinkey.onrender.com` |
+| backend (Render) | `PUBLIC_URL` | `https://reinkey.onrender.com` |
+| backend | `CORS_ORIGINS` | `https://www.reinkey.com,https://www.reinkey.io` |
+
+Konsoldaki Reinkey logosu `NEXT_PUBLIC_SITE_URL`'e bağlanır. Konsol reinkey.io'da
+olduğu için bu değer **tanıtım sitesini** göstermek zorundadır; konsolun kendi
+adresi yazılırsa logo kullanıcıyı bulunduğu sayfaya geri atar.
+
+Yalnızca konsol tarayıcıdan backend'e bağlanır, dolayısıyla CORS'ta asıl gereken
+köken `https://www.reinkey.io`'dur. Tanıtım sitesi backend'e istek atmaz (CSP'de
+`connect-src 'self'`), listede durması zararsızdır.
 
 ### Render'da demo kontrolleri için gereken düzeltme
 
@@ -74,7 +98,7 @@ Railway / Render: "Dockerfile path" = `backend/Dockerfile`, "context" = depo kö
 | Değişken | Değer |
 |---|---|
 | `PUBLIC_URL` | Backend'in herkese açık adresi. 402 gövdesindeki `resource`, ajanın `API_URL`'i ve MCP açıklaması buradan gelir |
-| `CORS_ORIGINS` | Site ve konsol adresleri, virgülle: `https://reinkey.xyz,https://console.reinkey.xyz` |
+| `CORS_ORIGINS` | Site ve konsol adresleri, virgülle. Tarayıcı `Origin` başlığını **sunulan** ana bilgisayar adıyla gönderir, bu yüzden `www` biçimi yazılır: `https://www.reinkey.com,https://www.reinkey.io` |
 | `DATABASE_URL` | Yönetilen Postgres bağlantısı (`?sslmode=require` gerekebilir) |
 | `FACILITATOR_SECRET` | Claim işlemlerini gönderen ve ücret ödeyen G-hesabı (testnet) |
 | `SELLER_PAY_TO` | Demo satıcının adresi |
@@ -117,6 +141,7 @@ Giriş betiği önce `prisma migrate deploy` çalıştırır; ilk açılışta t
 
 - Root directory: `app.mandate`.
 - Ortam değişkenleri (`app.mandate/.env.example`): `NEXT_PUBLIC_API_URL` (backend), `NEXT_PUBLIC_SITE_URL` (site).
+- `NEXT_PUBLIC_SITE_URL` **tanıtım sitesini** gösterir (`https://www.reinkey.com`), konsolun kendi adresini değil. Kabuktaki Reinkey logosu bu değere bağlanır; buraya `reinkey.io` yazılırsa logo kullanıcıyı bulunduğu sayfaya geri atar.
 - Konsol tamamen istemci tarafındadır; backend'e tarayıcıdan bağlanır. Bu yüzden konsol adresi backend'in `CORS_ORIGINS`'inde olmak zorunda.
 
 ## 4. CORS'u kapat ve doğrula

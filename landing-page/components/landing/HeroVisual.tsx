@@ -212,8 +212,12 @@ export function HeroVisual() {
           <span dir="ltr" className="ms-2 truncate rounded-full bg-bg px-3 py-1 font-mono text-xs text-fg-subtle">
             agent-01 → demo-seller · stellar:testnet
           </span>
-          <span className="ms-auto flex items-center gap-2 rounded-full border border-line px-2.5 py-1 text-[11px] font-medium tracking-[0.1em] text-fg-muted uppercase">
-            <span aria-hidden="true" className={cn("size-1.5 rounded-full bg-success", !reduced && "soft-pulse")} />
+          {/*
+            Etiket sade ve DURAĞAN: yanıp sönen yeşil bir nokta "canlı yayın"
+            demektir. Buradaki sayılar canlı değil, ürünün kendi birimleriyle
+            kurulmuş bir örnek akış; rozet de onu söylemeli.
+          */}
+          <span className="ms-auto rounded-full border border-line px-2.5 py-1 text-[11px] font-medium tracking-[0.1em] text-fg-subtle uppercase">
             {th("badge")}
           </span>
         </div>

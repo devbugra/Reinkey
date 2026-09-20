@@ -41,12 +41,12 @@
     ],
     "builtOn": "Built on",
     "visual": {
-      "badge": "Simulation"
+      "badge": "Example run"
     }
   },
   "playground": {
     "eyebrow": "Try it yourself",
-    "title": "Be the agent. Pay first, then hit the limit.",
+    "title": "Pay first, then hit the limit.",
     "lead": "Open a channel, make calls, stream a response token by token. Watch the voucher count climb while the transaction count barely moves. Then push the cap: the rejection comes from the account, not from a server.",
     "agent": "agent-01",
     "policyTitle": "Account rules",
@@ -382,7 +382,7 @@
     ]
   },
   "closing": {
-    "title": "This isn't a video. It's a live URL.",
+    "title": "The endpoint is live. Call it.",
     "subtitle": "Call it with your own agent. The first request returns 402 with the terms; sign a voucher if you have a channel, or open one if you don't.",
     "cta": "llms.txt",
     "ctaSecondary": "OpenAPI schema"
@@ -404,11 +404,9 @@
       "x402": "x402 protocol",
       "x402Stellar": "@x402/stellar",
       "networkLimits": "Network limits",
-      "scfRfp": "SCF RFP track",
       "docs": "Docs"
     },
     "disclaimer": "A non-custodial payment protocol running on Stellar testnet. The contracts haven't been audited yet.",
-    "event": "Stellar Pro Hackathon · Istanbul · 2026",
     "products": "Products",
     "status": "Stellar testnet · live"
   },

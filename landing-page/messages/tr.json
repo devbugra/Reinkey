@@ -41,12 +41,12 @@
     ],
     "builtOn": "Üzerine kurulu",
     "visual": {
-      "badge": "Simülasyon"
+      "badge": "Örnek akış"
     }
   },
   "playground": {
     "eyebrow": "Kendiniz deneyin",
-    "title": "Bir ajan olun. Önce ödeyin, sonra sınıra çarpın.",
+    "title": "Önce ödeyin, sonra sınıra çarpın.",
     "lead": "Kanalı açın, çağrı yapın, yanıtı token token akıtın. Kupon sayısı artarken zincir işlemi sayısının neredeyse hiç değişmediğine bakın. Sonra tavanı zorlayın: red sunucudan değil, hesaptan gelir.",
     "agent": "ajan-01",
     "policyTitle": "Hesabın kuralları",
@@ -382,7 +382,7 @@
     ]
   },
   "closing": {
-    "title": "Bu bir video değil. Canlı bir URL.",
+    "title": "Uç nokta açık. Şimdi çağırın.",
     "subtitle": "Kendi ajanınızla çağırın. İlk istek 402 ile şartları döner; kanalınız varsa kupon imzalayın, yoksa bir tane açın.",
     "cta": "llms.txt",
     "ctaSecondary": "OpenAPI şeması"
@@ -404,11 +404,9 @@
       "x402": "x402 protokolü",
       "x402Stellar": "@x402/stellar",
       "networkLimits": "Ağ limitleri",
-      "scfRfp": "SCF RFP track",
       "docs": "Belgeler"
     },
     "disclaimer": "Stellar testnet üzerinde çalışan emanetsiz bir ödeme protokolü. Kontratlar henüz denetlenmedi.",
-    "event": "Stellar Pro Hackathon · İstanbul · 2026",
     "products": "Ürünler",
     "status": "Stellar testnet · canlı"
   },

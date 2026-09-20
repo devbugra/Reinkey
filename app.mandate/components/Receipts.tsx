@@ -7,6 +7,7 @@
  * diye sorulmaz; sorulsaydı kanıt olmazdı.
  */
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { BadgeCheck, ShieldX } from "lucide-react";
 import { getJson } from "@/lib/api";
 import { env } from "@/lib/env";
@@ -65,6 +66,7 @@ async function verify(r: Receipt): Promise<"ok" | "bad" | "server-ok" | "server-
 }
 
 function Row({ r }: { r: Receipt }) {
+  const t = useTranslations("receipts");
   const [state, setState] = useState<"idle" | "checking" | "ok" | "bad" | "server-ok" | "server-bad">("idle");
   const path = (() => {
     try {
@@ -84,10 +86,10 @@ function Row({ r }: { r: Receipt }) {
         <span className="ml-auto text-[11px] text-fg-subtle">{clock(r.ts)}</span>
       </p>
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-fg-subtle">
-        <span title="Makbuz kimliği (gövdenin sha256'sı)">#{r.id.slice(0, 10)}…</span>
-        <span title="İstek özeti: ne istendi">istek {r.requestHash?.slice(0, 8) ?? "—"}…</span>
-        <span title="Satıcının taahhüt ettiği yanıt özeti: ne teslim edildi">
-          yanıt {r.responseHash ? `${r.responseHash.slice(0, 8)}…` : "taahhüt yok"}
+        <span title={t("idTitle")}>#{r.id.slice(0, 10)}…</span>
+        <span title={t("requestTitle")}>{t("request", { hash: r.requestHash?.slice(0, 8) ?? "—" })}</span>
+        <span title={t("responseTitle")}>
+          {r.responseHash ? t("response", { hash: r.responseHash.slice(0, 8) }) : t("noCommit")}
         </span>
         <span className="ml-auto flex items-center gap-2">
           <button
@@ -109,17 +111,17 @@ function Row({ r }: { r: Receipt }) {
               <ShieldX className="size-3.5" aria-hidden="true" />
             ) : null}
             {state === "ok"
-              ? "imza geçerli"
+              ? t("valid")
               : state === "server-ok"
-                ? "geçerli (sunucuya göre)"
+                ? t("validServer")
                 : state === "bad" || state === "server-bad"
-                  ? "imza geçersiz"
+                  ? t("invalid")
                   : state === "checking"
-                    ? "doğrulanıyor…"
-                    : "imzayı doğrula"}
+                    ? t("checking")
+                    : t("verify")}
           </button>
           <a href={`${env.apiUrl}/receipts/${r.id}`} target="_blank" rel="noreferrer" className="font-sans text-[11px] hover:text-fg">
-            ham
+            {t("raw")}
           </a>
         </span>
       </p>
@@ -128,24 +130,25 @@ function Row({ r }: { r: Receipt }) {
 }
 
 export function Receipts({ payee, active }: { payee: string | null; active: boolean }) {
+  const t = useTranslations("receipts");
   const data = useReceipts(payee, active);
 
   return (
     <Panel
-      title="İmzalı makbuzlar"
-      hint="Her ödeme ne için yapıldığını taşır: istek özeti, teslim edilen yanıtın özeti ve facilitator imzası"
+      title={t("title")}
+      hint={t("hint")}
       action={
         data?.signer ? (
-          <span className="shrink-0 font-mono text-[11px] text-fg-subtle" title="Makbuzları imzalayan anahtar; zincirde claim'i gönderen anahtarla aynı">
-            imzalayan {shortAddr(data.signer, 4, 4)}
+          <span className="shrink-0 font-mono text-[11px] text-fg-subtle" title={t("signerTitle")}>
+            {t("signer", { address: shortAddr(data.signer, 4, 4) })}
           </span>
         ) : null
       }
     >
       {!data ? (
-        <Empty>Makbuzlar okunuyor…</Empty>
+        <Empty>{t("loading")}</Empty>
       ) : data.receipts.length === 0 ? (
-        <Empty>Bu adrese henüz ödeme yapılmadı.</Empty>
+        <Empty>{t("empty")}</Empty>
       ) : (
         <>
           <ul className="divide-y divide-line">
@@ -153,9 +156,7 @@ export function Receipts({ payee, active }: { payee: string | null; active: bool
               <Row key={r.id} r={r} />
             ))}
           </ul>
-          <p className="border-t border-line px-5 py-2.5 text-[11px] leading-relaxed text-fg-subtle">
-            Doğrulama tarayıcıda yapılır (WebCrypto, ed25519): imzalayanın açık anahtarı dışında hiçbir şeye güvenilmez. Kurcalanan bir makbuz imzayı geçemez.
-          </p>
+          <p className="border-t border-line px-5 py-2.5 text-[11px] leading-relaxed text-fg-subtle">{t("note")}</p>
         </>
       )}
     </Panel>

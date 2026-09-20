@@ -80,7 +80,6 @@ export const external = {
   x402: "https://github.com/x402-foundation/x402",
   x402Stellar: "https://www.npmjs.com/package/@x402/stellar",
   networkLimits: "https://lab.stellar.org/network-limits",
-  scfRfp: "https://stellar.gitbook.io/scf-handbook/scf-awards/build-award/rfp-track",
 } as const;
 
 /**

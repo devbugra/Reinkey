@@ -1,4 +1,7 @@
+"use client";
+
 /** Panelin küçük yapı taşları. */
+import { useTranslations } from "next-intl";
 import { clsx } from "clsx";
 import type { Source } from "@/lib/types";
 import { txUrl, shortHash } from "@/lib/format";
@@ -43,13 +46,8 @@ const SOURCE_STYLE: Record<Source, string> = {
   gateway: "border-line-strong text-fg-muted",
 };
 
-const SOURCE_LABEL: Record<Source, string> = {
-  chain: "zincir",
-  facilitator: "facilitator",
-  gateway: "gateway",
-};
-
 export function SourceTag({ source }: { source: Source }) {
+  const t = useTranslations("sources");
   return (
     <span
       className={cn(
@@ -57,7 +55,7 @@ export function SourceTag({ source }: { source: Source }) {
         SOURCE_STYLE[source],
       )}
     >
-      {SOURCE_LABEL[source]}
+      {t(source)}
     </span>
   );
 }
@@ -76,6 +74,7 @@ export function Code({ code, tone = "danger" }: { code: string; tone?: "danger" 
 }
 
 export function TxLink({ hash, className }: { hash: string | null | undefined; className?: string }) {
+  const t = useTranslations("ui");
   if (!hash) return null;
   const url = txUrl(hash);
   const label = shortHash(hash);
@@ -86,7 +85,7 @@ export function TxLink({ hash, className }: { hash: string | null | undefined; c
       target="_blank"
       rel="noreferrer"
       className={cn(cls, "underline decoration-line-strong underline-offset-2 hover:text-accent")}
-      title="stellar.expert üzerinde aç"
+      title={t("txLink")}
     >
       tx {label}
     </a>

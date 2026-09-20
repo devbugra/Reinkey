@@ -4,6 +4,7 @@
  * Reinkey Meter · satıcı görünümü: bu adrese ödeme yapan kanallar, tahsil edilen
  * ve bekleyen gelir, elle tahsilat ve adresle doldurulmuş entegrasyon örneği.
  */
+import { useTranslations } from "next-intl";
 import { CheckCircle2, Loader2, Receipt } from "lucide-react";
 import { env } from "@/lib/env";
 import { clock, int, ratio, usdc } from "@/lib/format";
@@ -30,16 +31,12 @@ function Kpi({ label, value, sub, accent }: { label: string; value: string; sub?
  * sayfa kendiliğinden dolar (10 sn'de bir okunuyor).
  */
 function FirstRun({ payTo }: { payTo: string }) {
-  const steps: { title: string; body: string; code?: string; lang?: string }[] = [
+  const t = useTranslations("meter");
+  const steps = [
+    { title: t("step1"), body: t("step1Body"), code: "npm i @reinkey/meter" },
     {
-      title: "Paketi kurun",
-      body: "Sunucunuz Express, Nest ya da düz node:http olabilir.",
-      code: "npm i @reinkey/meter",
-      lang: "bash",
-    },
-    {
-      title: "Bir ucu ücretli yapın",
-      body: "Fiyat taban birimdedir: 5000 = 0,0005 USDC. Ödeme adresiniz aşağıda hazır.",
+      title: t("step2"),
+      body: t("step2Body"),
       code: `import { reinkey } from "@reinkey/meter";
 
 const rk = await reinkey({
@@ -48,19 +45,13 @@ const rk = await reinkey({
 });
 
 app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`,
-      lang: "server.ts",
     },
-    {
-      title: "Şartların göründüğünü doğrulayın",
-      body: "Ödemesiz istek 402 döner ve fiyatı, ağı, ödeme adresinizi makinenin okuyacağı biçimde söyler.",
-      code: "curl -i localhost:8080/book",
-      lang: "bash",
-    },
+    { title: t("step3"), body: t("step3Body"), code: "curl -i localhost:8080/book" },
   ];
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-      <Panel title="İlk ödemenizi alın" hint="Üç adım · kayıt, API anahtarı ya da abonelik yok">
+      <Panel title={t("firstTitle")} hint={t("firstHint")}>
         <ol className="divide-y divide-line">
           {steps.map((s, i) => (
             <li key={s.title} className="grid gap-2.5 px-5 py-4">
@@ -71,48 +62,39 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`,
                 <span className="text-sm font-semibold">{s.title}</span>
               </p>
               <p className="ps-7 text-xs leading-relaxed text-fg-muted">{s.body}</p>
-              {s.code && (
-                <pre className="ms-7 overflow-x-auto rounded-md border border-line bg-bg px-4 py-3 font-mono text-[11.5px] leading-relaxed text-fg-muted">
-                  <code>{s.code}</code>
-                </pre>
-              )}
+              <pre className="ms-7 overflow-x-auto rounded-md border border-line bg-bg px-4 py-3 font-mono text-[11.5px] leading-relaxed text-fg-muted">
+                <code>{s.code}</code>
+              </pre>
             </li>
           ))}
         </ol>
       </Panel>
 
       <div className="grid content-start gap-4">
-        <Panel title="Bu sayfa ne zaman dolar?" hint="Adres zincirden okunuyor, 10 saniyede bir">
+        <Panel title={t("whenTitle")} hint={t("whenHint")}>
           <div className="grid gap-3 px-5 py-4">
             <p className="flex items-center gap-2 text-sm text-fg-muted">
               <span className="pulse-dot size-2 shrink-0 rounded-full bg-warning" aria-hidden="true" />
-              İlk ödeme bekleniyor
+              {t("waiting")}
             </p>
-            <p className="text-xs leading-relaxed text-fg-subtle">
-              Bir alıcı size kanal açıp ödediği anda burada gelir, tahsilat ve imzalı makbuzlar görünür. Sayfayı açık
-              bırakabilirsiniz; yenilemeye gerek yok.
-            </p>
+            <p className="text-xs leading-relaxed text-fg-subtle">{t("whenBody")}</p>
             <ul className="grid gap-2 border-t border-line pt-3 text-xs text-fg-muted">
-              {[
-                "Ödemeler zincire gitmeden doğrulanır (ortanca 1 ms'nin altında)",
-                "Biriken yüzlerce ödeme tek zincir işlemiyle cüzdanınıza geçer",
-                "Her ödeme, ne için yapıldığını taşıyan imzalı bir makbuz üretir",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-2">
+              {[t("bullet1"), t("bullet2"), t("bullet3")].map((line) => (
+                <li key={line} className="flex items-start gap-2">
                   <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success" aria-hidden="true" />
-                  {t}
+                  {line}
                 </li>
               ))}
             </ul>
           </div>
         </Panel>
 
-        <Panel title="Yardım" hint="Ayrıntılı anlatım ve referans">
+        <Panel title={t("helpTitle")} hint={t("helpHint")}>
           <ul className="divide-y divide-line text-sm">
             {[
-              ["Meter hızlı başlangıç", `${env.siteUrl}/docs/meter/quickstart`],
-              ["Birimler, 402 gövdesi, başlıklar", `${env.siteUrl}/docs/meter/reference`],
-              ["Sebep kodları", `${env.siteUrl}/docs/reason-codes`],
+              [t("helpQuickstart"), `${env.siteUrl}/docs/meter/quickstart`],
+              [t("helpReference"), `${env.siteUrl}/docs/meter/reference`],
+              [t("helpCodes"), `${env.siteUrl}/docs/reason-codes`],
             ].map(([label, href]) => (
               <li key={href}>
                 <a href={href} target="_blank" rel="noreferrer" className="block px-5 py-2.5 text-fg-muted hover:text-fg">
@@ -129,7 +111,7 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`,
 
 export function MeterView({
   seller,
-  isDemo,
+  isExample,
   channels,
   claims,
   canClaim,
@@ -138,7 +120,7 @@ export function MeterView({
   onSeller,
 }: {
   seller: string | null;
-  isDemo: boolean;
+  isExample: boolean;
   channels: Record<string, ChannelView>;
   claims: ClaimView[];
   canClaim: boolean;
@@ -146,6 +128,7 @@ export function MeterView({
   onClaim: (channelId: string) => void;
   onSeller: (address: string | null) => void;
 }) {
+  const t = useTranslations("meter");
   const mine = Object.values(channels)
     .filter((c) => c.payee === seller)
     .sort((a, b) => Number(b.id) - Number(a.id));
@@ -156,13 +139,7 @@ export function MeterView({
   if (seller && mine.length === 0)
     return (
       <>
-        <Identity
-          label="Satıcı adresi (payTo)"
-          value={seller}
-          isDemo={isDemo}
-          placeholder="Başka bir satıcı adresi: G…"
-          onChange={onSeller}
-        />
+        <Identity label={t("identity")} value={seller} isExample={isExample} placeholder={t("placeholder")} onChange={onSeller} />
         <FirstRun payTo={seller} />
       </>
     );
@@ -183,39 +160,31 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`;
 
   return (
     <>
-      <Identity
-        label="Satıcı adresi (payTo)"
-        value={seller}
-        isDemo={isDemo}
-        placeholder="Başka bir satıcı adresi: G…"
-        onChange={onSeller}
-      />
+      <Identity label={t("identity")} value={seller} isExample={isExample} placeholder={t("placeholder")} onChange={onSeller} />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <Kpi label="Tahsil edilen" value={`${usdc(claimed)} USDC`} sub="Zincirde cüzdanınıza geçti" accent />
-        <Kpi label="Tahsilat bekleyen" value={`${usdc(pending)} USDC`} sub="İmzalı kuponla kanıtlı, henüz tahsil edilmedi" />
-        <Kpi label="Açık kanal" value={int(open)} sub={`${int(mine.length)} kanal, ${int(buyers)} alıcı`} />
-        <Kpi label="Tahsilat işlemi" value={int(myClaims.length)} sub="Bu oturumda görülen zincir işlemleri" />
+        <Kpi label={t("claimed")} value={`${usdc(claimed)} USDC`} sub={t("claimedSub")} accent />
+        <Kpi label={t("pending")} value={`${usdc(pending)} USDC`} sub={t("pendingSub")} />
+        <Kpi label={t("openChannels")} value={int(open)} sub={t("channelsSub", { channels: int(mine.length), buyers: int(buyers) })} />
+        <Kpi label={t("claimTxs")} value={int(myClaims.length)} sub={t("claimTxsSub")} />
       </div>
 
       <Revenue seller={seller} active />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <Panel title="Kanallar" hint="Size ödeme yapan her alıcının kanalı · mor: tahsil edildi · mavi: tahsilat bekliyor">
+        <Panel title={t("channelsTitle")} hint={t("channelsHint")}>
           {mine.length === 0 ? (
-            <Empty>
-              {seller ? "Bu adrese ödeme yapan kanal yok." : "Satıcı adresi okunuyor…"}
-            </Empty>
+            <Empty>{seller ? t("channelsEmpty") : t("reading")}</Empty>
           ) : (
             <div className="overflow-x-auto">
               <table className="tabular w-full min-w-[640px] text-sm">
                 <thead>
                   <tr className="border-b border-line text-left text-[11px] text-fg-subtle">
-                    <th scope="col" className="px-5 py-2 font-normal">Kanal</th>
-                    <th scope="col" className="px-5 py-2 font-normal">Alıcı</th>
-                    <th scope="col" className="w-40 px-5 py-2 font-normal">Depozito kullanımı</th>
-                    <th scope="col" className="px-5 py-2 text-right font-normal">Tahsil edilen</th>
-                    <th scope="col" className="px-5 py-2 text-right font-normal">Bekleyen</th>
+                    <th scope="col" className="px-5 py-2 font-normal">{t("colChannel")}</th>
+                    <th scope="col" className="px-5 py-2 font-normal">{t("colBuyer")}</th>
+                    <th scope="col" className="w-40 px-5 py-2 font-normal">{t("colUsage")}</th>
+                    <th scope="col" className="px-5 py-2 text-right font-normal">{t("colClaimed")}</th>
+                    <th scope="col" className="px-5 py-2 text-right font-normal">{t("colPending")}</th>
                     <th scope="col" className="px-5 py-2" />
                   </tr>
                 </thead>
@@ -227,10 +196,12 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`;
                         <th scope="row" className="whitespace-nowrap px-5 py-3 text-left font-normal">
                           <span className="font-mono text-xs">#{c.id}</span>{" "}
                           <span className={cn("ml-1 rounded-full px-2 py-0.5 text-[11px]", c.open ? "bg-success-bg text-success" : "bg-surface-3 text-fg-subtle")}>
-                            {c.open ? "açık" : "kapalı"}
+                            {c.open ? t("open") : t("closed")}
                           </span>
                         </th>
-                        <td className="whitespace-nowrap px-5 py-3 font-mono text-xs text-fg-muted">{c.payer ? `${c.payer.slice(0, 5)}…${c.payer.slice(-5)}` : "—"}</td>
+                        <td className="whitespace-nowrap px-5 py-3 font-mono text-xs text-fg-muted">
+                          {c.payer ? `${c.payer.slice(0, 5)}…${c.payer.slice(-5)}` : "—"}
+                        </td>
                         <td className="px-5 py-3">
                           <DepositBar claimed={ratio(c.claimed, c.deposit)} pending={ratio(p, c.deposit)} />
                           <span className="mt-1 block text-[11px] text-fg-subtle">{usdc(c.deposit)} USDC</span>
@@ -246,7 +217,7 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`;
                               className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-line-strong bg-surface-2 px-2.5 py-1.5 text-xs font-medium hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-45"
                             >
                               {claiming ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <Receipt className="size-3.5" aria-hidden="true" />}
-                              Tahsil et
+                              {t("claim")}
                             </button>
                           )}
                         </td>
@@ -262,11 +233,11 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`;
         <div className="grid content-start gap-4">
           <Receipts payee={seller} active />
           <Panel
-            title="Entegrasyon"
-            hint="Adresinizle doldurulmuş; kopyalayıp sunucunuza ekleyin"
+            title={t("integration")}
+            hint={t("integrationHint")}
             action={
               <a href={`${env.siteUrl}/docs/meter/quickstart`} target="_blank" rel="noreferrer" className="shrink-0 text-xs text-accent hover:underline">
-                Hızlı başlangıç
+                {t("quickstart")}
               </a>
             }
           >
@@ -275,16 +246,18 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`;
             </pre>
           </Panel>
 
-          <Panel title="Son tahsilatlar" hint="Her satır tek bir zincir işlemi">
+          <Panel title={t("recent")} hint={t("recentHint")}>
             {myClaims.length === 0 ? (
-              <Empty>Bu oturumda tahsilat görülmedi.</Empty>
+              <Empty>{t("recentEmpty")}</Empty>
             ) : (
               <ul className="divide-y divide-line">
                 {myClaims.slice(0, 6).map((c) => (
                   <li key={c.key} className="tabular flex items-center gap-3 px-5 py-3 text-sm">
                     <span className="font-semibold">{usdc(c.amount)} USDC</span>
                     <span className="text-xs text-fg-muted">
-                      {c.vouchersCovered > 0 ? `${int(c.vouchersCovered)} ödeme · ` : ""}kanal #{c.channelId}
+                      {c.vouchersCovered > 0
+                        ? t("claimRow", { count: int(c.vouchersCovered), id: c.channelId })
+                        : t("claimRowNoCount", { id: c.channelId })}
                     </span>
                     <span className="ml-auto flex flex-col items-end gap-0.5">
                       <TxLink hash={c.tx} />

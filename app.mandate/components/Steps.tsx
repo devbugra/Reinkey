@@ -1,15 +1,17 @@
+"use client";
+
 /**
- * Demo senaryosunun adımları (proje-tanimi.md §10). Hiçbir adım elle
- * işaretlenmez: hepsi akıştan gelen gerçek olaylardan türetilir.
+ * Örnek hesabın akışı. Hiçbir adım elle işaretlenmez: hepsi akıştan gelen
+ * gerçek olaylardan türetilir. Yalnızca örnek hesapta gösterilir.
  */
+import { useTranslations } from "next-intl";
 import { Check } from "lucide-react";
-import { int } from "@/lib/format";
 import type { State } from "@/lib/store";
 import { cn } from "./ui";
 
-type Step = { title: string; detail: string; done: boolean; live?: boolean; tone?: "danger" };
+type Step = { key: string; title: string; detail: string; done: boolean; live?: boolean; tone?: "danger" };
 
-function derive(s: State): Step[] {
+function derive(s: State, t: ReturnType<typeof useTranslations<"steps">>): Step[] {
   const channels = Object.values(s.channels);
   const streams = Object.values(s.streams).filter((st) => st.unit === "second");
   const streaming = streams.some((st) => !st.ended);
@@ -19,42 +21,49 @@ function derive(s: State): Step[] {
 
   return [
     {
-      title: "Yetki",
-      detail: s.account ? (s.account.frozen ? "hesap donduruldu" : "sınırlar zincirde") : "hesap okunuyor",
+      key: "authority",
+      title: t("authority"),
+      detail: s.account ? (s.account.frozen ? t("authorityFrozen") : t("authorityOn")) : t("authorityIdle"),
       done: Boolean(s.account),
       tone: s.account?.frozen ? "danger" : undefined,
     },
     {
-      title: "Kanal",
-      detail: channels.length ? `${int(channels.length)} kanal açıldı` : "depozito kilitlenir",
+      key: "channel",
+      title: t("channel"),
+      detail: channels.length ? t("channelDone", { count: channels.length }) : t("channelIdle"),
       done: channels.length > 0,
     },
     {
-      title: "Saniye başı veri",
-      detail: s.local.dataSeconds ? `${int(s.local.dataSeconds)} sn satın alındı` : "fiyat akışı",
+      key: "data",
+      title: t("data"),
+      detail: s.local.dataSeconds ? t("dataDone", { count: s.local.dataSeconds }) : t("dataIdle"),
       done: streams.length > 0 || s.local.dataSeconds > 0,
       live: streaming,
     },
     {
-      title: "Alım-satım",
-      detail: s.swaps.length ? `${int(s.swaps.length)} DEX işlemi` : "sınırlar içinde",
+      key: "trade",
+      title: t("trade"),
+      detail: s.swaps.length ? t("tradeDone", { count: s.swaps.length }) : t("tradeIdle"),
       done: s.swaps.length > 0,
     },
     {
-      title: "Zincirden red",
-      detail: chainRejections ? `${int(chainRejections)} işlem engellendi` : "sınır aşılırsa",
+      key: "reject",
+      title: t("reject"),
+      detail: chainRejections ? t("rejectDone", { count: chainRejections }) : t("rejectIdle"),
       done: chainRejections > 0,
       tone: "danger",
     },
     {
-      title: "Kesinti",
-      detail: exhausted ? "depozito bitti, akış kesildi" : "depozito bitince",
+      key: "cut",
+      title: t("cut"),
+      detail: exhausted ? t("cutDone") : t("cutIdle"),
       done: exhausted,
       tone: "danger",
     },
     {
-      title: "Tahsilat",
-      detail: s.claims.length ? `${int(s.claims.length)} zincir işlemi` : "tek işlemle",
+      key: "claim",
+      title: t("claim"),
+      detail: s.claims.length ? t("claimDone", { count: s.claims.length }) : t("claimIdle"),
       done: s.claims.length > 0,
     },
   ];
@@ -66,21 +75,22 @@ function derive(s: State): Step[] {
  * Dar ekranda hat çizilmez, istasyonlar iki sütuna dizilir.
  */
 export function Steps({ state }: { state: State }) {
-  const steps = derive(state);
+  const t = useTranslations("steps");
+  const steps = derive(state, t);
   const done = steps.filter((s) => s.done).length;
   return (
     <div className="card rounded-lg px-5 py-4">
       <p className="mb-4 flex items-baseline justify-between gap-3 text-xs text-fg-subtle">
-        <span>Senaryo · olaylardan türetilir, elle işaretlenmez</span>
+        <span>{t("header")}</span>
         <span className="tabular font-mono">
           {done}/{steps.length}
         </span>
       </p>
-      <ol aria-label="Senaryo adımları" className="track grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4 xl:grid-cols-7 xl:gap-x-2">
+      <ol aria-label={t("aria")} className="track grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4 xl:grid-cols-7 xl:gap-x-2">
         {steps.map((st, i) => {
           const danger = st.done && st.tone === "danger";
           return (
-            <li key={st.title} className="relative flex items-start gap-2.5 xl:flex-col xl:items-center xl:gap-2 xl:text-center">
+            <li key={st.key} className="relative flex items-start gap-2.5 xl:flex-col xl:items-center xl:gap-2 xl:text-center">
               <span
                 className={cn(
                   "tabular relative z-[1] grid size-[1.375rem] shrink-0 place-items-center rounded-full border text-[10px] font-semibold",
@@ -96,9 +106,9 @@ export function Steps({ state }: { state: State }) {
               <span className="min-w-0">
                 <span className={cn("block text-xs font-semibold", st.done ? "text-fg" : "text-fg-muted")}>
                   {st.title}
-                  <span className="sr-only">{st.done ? " (gerçekleşti)" : " (bekliyor)"}</span>
+                  <span className="sr-only">{st.done ? t("done") : t("pending")}</span>
                 </span>
-                <span className="block text-[11px] leading-snug text-fg-subtle">{st.live ? "şu anda akıyor" : st.detail}</span>
+                <span className="block text-[11px] leading-snug text-fg-subtle">{st.live ? t("streaming") : st.detail}</span>
               </span>
             </li>
           );

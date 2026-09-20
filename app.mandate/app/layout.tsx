@@ -7,13 +7,22 @@ const display = Sora({ variable: "--font-sora", subsets: ["latin", "latin-ext"],
 const body = Inter({ variable: "--font-inter", subsets: ["latin", "latin-ext"], display: "swap" });
 const code = JetBrains_Mono({ variable: "--font-jb", subsets: ["latin", "latin-ext"], weight: ["400", "500"], display: "swap" });
 
+/*
+ * Üst veri tek dildedir (İngilizce): düzen bir sunucu bileşenidir ve kullanıcının
+ * dilini bilemez — dil tarayıcıda seçilir (bkz. lib/locale.ts). Konsol dizine
+ * eklenmediği için bu bir arama sorunu da değil.
+ */
 export const metadata: Metadata = {
   title: "Reinkey Console",
   description:
-    "Reinkey Console: Meter ile gelirinizi, Reins ile ajan hesabınızı canlı izleyin. Kanallar, kuponlar, tahsilatlar ve zincirden gelen redler.",
+    "Watch your revenue with Meter and your agent account with Reins: channels, vouchers, settlements and on-chain rejections.",
   robots: { index: false, follow: false },
 };
 
+/**
+ * `lang` varsayılan dille başlar ve panel açılınca tarayıcıda güncellenir
+ * (bkz. components/DashboardLoader.tsx).
+ */
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="tr" className={`${display.variable} ${body.variable} ${code.variable} h-full antialiased`}>

@@ -4,11 +4,16 @@
  * "Ne oldu?": olaylar teknik adlarıyla değil, düz cümlelerle anlatılır.
  * Art arda gelen kuponlar tek satırda toplanır (bkz. lib/store.ts).
  *
+ * Cümleler sözlükte kurulur, parçalardan birleştirilmez: "Ajan" + "ödedi"
+ * gibi bir birleştirme Türkçede çekim ekleri, İngilizcede sözcük sırası
+ * yüzünden ikisinde birden doğru çıkmaz.
+ *
  * İki görünüm: "Canlı" SSE akışıdır (son 160 satır); "Defter" hesabın kalıcı
  * denetim kaydıdır (GET /accounts/:addr/ledger, sayfalı) ve ekran temizlense de
  * eksiksiz durur.
  */
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeftRight,
   Ban,
@@ -22,39 +27,39 @@ import {
 } from "lucide-react";
 import { getJson } from "@/lib/api";
 import { describeCode } from "@/lib/codes";
-import { clock, int, usdc } from "@/lib/format";
+import { clock, usdc } from "@/lib/format";
 import { rowsFromEvents, type Row } from "@/lib/store";
 import type { LedgerPage } from "@/lib/types";
 import { Empty, Panel, SourceTag, TxLink, cn } from "./ui";
 
-type Line = { icon: React.ReactNode; tone: "ok" | "bad" | "info" | "chain"; text: React.ReactNode };
+type Tone = "ok" | "bad" | "info" | "chain";
+type Line = { icon: React.ReactNode; tone: Tone; text: React.ReactNode };
+type T = ReturnType<typeof useTranslations<"timeline">>;
 
 const B = ({ children }: { children: React.ReactNode }) => <span className="font-semibold text-fg">{children}</span>;
+const C = ({ children }: { children: React.ReactNode }) => <span className="font-mono text-[11px]">{children}</span>;
+/** Sözlükteki <b> ve <code> etiketlerinin karşılığı. */
+const TAGS = { b: (c: React.ReactNode) => <B>{c}</B>, code: (c: React.ReactNode) => <C>{c}</C> };
 
-function explain(r: Row, perSecond: bigint): Line {
+function explain(r: Row, perSecond: bigint, t: T): Line {
   switch (r.type) {
     case "channel.opened":
-      return {
-        icon: <DoorOpen className="size-4" />,
-        tone: "chain",
-        text: <>Ajan <B>{usdc(r.amount)} USDC</B> kilitleyerek ödeme kanalı açtı.</>,
-      };
+      return { icon: <DoorOpen className="size-4" />, tone: "chain", text: t.rich("opened", { ...TAGS, amount: usdc(r.amount) }) };
     case "channel.topped_up":
-      return { icon: <Coins className="size-4" />, tone: "chain", text: <>Ajan kanala <B>{usdc(r.amount)} USDC</B> ekledi.</> };
+      return { icon: <Coins className="size-4" />, tone: "chain", text: t.rich("toppedUp", { ...TAGS, amount: usdc(r.amount) }) };
     case "voucher.accepted": {
-      const n = <B>{int(r.count)} ödeme</B>;
       if (r.unit === "second") {
-        const secs = perSecond > 0n ? Number(r.amount / perSecond) : 0;
+        const seconds = perSecond > 0n ? Number(r.amount / perSecond) : 0;
         return {
           icon: <Radio className="size-4" />,
           tone: "ok",
-          text: <>Ajan <B>{int(secs)} saniyelik</B> fiyat verisi için <B>{usdc(r.amount)} USDC</B> ödedi · {n}, zincire gitmeden.</>,
+          text: t.rich("paidSeconds", { ...TAGS, seconds, amount: usdc(r.amount), count: r.count }),
         };
       }
       return {
         icon: <Coins className="size-4" />,
         tone: "ok",
-        text: <>Ajan <span className="font-mono text-[11px]">{r.text}</span> için <B>{usdc(r.amount)} USDC</B> ödedi · {n}, zincire gitmeden.</>,
+        text: t.rich("paidResource", { ...TAGS, resource: r.text, amount: usdc(r.amount), count: r.count }),
       };
     }
     case "voucher.rejected":
@@ -62,73 +67,64 @@ function explain(r: Row, perSecond: bigint): Line {
         icon: <Ban className="size-4" />,
         tone: "bad",
         text:
-          r.code === "CHANNEL_EXHAUSTED" ? (
-            <>Depozito bitti; <B>veri akışı anında kesildi.</B></>
-          ) : (
-            <>Ödeme reddedildi: <B>{describeCode(r.code ?? "")}</B>.</>
-          ),
+          r.code === "CHANNEL_EXHAUSTED"
+            ? t.rich("exhausted", TAGS)
+            : t.rich("rejected", { ...TAGS, reason: describeCode(r.code ?? "") }),
       };
     case "channel.claimed":
       return {
         icon: <Receipt className="size-4" />,
         tone: "chain",
-        text: <>Borsa <B>{int(r.count)} ödemeyi tek zincir işlemiyle</B> tahsil etti: <B>{usdc(r.amount)} USDC</B>.</>,
+        text: t.rich("settled", { ...TAGS, count: r.count, amount: usdc(r.amount) }),
       };
     case "channel.closed":
-      return {
-        icon: <DoorClosed className="size-4" />,
-        tone: "chain",
-        text: <>Kanal kapandı; kullanılmayan <B>{usdc(r.amount)} USDC</B> ajana iade edildi.</>,
-      };
+      return { icon: <DoorClosed className="size-4" />, tone: "chain", text: t.rich("closedRow", { ...TAGS, amount: usdc(r.amount) }) };
     case "payment.exact":
-      return { icon: <Coins className="size-4" />, tone: "chain", text: <>Tek seferlik ödeme: <B>{usdc(r.amount)} USDC</B>.</> };
+      return { icon: <Coins className="size-4" />, tone: "chain", text: t.rich("exact", { ...TAGS, amount: usdc(r.amount) }) };
     case "dex.swapped":
       return {
         icon: <ArrowLeftRight className="size-4" />,
         tone: "chain",
-        text: (
-          <>
-            Ajan DEX&apos;te <B>{usdc(r.amount)} {r.meta.soldAsset}</B> verip{" "}
-            <B>{usdc(r.meta.bought ?? "0", 2)} {r.meta.boughtAsset}</B> aldı. Sınırlar içinde olduğu için zincir izin verdi.
-          </>
-        ),
+        text: t.rich("swapped", {
+          ...TAGS,
+          sold: usdc(r.amount),
+          soldAsset: r.meta.soldAsset,
+          bought: usdc(r.meta.bought ?? "0", 2),
+          boughtAsset: r.meta.boughtAsset,
+        }),
       };
     case "chain.rejected":
-      return {
-        icon: <Ban className="size-4" />,
-        tone: "bad",
-        text: <><B>Zincir işlemi engelledi:</B> {describeCode(r.code ?? "")}.</>,
-      };
+      return { icon: <Ban className="size-4" />, tone: "bad", text: t.rich("chainRejected", { ...TAGS, reason: describeCode(r.code ?? "") }) };
     case "stream.started":
       return {
         icon: <Radio className="size-4" />,
         tone: "info",
-        text: r.unit === "second" ? <>Ajan borsanın canlı fiyat akışına bağlandı.</> : <>Ajan yanıt akışına bağlandı.</>,
+        text: r.unit === "second" ? t("streamPrice") : t("streamResponse"),
       };
-    case "stream.ended":
+    case "stream.ended": {
+      const volume = r.unit === "second" ? t("volumeSeconds", { count: r.count }) : t("volumeTokens", { count: r.count });
       return {
         icon: <Radio className="size-4" />,
         tone: r.code ? "bad" : "info",
-        text: r.code ? (
-          <>Akış kesildi ({describeCode(r.code)}) · {r.text}, toplam <B>{usdc(r.amount)} USDC</B>.</>
-        ) : (
-          <>Akış tamamlandı · {r.text}, toplam <B>{usdc(r.amount)} USDC</B>.</>
-        ),
+        text: r.code
+          ? t("streamCut", { reason: describeCode(r.code), amount: usdc(r.amount), volume })
+          : t("streamDone", { amount: usdc(r.amount), volume }),
       };
+    }
     case "account.frozen":
       return {
         icon: <Snowflake className="size-4" />,
         tone: r.text === "frozen" ? "bad" : "info",
-        text: r.text === "frozen" ? <><B>Sahip ajanı dondurdu.</B> Sonraki işlemleri zincir reddedecek.</> : <>Sahip dondurmayı kaldırdı.</>,
+        text: r.text === "frozen" ? t.rich("frozenRow", TAGS) : t("unfrozenRow"),
       };
     case "agent.exited":
-      return { icon: <SquareTerminal className="size-4" />, tone: "info", text: <>Ajan senaryosu bitti ({r.text}).</> };
+      return { icon: <SquareTerminal className="size-4" />, tone: "info", text: t("agentExited", { status: r.text }) };
     default:
       return { icon: <Coins className="size-4" />, tone: "info", text: r.text };
   }
 }
 
-const TONE: Record<Line["tone"], string> = {
+const TONE: Record<Tone, string> = {
   ok: "bg-success-bg text-success",
   bad: "bg-danger-bg text-danger",
   info: "bg-surface-3 text-fg-muted",
@@ -136,13 +132,13 @@ const TONE: Record<Line["tone"], string> = {
 };
 
 type Tab = "live" | "ledger";
-type Filter = "all" | Line["tone"];
+type Filter = "all" | Tone;
 
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: "all", label: "Tümü" },
-  { id: "ok", label: "Zincir dışı ödeme" },
-  { id: "chain", label: "Zincir işlemi" },
-  { id: "bad", label: "Engellenen" },
+const FILTERS: { id: Filter; key: "all" | "offChain" | "onChain" | "blockedF" }[] = [
+  { id: "all", key: "all" },
+  { id: "ok", key: "offChain" },
+  { id: "chain", key: "onChain" },
+  { id: "bad", key: "blockedF" },
 ];
 
 /** Defter sayfaları. Her sayfa kendi içinde satırlara çevrilir; sayfalar yeniden eskiye eklenir. */
@@ -168,8 +164,8 @@ function useLedger(account: string | null, active: boolean) {
   useEffect(() => {
     if (!active) return;
     // Sekme her açıldığında ilk sayfa tazelenir.
-    const t = setTimeout(() => void load(null), 0);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => void load(null), 0);
+    return () => clearTimeout(timer);
   }, [active, load]);
 
   return { rows, status, hasMore: cursor !== null, more: () => void load(cursor), refresh: () => void load(null) };
@@ -202,27 +198,35 @@ export function Timeline({
   account: string | null;
   defaultTab?: Tab;
 }) {
+  const t = useTranslations("timeline");
+  const tc = useTranslations("common");
   const [tab, setTab] = useState<Tab>(defaultTab);
   const [filter, setFilter] = useState<Filter>("all");
   const ledger = useLedger(account, tab === "ledger");
 
   const source = tab === "live" ? rows : ledger.rows;
   const lines = source
-    .map((r) => ({ r, l: explain(r, perSecond) }))
+    .map((r) => ({ r, l: explain(r, perSecond, t) }))
     .filter(({ l }) => filter === "all" || l.tone === filter);
+
+  const emptyText =
+    tab === "ledger"
+      ? ledger.status === "loading"
+        ? t("ledgerLoading")
+        : account
+          ? t("ledgerEmpty")
+          : t("ledgerNoAccount")
+      : source.length > 0
+        ? t("noMatch")
+        : t("empty");
 
   return (
     <Panel
-      title="Ne oldu?"
-      hint="En yeni üstte · mor: zincir işlemi · yeşil: zincire gitmeyen ödeme · kırmızı: engellenen"
+      title={t("title")}
+      hint={t("hint")}
       action={
-        <div className="flex shrink-0 rounded-md border border-line p-0.5 text-xs" role="tablist" aria-label="Görünüm">
-          {(
-            [
-              ["live", "Canlı"],
-              ["ledger", "Defter"],
-            ] as const
-          ).map(([id, label]) => (
+        <div className="flex shrink-0 rounded-md border border-line p-0.5 text-xs" role="tablist" aria-label={t("viewAria")}>
+          {(["live", "ledger"] as const).map((id) => (
             <button
               key={id}
               type="button"
@@ -231,7 +235,7 @@ export function Timeline({
               onClick={() => setTab(id)}
               className={cn("rounded-[5px] px-2.5 py-1 transition-colors", tab === id ? "bg-surface-3 text-fg" : "text-fg-muted hover:text-fg")}
             >
-              {label}
+              {t(id)}
             </button>
           ))}
         </div>
@@ -240,7 +244,7 @@ export function Timeline({
       <div className="flex flex-wrap items-center gap-1.5 border-b border-line px-5 py-2.5">
         {FILTERS.map((f) => (
           <Chip key={f.id} active={filter === f.id} onClick={() => setFilter(f.id)}>
-            {f.label}
+            {t(f.key)}
           </Chip>
         ))}
         {tab === "ledger" && (
@@ -250,25 +254,15 @@ export function Timeline({
             disabled={ledger.status === "loading"}
             className="ml-auto text-[11px] text-fg-muted underline decoration-line-strong underline-offset-2 hover:text-fg disabled:opacity-50"
           >
-            {ledger.status === "loading" ? "Yükleniyor…" : "Yenile"}
+            {ledger.status === "loading" ? tc("loading") : tc("refresh")}
           </button>
         )}
       </div>
 
       {tab === "ledger" && ledger.status === "error" ? (
-        <Empty>Defter okunamadı. Backend çalışıyor mu?</Empty>
+        <Empty>{t("ledgerError")}</Empty>
       ) : lines.length === 0 ? (
-        <Empty>
-          {tab === "ledger"
-            ? ledger.status === "loading"
-              ? "Defter okunuyor…"
-              : account
-                ? "Bu hesap için kayıt yok."
-                : "Demo hesabı henüz okunmadı."
-            : source.length > 0
-              ? "Bu filtreye uyan olay yok."
-              : 'Henüz olay yok. "Ajanı başlat" düğmesine basın.'}
-        </Empty>
+        <Empty>{emptyText}</Empty>
       ) : (
         <ol
           className="max-h-[520px] divide-y divide-line overflow-y-auto"
@@ -284,7 +278,7 @@ export function Timeline({
                 <p className="text-sm leading-snug text-fg-muted">{l.text}</p>
                 <p className="mt-1 flex flex-wrap items-center gap-2">
                   <span className="tabular font-mono text-[11px] text-fg-subtle">{clock(r.ts)}</span>
-                  {r.channelId && <span className="font-mono text-[11px] text-fg-subtle">kanal #{r.channelId}</span>}
+                  {r.channelId && <span className="font-mono text-[11px] text-fg-subtle">{t("channelNo", { id: r.channelId })}</span>}
                   <TxLink hash={r.tx} />
                 </p>
               </div>
@@ -299,7 +293,7 @@ export function Timeline({
                 disabled={ledger.status === "loading"}
                 className="text-xs text-fg-muted underline decoration-line-strong underline-offset-2 hover:text-fg disabled:opacity-50"
               >
-                {ledger.status === "loading" ? "Yükleniyor…" : "Daha eski kayıtlar"}
+                {ledger.status === "loading" ? tc("loading") : tc("older")}
               </button>
             </li>
           )}

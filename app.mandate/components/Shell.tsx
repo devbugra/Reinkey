@@ -6,41 +6,45 @@
  * Gezinme bir menü değil bir hattır: kesintisiz dikey çizgi üzerinde istasyonlar.
  * Üst grup izleme ("şu an ne oluyor"), orta grup ürünler (kim bakıyor: satıcı,
  * ajan sahibi, sermaye), alt grup geliştirici bağlantıları. Durum (ağ, bağlantı)
- * hattın sonunda durur; sayfa içeriğiyle yarışmaz.
+ * ve dil hattın sonunda durur; sayfa içeriğiyle yarışmaz.
  */
 import { useEffect, useState } from "react";
-import { ArrowUpRight, Maximize2, Menu, Minimize2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { ArrowUpRight, Menu, X } from "lucide-react";
 import { env } from "@/lib/env";
 import type { Connection } from "@/lib/useFeed";
 import type { View } from "@/lib/useView";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Mark } from "./Mark";
 import { cn } from "./ui";
 
-type Item = { id: View; label: string; sub: string };
-const GROUPS: { title: string; items: Item[] }[] = [
-  { title: "İzle", items: [{ id: "live", label: "Canlı akış", sub: "Şu an ne oluyor" }] },
+/** Etiketler çeviriden gelir; ürün adları (Meter, Reins, Float) marka olduğu için çevrilmez. */
+const GROUPS: { title: "watch" | "products"; items: { id: View; label?: string; sub: string }[] }[] = [
+  { title: "watch", items: [{ id: "live", sub: "liveSub" }] },
   {
-    title: "Ürünler",
+    title: "products",
     items: [
-      { id: "meter", label: "Meter", sub: "Satıcı · gelir ve tahsilat" },
-      { id: "reins", label: "Reins", sub: "Ajan hesabı · sınırlar" },
-      { id: "float", label: "Float", sub: "Sermaye · kredi havuzu" },
+      { id: "meter", label: "Meter", sub: "meterSub" },
+      { id: "reins", label: "Reins", sub: "reinsSub" },
+      { id: "float", label: "Float", sub: "floatSub" },
+      { id: "dex", sub: "dexSub" },
     ],
   },
 ];
 
-const CONNECTION: Record<Connection, { label: string; dot: string; text: string }> = {
-  live: { label: "Canlı", dot: "bg-success pulse-dot", text: "text-success" },
-  connecting: { label: "Bağlanıyor…", dot: "bg-warning pulse-dot", text: "text-warning" },
-  offline: { label: "Backend'e ulaşılamıyor", dot: "bg-danger", text: "text-danger" },
+const CONNECTION: Record<Connection, { dot: string; text: string }> = {
+  live: { dot: "bg-success pulse-dot", text: "text-success" },
+  connecting: { dot: "bg-warning pulse-dot", text: "text-warning" },
+  offline: { dot: "bg-danger", text: "text-danger" },
 };
 
 function Nav({ view, onView }: { view: View; onView: (v: View) => void }) {
+  const t = useTranslations("nav");
   return (
-    <nav aria-label="Konsol" className="rail flex flex-col gap-6">
+    <nav aria-label={t("aria")} className="rail flex flex-col gap-6">
       {GROUPS.map((g) => (
         <div key={g.title}>
-          <p className="mb-1.5 ps-8 text-[10.5px] font-medium uppercase tracking-[0.16em] text-fg-subtle">{g.title}</p>
+          <p className="mb-1.5 ps-8 text-[10.5px] font-medium uppercase tracking-[0.16em] text-fg-subtle">{t(g.title)}</p>
           <ul className="flex flex-col">
             {g.items.map((it) => {
               const on = view === it.id;
@@ -57,8 +61,10 @@ function Nav({ view, onView }: { view: View; onView: (v: View) => void }) {
                   >
                     <span className="station shrink-0" data-on={on} aria-hidden="true" />
                     <span className="min-w-0 ps-1.5">
-                      <span className={cn("block text-sm font-medium", on ? "text-fg" : "text-fg-muted group-hover:text-fg")}>{it.label}</span>
-                      <span className="block truncate text-[11px] text-fg-subtle">{it.sub}</span>
+                      <span className={cn("block text-sm font-medium", on ? "text-fg" : "text-fg-muted group-hover:text-fg")}>
+                        {it.label ?? t(it.id as "live")}
+                      </span>
+                      <span className="block truncate text-[11px] text-fg-subtle">{t(it.sub as "liveSub")}</span>
                     </span>
                   </button>
                 </li>
@@ -69,11 +75,11 @@ function Nav({ view, onView }: { view: View; onView: (v: View) => void }) {
       ))}
 
       <div>
-        <p className="mb-1.5 ps-8 text-[10.5px] font-medium uppercase tracking-[0.16em] text-fg-subtle">Geliştirici</p>
+        <p className="mb-1.5 ps-8 text-[10.5px] font-medium uppercase tracking-[0.16em] text-fg-subtle">{t("developer")}</p>
         <ul className="flex flex-col">
           {[
-            ["Belgeler", `${env.siteUrl}/docs`],
-            ["API (OpenAPI)", `${env.apiUrl}/docs`],
+            [t("docs"), `${env.siteUrl}/docs`],
+            [t("api"), `${env.apiUrl}/docs`],
             ["llms.txt", `${env.apiUrl}/llms.txt`],
           ].map(([label, href]) => (
             <li key={href}>
@@ -95,37 +101,30 @@ function Nav({ view, onView }: { view: View; onView: (v: View) => void }) {
   );
 }
 
-function Status({ connection, present, onPresent }: { connection: Connection; present: boolean; onPresent: () => void }) {
+function Status({ connection }: { connection: Connection }) {
+  const t = useTranslations("status");
   const c = CONNECTION[connection];
   return (
     <div className="grid gap-2">
       <div className="rounded-md border border-line bg-bg-alt px-3 py-2.5" role="status">
         <p className={cn("flex items-center gap-2 text-xs font-medium", c.text)}>
           <span className={cn("size-2 rounded-full", c.dot)} aria-hidden="true" />
-          {c.label}
+          {t(connection)}
         </p>
-        <p className="mt-1 text-[11px] text-fg-subtle">Stellar testnet · emanetsiz</p>
+        <p className="mt-1 text-[11px] text-fg-subtle">{t("network")}</p>
       </div>
-      <button
-        type="button"
-        onClick={onPresent}
-        aria-pressed={present}
-        title="Projeksiyon için büyük yazı ve tam ekran"
-        className="inline-flex items-center justify-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
-      >
-        {present ? <Minimize2 className="size-3.5" aria-hidden="true" /> : <Maximize2 className="size-3.5" aria-hidden="true" />}
-        {present ? "Sunumdan çık" : "Sunum modu"}
-      </button>
+      <LanguageSwitcher />
     </div>
   );
 }
 
 function Brand() {
+  const t = useTranslations("shell");
   return (
-    <a href={env.siteUrl} className="flex items-center gap-2.5" aria-label="Reinkey tanıtım sitesi">
+    <a href={env.siteUrl} className="flex items-center gap-2.5" aria-label={t("siteLabel")}>
       <Mark className="size-6 text-accent" />
       <span className="font-display text-base font-semibold tracking-tight">Reinkey</span>
-      <span className="rounded-full border border-line px-2 py-0.5 text-[10.5px] text-fg-muted">Console</span>
+      <span className="rounded-full border border-line px-2 py-0.5 text-[10.5px] text-fg-muted">{t("badge")}</span>
     </a>
   );
 }
@@ -134,20 +133,18 @@ export function Shell({
   view,
   onView,
   connection,
-  present,
-  onPresent,
   workspace,
   children,
 }: {
   view: View;
   onView: (v: View) => void;
   connection: Connection;
-  present: boolean;
-  onPresent: () => void;
   /** Çalışma alanı seçici (rayın tepesinde). */
   workspace?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("shell");
+  const tc = useTranslations("common");
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -163,7 +160,7 @@ export function Shell({
   };
 
   return (
-    <div className={cn("app-bg min-h-full", present && "present")}>
+    <div className="app-bg min-h-full">
       {/* Geniş ekran: sabit kenar çubuğu */}
       <aside className="fixed inset-y-0 start-0 z-20 hidden w-(--rail-w) flex-col border-e border-line bg-bg/80 px-4 py-5 backdrop-blur lg:flex">
         <div className="px-1">
@@ -173,7 +170,7 @@ export function Shell({
         <div className="mt-6 flex-1 overflow-y-auto">
           <Nav view={view} onView={go} />
         </div>
-        <Status connection={connection} present={present} onPresent={onPresent} />
+        <Status connection={connection} />
       </aside>
 
       {/* Dar ekran: üst çubuk + çekmece */}
@@ -181,7 +178,7 @@ export function Shell({
         <Brand />
         <button
           type="button"
-          aria-label={open ? "Menüyü kapat" : "Menüyü aç"}
+          aria-label={open ? tc("closeMenu") : tc("openMenu")}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
           className="grid size-9 place-items-center rounded-md border border-line text-fg"
@@ -193,7 +190,7 @@ export function Shell({
         <div className="fixed inset-x-0 bottom-0 top-14 z-30 flex flex-col gap-6 overflow-y-auto bg-bg px-4 py-6 lg:hidden">
           {workspace}
           <Nav view={view} onView={go} />
-          <Status connection={connection} present={present} onPresent={onPresent} />
+          <Status connection={connection} />
         </div>
       )}
 
@@ -202,7 +199,7 @@ export function Shell({
           {children}
         </main>
         <footer className="mx-auto w-full max-w-[1320px] px-4 pb-8 text-[11px] text-fg-subtle sm:px-8">
-          Tüm veriler canlıdır: {env.apiUrl} · işlem bağlantıları stellar.expert&apos;e gider · testnet, emanetsiz protokol.
+          {t("footer", { api: env.apiUrl })}
         </footer>
       </div>
     </div>

@@ -38,7 +38,6 @@ export function Footer() {
         { label: t("links.x402"), href: external.x402 },
         { label: t("links.x402Stellar"), href: external.x402Stellar },
         { label: t("links.networkLimits"), href: external.networkLimits },
-        { label: t("links.scfRfp"), href: external.scfRfp },
       ],
     },
   ];
@@ -103,12 +102,11 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-14 flex flex-col gap-2 border-t border-line pt-6 text-sm text-fg-subtle sm:flex-row sm:justify-between">
+        <div className="mt-14 border-t border-line pt-6 text-sm text-fg-subtle">
           <p>
             © {new Date().getFullYear()} <span dir="ltr">{site.name}</span>.{" "}
             {t("disclaimer")}
           </p>
-          <p>{t("event")}</p>
         </div>
       </Container>
     </footer>

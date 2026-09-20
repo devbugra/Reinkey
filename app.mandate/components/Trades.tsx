@@ -1,13 +1,17 @@
+"use client";
+
 /** Ajanın DEX (Soroswap) işlemleri: hepsi zincirdeki politika içinde gerçekleşti. */
+import { useTranslations } from "next-intl";
 import { clock, usdc } from "@/lib/format";
 import type { SwapView } from "@/lib/store";
 import { Empty, Panel, TxLink } from "./ui";
 
 export function Trades({ items }: { items: SwapView[] }) {
+  const t = useTranslations("trades");
   return (
-    <Panel title="Alım-satım (Soroswap)" hint="İşlem çifti, işlem başı tutar ve günlük tavan zincirde denetlenir">
+    <Panel title={t("title")} hint={t("hint")}>
       {items.length === 0 ? (
-        <Empty>Henüz alım-satım yok.</Empty>
+        <Empty>{t("empty")}</Empty>
       ) : (
         <ul className="divide-y divide-line">
           {items.slice(0, 5).map((s) => (

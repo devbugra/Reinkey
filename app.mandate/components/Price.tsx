@@ -1,11 +1,12 @@
 "use client";
 
 /**
- * Ajanın satın aldığı fiyat verisi: borsanın ajana sattığı her tik'in kopyası
+ * Ajanın satın aldığı fiyat verisi: satıcının ajana sattığı her tik'in kopyası
  * (SSE `ticker.tick`). Üstünde ajanın DEX işlemleri işaretlenir; "veriyi alıp o
  * veriyle işlem yapıyor" anlatısının görünen hâli. Üretilmiş nokta yoktur.
  */
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { clock, int } from "@/lib/format";
 import { useSize } from "@/lib/hooks";
 import type { SwapView, Tick } from "@/lib/store";
@@ -20,6 +21,7 @@ const GAP_MS = 5_000;
 const price = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 5, maximumFractionDigits: 5 });
 
 export function Price({ ticks, swaps, streaming }: { ticks: Tick[]; swaps: SwapView[]; streaming: boolean }) {
+  const t = useTranslations("price");
   const [ref, { width, height }] = useSize<HTMLDivElement>();
   // Panel, yanındaki sütunun boyuna uzar; grafik o alanı doldurur.
   const H = Math.max(height, MIN_H);
@@ -60,15 +62,15 @@ export function Price({ ticks, swaps, streaming }: { ticks: Tick[]; swaps: SwapV
   return (
     <Panel
       className="h-full"
-      title="Ajanın satın aldığı veri · XLM/USDC"
-      hint="Borsanın ajana saniye başı sattığı fiyat akışının aynısı · kaynak: Soroswap havuzu"
+      title={t("title")}
+      hint={t("hint")}
       action={
         last ? (
           <p className="tabular shrink-0 text-right">
             <span className="block text-lg font-semibold leading-tight">{price(last.price)}</span>
             <span className="block text-[11px] text-fg-subtle">
-              {streaming ? "canlı · " : ""}
-              {int(ticks.length)} sn veri teslim edildi
+              {streaming ? t("live") : ""}
+              {t("delivered", { count: ticks.length })}
             </span>
           </p>
         ) : null
@@ -78,7 +80,7 @@ export function Price({ ticks, swaps, streaming }: { ticks: Tick[]; swaps: SwapV
         <div ref={ref} className={cn("relative flex-1", visible.length === 0 ? "min-h-[140px]" : "min-h-[220px]")}>
           {visible.length === 0 ? (
             <div className="flex h-full items-center justify-center">
-              <Empty>Ajan fiyat akışına bağlanınca satın aldığı veri burada saniye saniye görünür.</Empty>
+              <Empty>{t("empty")}</Empty>
             </div>
           ) : (
             width > 0 && (
@@ -87,7 +89,7 @@ export function Price({ ticks, swaps, streaming }: { ticks: Tick[]; swaps: SwapV
                   width={width}
                   height={H}
                   role="img"
-                  aria-label={`XLM/USDC fiyatı, son ${int(visible.length)} saniye. Son fiyat ${price(last.price)}. ${int(marks.length)} DEX işlemi işaretli.`}
+                  aria-label={t("chartAria", { count: visible.length, price: price(last.price), marks: marks.length })}
                   onPointerMove={(e) => setHover(e.clientX - e.currentTarget.getBoundingClientRect().left)}
                   onPointerLeave={() => setHover(null)}
                   className="absolute inset-0 block touch-none"
@@ -114,7 +116,7 @@ export function Price({ ticks, swaps, streaming }: { ticks: Tick[]; swaps: SwapV
                       <line x1={x(at.t)} x2={x(at.t)} y1={M.top} y2={M.top + ih} stroke="var(--brand-lavender)" strokeWidth={1} strokeDasharray="3 3" opacity={0.6} />
                       <circle cx={x(at.t)} cy={y(at.price)} r={5} fill="var(--brand-lavender)" stroke="var(--surface)" strokeWidth={2} />
                       <text x={x(at.t)} y={M.top - 4} fontSize={10.5} textAnchor="middle" fill="var(--fg-muted)">
-                        alım
+                        {t("buy")}
                       </text>
                     </g>
                   ))}
@@ -144,10 +146,8 @@ export function Price({ ticks, swaps, streaming }: { ticks: Tick[]; swaps: SwapV
                   >
                     <p className="font-mono text-fg-subtle">{clock(new Date(hovered.t).toISOString())}</p>
                     <p className="mt-1 text-sm font-semibold text-fg">{price(hovered.price)} USDC</p>
-                    <p className="mt-0.5 text-fg-muted">
-                      alış {price(hovered.bid)} · satış {price(hovered.ask)}
-                    </p>
-                    <p className="text-fg-subtle">ledger {int(hovered.ledger)}</p>
+                    <p className="mt-0.5 text-fg-muted">{t("bidAsk", { bid: price(hovered.bid), ask: price(hovered.ask) })}</p>
+                    <p className="text-fg-subtle">{t("ledger", { n: int(hovered.ledger) })}</p>
                   </div>
                 )}
               </>
@@ -158,12 +158,12 @@ export function Price({ ticks, swaps, streaming }: { ticks: Tick[]; swaps: SwapV
         {visible.length > 0 && (
           <ul className="flex flex-wrap gap-x-5 gap-y-1 border-t border-line px-5 py-2.5 text-[11px] text-fg-muted">
             <li className="flex items-center gap-1.5">
-              <span className="h-0.5 w-4 rounded-full bg-brand-sky" aria-hidden="true" /> 1 XLM fiyatı (havuz orta fiyatı)
+              <span className="h-0.5 w-4 rounded-full bg-brand-sky" aria-hidden="true" /> {t("legendLine")}
             </li>
             <li className="flex items-center gap-1.5">
-              <span className="size-2 rounded-full bg-brand-lavender" aria-hidden="true" /> ajanın DEX işlemi
+              <span className="size-2 rounded-full bg-brand-lavender" aria-hidden="true" /> {t("legendSwap")}
             </li>
-            <li className="ml-auto text-fg-subtle">her nokta = ödenmiş 1 saniye</li>
+            <li className="ml-auto text-fg-subtle">{t("legendDot")}</li>
           </ul>
         )}
       </div>

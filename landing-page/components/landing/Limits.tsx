@@ -7,7 +7,7 @@ import { Reveal } from "@/components/ui/Reveal";
 /**
  * DÜRÜST SINIRLAR.
  *
- * Gecikme ve kapsam soruları jüriden de müşteriden de ilk gelen sorulardır.
+ * Gecikme ve kapsam, entegrasyondan önce sorulan ilk iki sorudur.
  * Gizlenirse ilk soruda yakalanır; baştan yazılırsa güven kurar. Liste
  * işareti bu yüzden onay değil eksi: bunlar ürünün YAPMADIKLARI.
  */

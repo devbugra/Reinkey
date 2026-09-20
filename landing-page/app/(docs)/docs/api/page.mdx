@@ -52,6 +52,34 @@ The facilitator holds stream sessions so a seller can wait for the next voucher 
 | `GET /stats` | Totals: vouchers, on-chain transactions, volume, median verification latency. |
 | `POST /v1/report` | Report an on-chain transaction; verified against the chain before it is published. |
 
+## Exchange
+
+We run no liquidity pool and never hold funds. Trades settle in the liquidity that already exists
+on Stellar (Soroswap); what this layer adds is the route, the slippage floor the contract insists
+on, and — the part nobody else can give an agent — **whether its own account will accept the trade.**
+
+| | |
+|---|---|
+| `GET /dex/quote` | `side` (`USDC_XLM` \| `XLM_USDC`), `amountIn` in base units, optional `account` and `slippageBps` (default 100 = 1%). Returns the output from the pool's constant-product curve, the execution price against the pool mid, the price impact in basis points, a suggested `minOut`, the pool reserves, and the exact router call the agent would sign. |
+
+With `account`, the response carries a **policy verdict**: the same rules the account contract
+applies in `__check_auth` (`check_swap` plus the caps), evaluated before anything is signed.
+
+```json
+"policy": {
+  "allowed": false,
+  "code": "PER_TX_CAP_EXCEEDED",
+  "message": "Tek işlem tavanı aşılıyor (10000000 taban birim)",
+  "caps": { "perTxCap": "10000000", "dailyCap": "50000000", "spentToday": "20000000",
+            "remainingToday": "30000000", "counted": "20000000" }
+}
+```
+
+The verdict is a preview; the chain is what decides. It exists so an agent can find out it would be
+rejected without paying a fee to learn it. Prices are reported from two sources: the Soroswap pool
+mid, and the conservative price the credit pool uses (the lower of the Reflector oracle and the
+pool), so a quote and a loan valuation can never disagree silently.
+
 ## Seller finance (Meter)
 
 Derived from the audit ledger, so the report and the ledger can't disagree. Three numbers are kept apart: **earned** (accepted vouchers), **settled** (claimed on-chain), **receivable** (the difference).
