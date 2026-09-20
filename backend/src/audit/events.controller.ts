@@ -1,13 +1,14 @@
-import { Controller, Get, Query, Req, Res } from '@nestjs/common';
+import { Controller, Get, Inject, Query, Req, Res } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { EventsService, ReinkeyEvent } from './events.service';
 import { StatsService } from './stats.service';
 import { ReinkeyError } from '../common/errors';
+import { APP_CONFIG, type AppConfig } from '../config/config';
 
 const PING_MS = 15_000;
 
-const MAX_PER_IP = 8;
+/** Toplam açık akış sınırı; IP başına sınır ayardan gelir (SSE_MAX_PER_IP). */
 const MAX_TOTAL = 200;
 const openPerIp = new Map<string, number>();
 let openTotal = 0;
@@ -18,6 +19,7 @@ export class EventsController {
   constructor(
     private readonly events: EventsService,
     private readonly stats: StatsService,
+    @Inject(APP_CONFIG) private readonly cfg: AppConfig,
   ) {}
 
   @Get('events')
@@ -39,7 +41,7 @@ export class EventsController {
     // SSE bağlantısı dakikalarca açık kalır: tek bir istemci hepsini tutmasın.
     const ip = req.ip ?? 'bilinmiyor';
     const mine = (openPerIp.get(ip) ?? 0) + 1;
-    if (mine > MAX_PER_IP || openTotal >= MAX_TOTAL)
+    if (mine > this.cfg.sseMaxPerIp || openTotal >= MAX_TOTAL)
       throw new ReinkeyError('RATE_LIMITED', 'Açık olay akışı sayısı sınırda; bir sekmeyi kapatıp yeniden deneyin');
     openPerIp.set(ip, mine);
     openTotal += 1;

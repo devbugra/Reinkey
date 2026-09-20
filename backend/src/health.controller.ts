@@ -27,7 +27,8 @@ export class HealthController {
       db,
       demoControls: this.cfg.demoControls,
       ...this.prices.health(),
-      ...(chain.error ? { chainError: chain.error } : {}),
+      // Ayrıntı (RPC'nin ham hata metni) günlüğe yazılır; dışarı yalnızca bayrak.
+      ...(chain.error ? { chainOk: false } : {}),
     };
   }
 }

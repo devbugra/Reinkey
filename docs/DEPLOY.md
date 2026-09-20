@@ -32,8 +32,24 @@ alanda da sunulan ana bilgisayar adı `www`'dür; env değerlerine bu yüzden ş
 | landing-page | `NEXT_PUBLIC_APP_URL` | `https://www.reinkey.io` |
 | app.mandate (Vercel) | `NEXT_PUBLIC_MARKETING_URL` | `https://www.reinkey.com` |
 | app.mandate | `NEXT_PUBLIC_API_URL` | `https://reinkey.onrender.com` |
+| app.mandate | `NEXT_PUBLIC_STELLAR_NETWORK` | `testnet` (ana ağ için `public`) |
 | backend (Render) | `PUBLIC_URL` | `https://reinkey.onrender.com` |
 | backend | `CORS_ORIGINS` | `https://www.reinkey.com,https://www.reinkey.io` |
+| backend | `DEMO_CONTROL_KEY` | rastgele (`openssl rand -hex 16`) |
+
+`PUBLIC_URL` verilmezse 402 yanıtları, makbuzlar ve katalog `localhost` adresini
+taşır: dışarıdan bağlanan hiçbir ajan, MCP istemcisi ya da jüri aracı ödeme
+yapamaz. Açılışta uyarı verilir ama süreç ölmez, yani sessizce yanlış çalışır.
+
+`DEMO_CONTROL_KEY` tanımlıysa "Ajanı başlat" ve "Dondur" uçları `x-demo-key`
+başlığı ister; konsol bu anahtarı adresteki `?key=…` parametresinden okur ve
+oturum boyunca saklar. **Sırayı bozmayın:** önce konsolun yeni sürümünü Vercel'e
+çıkarın, sonra anahtarı Render'a ekleyin; tersi hâlde düğmeler 401 alır. Anahtar
+tanımsızken `DEMO_CONTROLS=true` ise bu uçlar herkese açıktır ve sunum sırasında
+bir başkası örnek hesabı dondurabilir.
+
+Tanıtım sitesi artık üretim derlemesinde `localhost` içeren bir adres görürse
+derlemeyi durdurur; üç `NEXT_PUBLIC_*` değerinin de Vercel'de dolu olması gerekir.
 
 **Adlandırma kuralı.** `NEXT_PUBLIC_SITE_URL` her uygulamada "uygulamanın KENDİ
 adresi" demektir; başka bir servise giden her adres o servisin adını taşır. Bu

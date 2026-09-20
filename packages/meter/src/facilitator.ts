@@ -24,7 +24,7 @@ export type FetchLike = (
 ) => Promise<{ ok: boolean; status: number; json(): Promise<unknown>; text(): Promise<string> }>;
 
 export interface ReinkeyOptions {
-  /** Facilitator kök URL'si, ör. `https://api.reinkey.dev`. */
+  /** Facilitator kök URL'si, ör. `https://reinkey.onrender.com`. */
   facilitator: string;
   /** Satıcının Stellar adresi (G… ya da C…). Kanalın `payee`si bu olmalı. */
   payTo: string;

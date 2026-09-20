@@ -4,9 +4,12 @@
  * değişirse önce burası güncellenir; belgeler (`app/(docs)`) aynı örnekleri kullanır.
  */
 import { env } from "@/lib/env";
+import { external } from "@/content/site";
 
 export const snippets = {
-  meterInstall: "npm i @reinkey/meter",
+  /* Paketler henüz npm'de değil: komut olduğu gibi çalışmıyor, bunu satırın yanında söylüyoruz. */
+  meterInstall: `# Pre-release: not on npm yet — until then build from ${external.repo}
+npm i @reinkey/meter`,
   meter: `import express from "express";
 import { reinkey } from "@reinkey/meter";
 
@@ -37,7 +40,8 @@ PAYMENT-REQUIRED: eyJ4NDAyVmVyc2lvbiI6Mi…
     "payTo": "G…YOUR_STELLAR_ADDRESS"
   }]
 }`,
-  reinsInstall: "npm i @reinkey/sdk",
+  reinsInstall: `# Pre-release: not on npm yet — until then build from ${external.repo}
+npm i @reinkey/sdk`,
   reins: `import { ReinkeyAccount, ChannelSigner, x402Fetch } from "@reinkey/sdk";
 import { randomBytes } from "node:crypto";
 

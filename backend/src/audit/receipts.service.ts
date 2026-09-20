@@ -15,6 +15,8 @@ import { canonical, receiptId, sha256Hex, type ReceiptBody, type SignedReceipt }
  */
 const FLUSH_MS = 250;
 const MAX_PAGE = 200;
+/** Yazılamayan makbuzlar için üst sınır: veritabanı düşerse bellek şişmesin. */
+const MAX_PENDING = 5_000;
 /** Taahhüt penceresi: satıcı yanıtı gönderdikten hemen sonra çağırır. */
 const ATTEST_WINDOW_MS = 60_000;
 
@@ -120,7 +122,11 @@ export class ReceiptsService implements OnModuleInit, OnApplicationShutdown {
         skipDuplicates: true,
       });
     } catch (e) {
-      this.log.error(`makbuzlar yazılamadı (${batch.length}): ${(e as Error).message}`);
+      // İstemci imzalı makbuzu çoktan aldı: yazma başarısız olursa kaybetmeyelim,
+      // bir sonraki turda yeniden denenir. Kuyruk sınırlı: veritabanı uzun süre
+      // erişilemezse bellek şişmesin, en eskiler düşer.
+      this.pending = [...batch, ...this.pending].slice(-MAX_PENDING);
+      this.log.error(`makbuzlar yazılamadı (${batch.length}), kuyruğa alındı: ${(e as Error).message}`);
     }
   }
 

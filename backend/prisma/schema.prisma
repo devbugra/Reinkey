@@ -36,7 +36,10 @@ model Event {
   createdAt DateTime @default(now())
 
   @@index([type, createdAt])
-  @@index([account])
+  // Denetim defteri: where account, order by id desc.
+  @@index([account, id])
+  // Gelir dökümü: type + kanal + tarih birlikte süzülür.
+  @@index([type, channelId, createdAt])
   @@index([channelId])
 }
 
@@ -57,6 +60,7 @@ model Resource {
   lastPaidAt  DateTime @default(now())
 
   @@index([payTo])
+  @@index([lastPaidAt])
 }
 
 /// Reinkey Float: havuzun periyodik anlık görüntüsü (pay fiyatı ve büyüklük grafiği için).
@@ -94,5 +98,7 @@ model Receipt {
   createdAt    DateTime  @default(now())
 
   @@index([payee, createdAt])
-  @@index([channelId])
+  // Süzgeçsiz listeleme tarihe göre sıralanır.
+  @@index([createdAt])
+  @@index([channelId, createdAt])
 }

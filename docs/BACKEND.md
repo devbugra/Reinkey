@@ -716,3 +716,22 @@ Konsol artık salt okunur değil: kullanıcı **kendi** Reinkey hesabını taray
 Yazma yolu (`app.mandate/lib/account.ts`): `set_policy` / `freeze` / `unfreeze` kaydetme modunda simüle edilir, hesabın auth girdisinin önimajı cüzdanın `signAuthEntry`'siyle imzalanır, 64 baytlık imza `Sig::Owner(BytesN<64>)` olarak yerleştirilir, imzalı hâli yeniden simüle edilir (`__check_auth` burada çalışır) ve gönderilir. Yönetimi bir controller'a devredilmiş hesaplarda (kredi hattı) düzenleme kapalıdır: kontrat sahip imzasını değil controller'ı arar.
 
 Testnet'te aynı kodlamayla doğrulandı (20 Eylül): kurulum `93dade11…`, `set_policy` `01633b1a…`, `freeze` `f8588362…`; örnek hesapta özdeş politika yazımı `bc1f9fb4…`. Doğrulanmayan tek halka cüzdan uzantısının kendisidir (başsız tarayıcıda Freighter yok); imzanın üretildiği yer dışında yol birebir aynıdır.
+
+## 23. EK (20 Eylül, Hat 3): herkese açık servis olarak sertleştirme
+
+Facilitator herkese açık bir adreste duruyor ve zincir ücretini bizim anahtarımız ödüyor. Denetimde çıkan açıklar ve kapatılışları:
+
+- **Demo kontrolleri.** `POST /demo/agent/run` ve `POST /demo/owner/freeze` sunucunun anahtarıyla zincire yazar. `DEMO_CONTROL_KEY` tanımlıysa `x-demo-key` başlığı zorunludur (`timingSafeEqual`), ayrıca uç başına bekleme süresi vardır ve ikisi de OpenAPI'de görünmez. Anahtar yoksa açılışta uyarı basılır. `GET /demo/info` → `demoKeyRequired` ile konsol bunu öğrenir.
+- **IP başına hız sınırı.** `IP_RATE_LIMIT_PER_MINUTE` genel, `IP_COSTLY_LIMIT_PER_MINUTE` ise zincir ücreti harcatan ya da kayıt yazan POST uçları için (`/demo/*`, `/channels/:id/claim`, `/receipts/:id/attest`, `/v1/report`). `trust proxy` açık, `x-powered-by` kapalı, temel güvenlik başlıkları ekli.
+- **Katalog zehirlenmesi.** `INSERT … ON CONFLICT` artık `payTo` alanını DEĞİŞTİRMEZ; 1 stroop'luk geçerli bir kuponla bir başkasının kaynağını kendi adresine yönlendirmek mümkün değil.
+- **Elle tahsilat.** Kanal başına 20 saniye bekleme. Tahsilat işlemleri tek kuyruktan geçiyor; art arda çağrı hem ücret harcatır hem gerçek tahsilatların önüne geçerdi.
+- **Akış oturumları.** Aynı akış için ikinci bir bekleyen geldiğinde ilki `aborted` ile çözülür; eskiden HTTP isteği sonsuza dek asılı kalıyordu.
+- **Makbuz taahhüdü.** `POST /receipts/:id/attest` yalnızca makbuz kesildikten sonraki 60 saniye içinde ve bir kez kabul edilir. Satıcı imzası bir sonraki sürümde; sınır kodda yazılı.
+- **Parametre doğrulama.** `src/common/params.ts` (`intParam`, `amountParam`, `addressParam`) altı uçta kullanılıyor; bozuk `limit`, `days`, `slippageBps` ya da adres artık 500 değil 400 döner.
+- **Sohbet.** İstem 2000 karakterle sınırlı (çıktı dilimleri ücretli, istem değil).
+- **SSE.** `/events` IP başına `SSE_MAX_PER_IP`, toplamda 200 bağlantı kabul eder.
+- **Makbuz kuyruğu.** Yazma başarısız olursa parti geri kuyruğa alınır (en çok 5000); istemci imzalı makbuzu çoktan almış oluyordu, sessizce kaybolmasın.
+- **Hata sızıntısı.** `/health` artık RPC'nin ham hata metnini değil yalnızca `chainOk: false` bayrağını döner.
+- **İndeksler.** `20260920090500_query_indexes`: denetim defteri (`Event(account, id)`), gelir dökümü (`Event(type, channelId, createdAt)`), makbuz listeleri ve katalog tazeliği.
+
+Kapatılmayanlar, bilerek: `/v1/report` işlemin gerçekten o hesaba ait olduğunu doğrulamıyor (yalnızca tekrar koruması var), akış oturumları için satıcıya özel gizli anahtar yok ve zincir olayları yeniden başlatmada kurtarılmıyor. Üçü de `docs/MAINNET.md`'deki "ana ağ öncesi" listesinde.
