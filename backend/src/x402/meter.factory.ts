@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+import { ReceiptsService } from '../audit/receipts.service';
 import { ChannelVerifier } from '../channel/channel.verifier';
 import { ReinkeyError } from '../common/errors';
 import { APP_CONFIG, type AppConfig } from '../config/config';
@@ -17,6 +19,7 @@ export class MeterFactory {
     @Inject(APP_CONFIG) cfg: AppConfig,
     channel: ChannelVerifier,
     exact: ExactVerifier,
+    private readonly receipts: ReceiptsService,
   ) {
     this.deps = {
       network: cfg.network,
@@ -28,6 +31,11 @@ export class MeterFactory {
       minDeposit: cfg.priceBookPerRequest * MIN_DEPOSIT_CALLS,
       exactEnabled: exact.enabled,
       verifyChannel: (p, ctx) => channel.verify(p, ctx),
+      attest: (id, body) => {
+        void this.receipts
+          .attest(id, createHash('sha256').update(body).digest('hex'))
+          .catch(() => undefined);
+      },
       verifyExact: (p, ctx) => exact.verify(p, ctx),
       toError: (e) =>
         e instanceof ReinkeyError

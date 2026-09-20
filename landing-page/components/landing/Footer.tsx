@@ -50,7 +50,7 @@ export function Footer() {
       <span
         aria-hidden="true"
         dir="ltr"
-        className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 font-display text-[22vw] leading-none font-semibold tracking-[-0.06em] whitespace-nowrap text-fg/[0.025] select-none sm:-bottom-10 lg:text-[16rem]"
+        className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 font-display text-[22vw] leading-none font-semibold tracking-[-0.06em] whitespace-nowrap text-fg/[0.06] select-none sm:-bottom-10 lg:text-[16rem]"
       >
         {site.name}
       </span>

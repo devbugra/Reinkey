@@ -73,3 +73,26 @@ model PoolSample {
 
   @@index([pool, createdAt])
 }
+
+/// İmzalı makbuz: bir x402 ödemesinin "ne için" kanıtı (bkz. src/audit/receipt.ts).
+model Receipt {
+  id           String    @id
+  channelId    BigInt
+  payer        String
+  payee        String
+  resource     String
+  method       String
+  unit         String
+  amount       BigInt
+  cumulative   BigInt
+  requestHash  String?
+  /// Satıcının teslim ettiği yanıtın özeti; imzanın parçası değildir.
+  responseHash String?
+  attestedAt   DateTime?
+  signer       String
+  signature    String
+  createdAt    DateTime  @default(now())
+
+  @@index([payee, createdAt])
+  @@index([channelId])
+}

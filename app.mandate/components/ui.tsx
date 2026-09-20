@@ -21,7 +21,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "flex min-w-0 flex-col rounded-lg border border-line bg-surface-1",
+        "card flex min-w-0 flex-col rounded-lg",
         className,
       )}
     >
@@ -92,6 +92,66 @@ export function TxLink({ hash, className }: { hash: string | null | undefined; c
     </a>
   ) : (
     <span className={cls}>tx {label}</span>
+  );
+}
+
+/**
+ * SAYFA BAŞLIĞI. Her görünüm bununla açılır: hangi ürün, burada ne görülür,
+ * neye bakılıyor (bağlam) ve ne yapılabilir (eylemler). "Neredeyim" sorusunun cevabı.
+ */
+export function PageHeader({
+  eyebrow,
+  title,
+  lead,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  lead: string;
+  /** Sağ taraf: bağlam ve eylemler. */
+  children?: React.ReactNode;
+}) {
+  return (
+    <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5 pb-2">
+      <div className="min-w-0 max-w-2xl">
+        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-accent">{eyebrow}</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-[2rem]">{title}</h1>
+        <p className="mt-2 text-sm leading-relaxed text-fg-muted">{lead}</p>
+      </div>
+      {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
+    </header>
+  );
+}
+
+/**
+ * BÖLÜM. Sayfa içindeki numaralı istasyon: kenar çubuğundaki rayın devamı. Numara
+ * sırayı, başlık konuyu, ipucu o bölümde neye bakılacağını söyler.
+ */
+export function Section({
+  index,
+  title,
+  hint,
+  action,
+  children,
+}: {
+  index: number;
+  title: string;
+  hint?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section aria-label={title} className="grid gap-4">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="station" data-on="true" aria-hidden="true" />
+        <span className="tabular font-mono text-[11px] text-fg-subtle">{String(index).padStart(2, "0")}</span>
+        <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+        {hint && <p className="text-xs text-fg-subtle">{hint}</p>}
+        <span className="h-px min-w-8 flex-1 bg-line" aria-hidden="true" />
+        {action}
+      </div>
+      {children}
+    </section>
   );
 }
 

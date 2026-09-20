@@ -5,6 +5,8 @@ import { EventsService, type EventSink } from '../audit/events.service';
 import { APP_CONFIG, type AppConfig } from '../config/config';
 import { ReinkeyError } from '../common/errors';
 import { ChannelStore, type CachedChannel } from './channel.cache';
+import type { SignedReceipt } from '../audit/receipt';
+import { ReceiptsService } from '../audit/receipts.service';
 import { ChainWatcher, type LedgerSource } from './chain.watcher';
 import { FrozenRegistry } from './frozen.registry';
 import { verifyVoucher } from './voucher';
@@ -33,6 +35,9 @@ export interface VerifyContext {
   payTo: string;
   resource: string;
   unit: string;
+  /** Makbuz için: HTTP yöntemi ve istek özeti (bkz. audit/receipt.ts). */
+  method?: string;
+  requestHash?: string;
 }
 
 export interface ChannelReceipt {
@@ -42,6 +47,8 @@ export interface ChannelReceipt {
   delta: string;
   remaining: string;
   latencyMs: number;
+  /** Bu ödemenin imzalı makbuzu; `receiptSigner` ile çevrimdışı doğrulanabilir. */
+  receipt?: SignedReceipt;
 }
 
 export interface VoucherInput {
@@ -61,6 +68,7 @@ export class ChannelVerifier {
     @Inject(ChainWatcher) private readonly ledger: LedgerSource,
     @Inject(EventsService) private readonly events: EventSink,
     @Optional() private readonly frozen?: FrozenRegistry,
+    @Optional() private readonly receipts?: ReceiptsService,
   ) {}
 
   /** Adım 1: yükü çöz ve şemayla doğrula. */
@@ -220,6 +228,17 @@ export class ChannelVerifier {
       },
       { channelId, account: ch.payer },
     );
+    const receipt = this.receipts?.issue({
+      channelId,
+      payer: ch.payer,
+      payee: ch.payee,
+      resource: ctx.resource,
+      method: ctx.method ?? 'GET',
+      unit: ctx.unit,
+      amount: delta,
+      cumulative,
+      requestHash: ctx.requestHash ?? null,
+    });
     return {
       scheme: 'channel',
       channelId: channelId.toString(),
@@ -227,6 +246,7 @@ export class ChannelVerifier {
       delta: delta.toString(),
       remaining: (ch.deposit - cumulative).toString(),
       latencyMs,
+      ...(receipt ? { receipt } : {}),
     };
   }
 

@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Sora } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin", "latin-ext"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+/* Tanıtım sitesiyle aynı üçlü: konsol ile site aynı markanın iki yüzü. */
+const display = Sora({ variable: "--font-sora", subsets: ["latin", "latin-ext"], display: "swap" });
+const body = Inter({ variable: "--font-inter", subsets: ["latin", "latin-ext"], display: "swap" });
+const code = JetBrains_Mono({ variable: "--font-jb", subsets: ["latin", "latin-ext"], weight: ["400", "500"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "Reinkey Console",
@@ -21,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="tr" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="tr" className={`${display.variable} ${body.variable} ${code.variable} h-full antialiased`}>
       <body className="min-h-full">{children}</body>
     </html>
   );

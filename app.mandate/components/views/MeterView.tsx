@@ -14,9 +14,9 @@ import { DepositBar, Empty, Panel, TxLink, cn } from "../ui";
 
 function Kpi({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
-    <div className="rounded-lg border border-line bg-surface-1 px-5 py-4">
+    <div className="card min-w-0 rounded-lg px-4 py-4 sm:px-5">
       <p className="text-xs text-fg-subtle">{label}</p>
-      <p className={cn("tabular mt-1.5 text-2xl font-semibold tracking-tight", accent && "text-gradient")}>{value}</p>
+      <p className={cn("tabular mt-1.5 truncate text-lg font-semibold tracking-tight sm:text-2xl", accent && "text-gradient")}>{value}</p>
       {sub && <p className="mt-1 text-[11px] text-fg-subtle">{sub}</p>}
     </div>
   );
@@ -71,7 +71,7 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`;
         onChange={onSeller}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Kpi label="Tahsil edilen" value={`${usdc(claimed)} USDC`} sub="Zincirde cüzdanınıza geçti" accent />
         <Kpi label="Tahsilat bekleyen" value={`${usdc(pending)} USDC`} sub="İmzalı kuponla kanıtlı, henüz tahsil edilmedi" />
         <Kpi label="Açık kanal" value={int(open)} sub={`${int(mine.length)} kanal, ${int(buyers)} alıcı`} />
@@ -104,13 +104,13 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`;
                     const p = c.accepted > c.claimed ? c.accepted - c.claimed : 0n;
                     return (
                       <tr key={c.id}>
-                        <th scope="row" className="px-5 py-3 text-left font-normal">
+                        <th scope="row" className="whitespace-nowrap px-5 py-3 text-left font-normal">
                           <span className="font-mono text-xs">#{c.id}</span>{" "}
                           <span className={cn("ml-1 rounded-full px-2 py-0.5 text-[11px]", c.open ? "bg-success-bg text-success" : "bg-surface-3 text-fg-subtle")}>
                             {c.open ? "açık" : "kapalı"}
                           </span>
                         </th>
-                        <td className="px-5 py-3 font-mono text-xs text-fg-muted">{c.payer ? `${c.payer.slice(0, 5)}…${c.payer.slice(-5)}` : "—"}</td>
+                        <td className="whitespace-nowrap px-5 py-3 font-mono text-xs text-fg-muted">{c.payer ? `${c.payer.slice(0, 5)}…${c.payer.slice(-5)}` : "—"}</td>
                         <td className="px-5 py-3">
                           <DepositBar claimed={ratio(c.claimed, c.deposit)} pending={ratio(p, c.deposit)} />
                           <span className="mt-1 block text-[11px] text-fg-subtle">{usdc(c.deposit)} USDC</span>
@@ -123,7 +123,7 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`;
                               type="button"
                               onClick={() => onClaim(c.id)}
                               disabled={!canClaim || claiming}
-                              className="inline-flex items-center gap-1.5 rounded-md border border-line-strong bg-surface-2 px-2.5 py-1.5 text-xs font-medium hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-45"
+                              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-line-strong bg-surface-2 px-2.5 py-1.5 text-xs font-medium hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-45"
                             >
                               {claiming ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <Receipt className="size-3.5" aria-hidden="true" />}
                               Tahsil et

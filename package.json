@@ -9,6 +9,7 @@
     "typecheck": "pnpm --filter @reinkey/core --filter @reinkey/sdk --filter @reinkey/meter --filter @reinkey/agents typecheck",
     "demo": "pnpm --filter @reinkey/agents demo",
     "demo:compromised": "pnpm --filter @reinkey/agents compromised",
+    "demo:injected": "pnpm --filter @reinkey/agents injected",
     "spike:open": "pnpm --filter @reinkey/agents spike:open"
   }
 }

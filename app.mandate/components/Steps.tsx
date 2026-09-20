@@ -60,44 +60,50 @@ function derive(s: State): Step[] {
   ];
 }
 
+/**
+ * Yedi kutu değil, tek bir hat: ray üzerinde yedi istasyon. Gerçekleşen adım dolar
+ * (yeşil; red ve kesinti kırmızı), süren adım yanıp söner, bekleyen boş kalır.
+ * Dar ekranda hat çizilmez, istasyonlar iki sütuna dizilir.
+ */
 export function Steps({ state }: { state: State }) {
   const steps = derive(state);
+  const done = steps.filter((s) => s.done).length;
   return (
-    <ol aria-label="Senaryo adımları" className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
-      {steps.map((st, i) => {
-        const danger = st.done && st.tone === "danger";
-        return (
-          <li
-            key={st.title}
-            className={cn(
-              "flex items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-colors duration-500",
-              !st.done && "border-line bg-transparent",
-              st.done && !danger && "border-success/30 bg-success-bg",
-              danger && "border-danger/30 bg-danger-bg",
-            )}
-          >
-            <span
-              className={cn(
-                "tabular mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-semibold",
-                !st.done && "bg-surface-3 text-fg-subtle",
-                st.done && !danger && "bg-success text-bg",
-                danger && "bg-danger text-bg",
-                st.live && "pulse-dot",
-              )}
-              aria-hidden="true"
-            >
-              {st.done && !st.live ? <Check className="size-3" strokeWidth={3} /> : i + 1}
-            </span>
-            <span className="min-w-0">
-              <span className={cn("block text-xs font-semibold", st.done ? "text-fg" : "text-fg-muted")}>
-                {st.title}
-                <span className="sr-only">{st.done ? " (gerçekleşti)" : " (bekliyor)"}</span>
+    <div className="card rounded-lg px-5 py-4">
+      <p className="mb-4 flex items-baseline justify-between gap-3 text-xs text-fg-subtle">
+        <span>Senaryo · olaylardan türetilir, elle işaretlenmez</span>
+        <span className="tabular font-mono">
+          {done}/{steps.length}
+        </span>
+      </p>
+      <ol aria-label="Senaryo adımları" className="track grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4 xl:grid-cols-7 xl:gap-x-2">
+        {steps.map((st, i) => {
+          const danger = st.done && st.tone === "danger";
+          return (
+            <li key={st.title} className="relative flex items-start gap-2.5 xl:flex-col xl:items-center xl:gap-2 xl:text-center">
+              <span
+                className={cn(
+                  "tabular relative z-[1] grid size-[1.375rem] shrink-0 place-items-center rounded-full border text-[10px] font-semibold",
+                  !st.done && "border-line-strong bg-bg text-fg-subtle",
+                  st.done && !danger && "border-success bg-success text-bg",
+                  danger && "border-danger bg-danger text-bg",
+                  st.live && "pulse-dot",
+                )}
+                aria-hidden="true"
+              >
+                {st.done && !st.live ? <Check className="size-3" strokeWidth={3} /> : i + 1}
               </span>
-              <span className="block truncate text-[11px] text-fg-subtle">{st.live ? "şu anda akıyor" : st.detail}</span>
-            </span>
-          </li>
-        );
-      })}
-    </ol>
+              <span className="min-w-0">
+                <span className={cn("block text-xs font-semibold", st.done ? "text-fg" : "text-fg-muted")}>
+                  {st.title}
+                  <span className="sr-only">{st.done ? " (gerçekleşti)" : " (bekliyor)"}</span>
+                </span>
+                <span className="block text-[11px] leading-snug text-fg-subtle">{st.live ? "şu anda akıyor" : st.detail}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }

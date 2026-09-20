@@ -33,8 +33,9 @@ function Card({
   return (
     <article
       className={cn(
-        "relative flex min-w-0 flex-col rounded-lg border bg-surface-1 transition-colors duration-500",
-        tone === "danger" ? "border-danger/50" : tone === "frozen" ? "border-brand-sky/50 bg-brand-sky/[0.06]" : "border-line",
+        "card relative flex min-w-0 flex-col rounded-lg transition-colors duration-500",
+        tone === "danger" && "border-danger/50",
+        tone === "frozen" && "border-brand-sky/50 bg-brand-sky/[0.06]",
       )}
     >
       {flashKey && <span key={flashKey} className="flash-danger pointer-events-none absolute inset-0 rounded-lg" aria-hidden="true" />}
@@ -163,8 +164,8 @@ export function Flow({
         icon={<Wallet className="size-5" aria-hidden="true" />}
         title="Ajanın hesabı"
         subtitle="Sınırı sahibi koyar, Stellar ağı uygular"
-        tone={account?.frozen ? "frozen" : rejection ? "danger" : undefined}
-        flashKey={rejection?.key}
+        tone={account?.frozen ? "frozen" : account && rejection ? "danger" : undefined}
+        flashKey={account ? rejection?.key : undefined}
         badge={
           account ? (
             <span

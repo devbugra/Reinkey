@@ -33,6 +33,7 @@ import {
   type ClaimResult,
   type DemoInfo,
   type FeedEvent,
+  type Scenario,
   type Stats,
 } from "./types";
 
@@ -252,7 +253,7 @@ export function useFeed(accountOverride: string | null = null) {
   }, []);
 
   const runAgent = useCallback(
-    (scenario: "trader" | "compromised") => act(scenario, "/demo/agent/run", { scenario }),
+    (scenario: Scenario) => act(scenario, "/demo/agent/run", { scenario }),
     [act],
   );
   const setFrozen = useCallback(

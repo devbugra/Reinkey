@@ -40,7 +40,7 @@ export function Hero({
   const dash = totals ? null : "—";
 
   return (
-    <section className="grid gap-6 rounded-xl border border-line bg-surface-1 px-6 py-6 sm:px-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
+    <section className="card grid gap-6 rounded-xl px-6 py-7 sm:px-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
       <div>
         <p className="flex flex-wrap items-center gap-x-3 text-xs font-medium uppercase tracking-[0.14em] text-fg-subtle">
           {totals?.scoped ? "Bu turda" : "Şu ana kadar"}
@@ -54,12 +54,17 @@ export function Hero({
             </button>
           )}
         </p>
-        <p className="tabular mt-2 text-4xl font-semibold tracking-tight sm:text-5xl" aria-live="polite">
-          <span className="text-gradient">{dash ?? int(payments)}</span>
-          <span className="text-fg-muted"> ödeme</span>
-          <span className="mx-3 text-fg-subtle">→</span>
-          <span>{dash ?? int(txs)}</span>
-          <span className="text-fg-muted"> zincir işlemi</span>
+        <p className="font-display tabular mt-2 flex flex-wrap items-baseline gap-x-3 text-4xl font-semibold tracking-tight 2xl:text-5xl" aria-live="polite">
+          {/* İki yarı ayrı ayrı bölünmez: "38 zincir / işlemi" diye kırılmasın. */}
+          <span className="whitespace-nowrap">
+            <span className="text-gradient">{dash ?? int(payments)}</span>
+            <span className="text-fg-muted"> ödeme</span>
+          </span>
+          <span className="text-fg-subtle" aria-hidden="true">→</span>
+          <span className="whitespace-nowrap">
+            <span>{dash ?? int(txs)}</span>
+            <span className="text-fg-muted"> zincir işlemi</span>
+          </span>
         </p>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-fg-muted">
           Ajan, borsanın fiyat verisini dinlediği saniye kadar öder. Her ödeme imzalı bir kupondur ve zincire

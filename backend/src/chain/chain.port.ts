@@ -71,6 +71,10 @@ export interface ChainPort {
     status: 'SUCCESS' | 'FAILED' | 'NOT_FOUND';
     contractErrorCode?: number;
   }>;
+  /** Makbuzları imzalayan ed25519 anahtarının açık adresi (claim'i gönderen anahtarla aynı). */
+  readonly signerAddress: string;
+  /** Facilitator anahtarıyla ham bayt imzalar (imzalı makbuz). */
+  signMessage(data: Buffer): Buffer;
   /**
    * Herhangi bir kontratta salt okunur çağrı (simülasyon; zincire yazmaz, ücret yok).
    * Float (kredi havuzu) görünümü bununla okunur; argümanlar kontrat spesifikasyonundaki adlarla verilir.

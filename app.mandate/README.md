@@ -8,6 +8,14 @@ Reinkey'in konsolu (Hat 3). Üç görünüm, hepsi gerçek veriden:
 
 Adres verilmezse backend'in demo hesabı ve demo satıcısı gösterilir; `&account=C…` ya da `&seller=G…` ile (ya da görünümdeki arama kutusuyla) herhangi bir adrese bakılır. Görünüm ve adres URL'de durur, bağlantı olarak paylaşılabilir. Demo kontrolleri (ajan başlatma, dondurma) yalnızca demo hesabı için çalışır.
 
+## Tasarım dili
+
+- **Ray.** Ürün bir ödeme rayıdır; gezinme de öyle çizilir: solda kesintisiz dikey hat ve üzerinde istasyonlar (`components/Shell.tsx`, `.rail` / `.station`). Sayfa içindeki numaralı bölüm başlıkları (`Section`) ve senaryo adımları (`.track`) aynı hattın devamıdır.
+- **Her sayfa aynı iskelet:** `PageHeader` (hangi ürün, burada ne görülür) → bağlam (hangi adres) → özet sayılar → ayrıntı. Geniş boşluk yalnızca başlık ile gövde arasında; görünüm içi bloklar sıkı dizilir.
+- **Yüzey:** tek kart türü (`.card`: üstten sönen ışık + 1px highlight), tanıtım sitesiyle aynı token'lar ve aynı yazı tipleri (Sora başlık, Inter gövde, JetBrains Mono kod). İç içe kutu yok.
+- **Demo kontrolleri** kesik çizgili bir şeritte ve "DEMO" etiketiyle durur: konsolun ilk gösterdiği şey düğme değil durumdur.
+- Dar ekranda kenar çubuğu üst çubuk + çekmeceye döner; KPI'lar iki sütun.
+
 Next.js 16 + Tailwind 4, tamamen istemci tarafında çalışır.
 
 ```bash

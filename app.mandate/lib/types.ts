@@ -180,7 +180,8 @@ export type DemoInfo = {
 };
 
 /** GET /demo/agent */
-export type AgentStatus = { running: boolean; runId?: string; scenario?: "trader" | "compromised" };
+export type AgentStatus = { running: boolean; runId?: string; scenario?: Scenario };
+export type Scenario = "trader" | "compromised" | "injected";
 
 /** GET /accounts/:addr/ledger: denetim defteri, yeniden eskiye, sayfalı. */
 export type LedgerPage = { events: FeedEvent[]; nextCursor: string | null };

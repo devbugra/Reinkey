@@ -43,6 +43,17 @@
   --danger: #ff6b60;
   --danger-bg: rgb(255 107 96 / 0.12);
 
+  /* Derinlik: landing ile aynı. Kart düz kutu değil; üstten sönen ince ışık + 1px highlight. */
+  --highlight: rgb(238 240 255 / 0.07);
+  --card-shadow:
+    inset 0 1px 0 0 var(--highlight),
+    0 1px 2px 0 rgb(0 0 0 / 0.3),
+    0 24px 48px -24px rgb(0 0 0 / 0.6);
+  --surface-sheen: linear-gradient(180deg, rgb(238 240 255 / 0.035) 0%, rgb(238 240 255 / 0) 42%);
+
+  /* Kenar çubuğu genişliği: kabuk ve içerik aynı değeri kullanır. */
+  --rail-w: 15rem;
+
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
@@ -80,8 +91,9 @@
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sora), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jb), ui-monospace, SFMono-Regular, monospace;
 }
 
 html,
@@ -93,6 +105,84 @@ body {
 body {
   font-family: var(--font-sans);
   font-feature-settings: "ss01", "cv11";
+}
+
+h1,
+h2,
+.font-display {
+  font-family: var(--font-sora), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* ============================================================
+   YÜZEY: kart. Bilgi taşıyan her kutu budur; iç içe kutu yapılmaz.
+   ============================================================ */
+.card {
+  background-color: var(--surface);
+  background-image: var(--surface-sheen);
+  border: 1px solid var(--line);
+  box-shadow: var(--card-shadow);
+}
+
+/* Sayfa zemini: üstte marka renginde çok hafif bir ışık; içerik düz siyahta yüzmesin. */
+.app-bg {
+  background:
+    radial-gradient(1100px 420px at 60% -120px, color-mix(in srgb, var(--brand-blue) 16%, transparent), transparent 70%),
+    var(--bg);
+}
+
+/* ============================================================
+   RAY. Konsolun imzası: ürün bir ödeme rayıdır; gezinme de öyle çizilir.
+   Kenar çubuğunda kesintisiz dikey bir hat, üzerinde istasyonlar. Etkin
+   istasyon yanar. Sayfa içindeki bölüm başlıkları (.station-head) ve senaryo
+   adımları (.track) aynı hattın devamıdır.
+   ============================================================ */
+.rail {
+  position: relative;
+}
+.rail::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.25rem;
+  inset-inline-start: 0.6875rem;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--line-strong) 12%, var(--line-strong) 88%, transparent);
+}
+.station {
+  position: relative;
+  z-index: 1;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1.5px solid var(--line-strong);
+  transition:
+    background-color 200ms,
+    border-color 200ms,
+    box-shadow 200ms;
+}
+.station[data-on="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent), 0 0 14px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+/* Yatay hat: senaryo adımları. Yalnızca adımlar tek sıraya dizildiğinde (xl) çizilir. */
+.track {
+  position: relative;
+}
+@media (width < 80rem) {
+  .track::before {
+    display: none;
+  }
+}
+.track::before {
+  content: "";
+  position: absolute;
+  inset-inline: 7%;
+  top: 0.6875rem;
+  height: 1px;
+  background: var(--line-strong);
 }
 
 /* Sayılar değişirken genişlik oynamasın. */

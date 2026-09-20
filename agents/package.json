@@ -6,6 +6,7 @@
   "scripts": {
     "demo": "tsx trader.ts",
     "compromised": "tsx compromised.ts",
+    "injected": "tsx injected.ts",
     "spike:open": "tsx tools/spike-open.ts",
     "typecheck": "tsc --noEmit"
   },

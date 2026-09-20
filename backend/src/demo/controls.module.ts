@@ -23,7 +23,11 @@ import { FrozenRegistry } from '../channel/frozen.registry';
 import { ReinkeyError } from '../common/errors';
 import { APP_CONFIG, type AppConfig } from '../config/config';
 
-const SCENARIOS = { trader: 'trader.ts', compromised: 'compromised.ts' } as const;
+const SCENARIOS = {
+  trader: 'trader.ts',
+  compromised: 'compromised.ts',
+  injected: 'injected.ts',
+} as const;
 type Scenario = keyof typeof SCENARIOS;
 
 // eslint-disable-next-line no-control-regex
@@ -128,7 +132,9 @@ export class AgentRunner implements OnApplicationShutdown {
   }
 }
 
-const RunBody = z.object({ scenario: z.enum(['trader', 'compromised']) });
+const RunBody = z.object({
+  scenario: z.enum(['trader', 'compromised', 'injected']),
+});
 const FreezeBody = z.object({ frozen: z.boolean() });
 
 @ApiTags('demo')
@@ -158,7 +164,7 @@ export class DemoControlsController {
   run(@Body() body: unknown) {
     const p = RunBody.safeParse(body);
     if (!p.success)
-      throw new ReinkeyError('BAD_REQUEST', 'scenario: "trader" | "compromised"');
+      throw new ReinkeyError('BAD_REQUEST', 'scenario: "trader" | "compromised" | "injected"');
     return this.runner.run(p.data.scenario);
   }
 

@@ -1,6 +1,7 @@
 // meter(): x402 ile korunan uçlar için Express middleware'i. Nest'e bağımlı DEĞİL;
 // Hat 1 bunu `packages/x402`ye taşıyacak. Bağımlılıklar `MeterDeps` ile verilir.
 
+import { createHash } from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
 import {
   HEADER_REQUIRED,
@@ -32,6 +33,28 @@ export interface MeterContext {
   payTo: string;
   resource: string;
   unit: string;
+  method?: string;
+  /** İstek özeti: yöntem + tam adres + (varsa) gövde. Makbuza girer. */
+  requestHash?: string;
+}
+
+/**
+ * İstek özeti: alıcının NE istediğini sabitler. Yöntem, sorgu dizesi dahil tam
+ * adres ve gövde (varsa) alınır; başlıklar alınmaz (ödeme başlığı her çağrıda değişir).
+ */
+export function requestHashOf(
+  req: { method?: string; originalUrl?: string; url?: string; body?: unknown },
+  resource: string,
+): string {
+  const url = req.originalUrl ?? req.url ?? '';
+  const query = url.includes('?') ? url.slice(url.indexOf('?')) : '';
+  const body =
+    req.body && typeof req.body === 'object' && Object.keys(req.body as object).length > 0
+      ? JSON.stringify(req.body)
+      : '';
+  return createHash('sha256')
+    .update(`${(req.method ?? 'GET').toUpperCase()}\n${resource}${query}\n${body}`)
+    .digest('hex');
 }
 
 /** Zincir dışı bir hata: §3.3 gövdesi + HTTP durumu. */
@@ -44,6 +67,11 @@ export interface MeterError {
 }
 
 export interface MeterDeps {
+  /**
+   * Satıcı yanıtı gönderdikten sonra çağrılır: makbuza yanıt özeti taahhüt edilir.
+   * Yalnızca `unit: request` için; akışlarda gövde tek bir belge değildir.
+   */
+  attest?(receiptId: string, body: Buffer): void;
   network: string;
   asset: string;
   payTo: string;
@@ -153,6 +181,33 @@ export function paymentRequirements(
   return accepts;
 }
 
+/**
+ * Yanıt gövdesini yakalar: `res.json`/`res.send`/`res.end` sarılır, gövde tek
+ * parça hâlinde toplanır ve geri çağrıya verilir. Yanıtın kendisine dokunulmaz.
+ */
+function captureBody(res: Response, done: (body: Buffer) => void) {
+  const chunks: Buffer[] = [];
+  const push = (c: unknown) => {
+    if (typeof c === 'string') chunks.push(Buffer.from(c, 'utf8'));
+    else if (Buffer.isBuffer(c)) chunks.push(c);
+  };
+  const origWrite = res.write.bind(res);
+  const origEnd = res.end.bind(res);
+  res.write = ((chunk: unknown, ...rest: unknown[]) => {
+    push(chunk);
+    return (origWrite as (...a: unknown[]) => boolean)(chunk, ...rest);
+  }) as Response['write'];
+  res.end = ((chunk: unknown, ...rest: unknown[]) => {
+    push(chunk);
+    try {
+      done(Buffer.concat(chunks));
+    } catch {
+      /* taahhüt yazılamadı: yanıtı etkilemez */
+    }
+    return (origEnd as (...a: unknown[]) => Response)(chunk, ...rest);
+  }) as Response['end'];
+}
+
 export function meter(opts: MeterOptions, deps: MeterDeps) {
   return async (req: PaidRequest, res: Response, next: NextFunction) => {
     const resource = `${deps.publicUrl}${req.originalUrl.split('?')[0]}`;
@@ -201,6 +256,8 @@ export function meter(opts: MeterOptions, deps: MeterDeps) {
       payTo: deps.payTo,
       resource,
       unit: opts.unit,
+      method: req.method,
+      requestHash: requestHashOf(req, resource),
     };
     try {
       const scheme = payloadScheme(header.payload);
@@ -212,6 +269,10 @@ export function meter(opts: MeterOptions, deps: MeterDeps) {
       const encoded = encodeHeader(receipt);
       res.setHeader(HEADER_RESPONSE, encoded);
       if (header.version === 1) res.setHeader(HEADER_RESPONSE_V1, encoded);
+
+      // Yanıt gönderilince özetini makbuza taahhüt et (yalnızca tek gövdeli yanıtlar).
+      const id = (receipt as { receipt?: { id?: string } }).receipt?.id;
+      if (id && deps.attest && opts.unit === 'request') captureBody(res, (body) => deps.attest!(id, body));
       next();
     } catch (e) {
       const err = deps.toError(e);

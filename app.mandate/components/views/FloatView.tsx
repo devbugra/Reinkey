@@ -17,9 +17,9 @@ const pct = (bps: number, digits = 2) => `${(bps / 100).toLocaleString("tr-TR", 
 
 function Kpi({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
-    <div className="rounded-lg border border-line bg-surface-1 px-5 py-4">
+    <div className="card min-w-0 rounded-lg px-4 py-4 sm:px-5">
       <p className="text-xs text-fg-subtle">{label}</p>
-      <p className={cn("tabular mt-1.5 text-2xl font-semibold tracking-tight", accent && "text-gradient")}>{value}</p>
+      <p className={cn("tabular mt-1.5 truncate text-lg font-semibold tracking-tight sm:text-2xl", accent && "text-gradient")}>{value}</p>
       {sub && <p className="mt-1 text-[11px] text-fg-subtle">{sub}</p>}
     </div>
   );
@@ -32,7 +32,8 @@ function SharePriceChart({ samples }: { samples: FloatSample[] }) {
   const pts = samples.map((s) => ({ t: Date.parse(s.ts), v: Number(BigInt(s.sharePrice)) / Number(SCALE) }));
   const lo = Math.min(...pts.map((p) => p.v));
   const hi = Math.max(...pts.map((p) => p.v));
-  const pad = hi > lo ? (hi - lo) * 0.25 : hi * 0.0005;
+  // Eksen en az ±%0,1 genişliğinde: yüz binde birlik oynama uçurum gibi çizilmesin.
+  const pad = Math.max((hi - lo) * 0.25, hi * 0.001);
   const t0 = pts[0]?.t ?? 0;
   const t1 = pts[pts.length - 1]?.t ?? 1;
   const x = (t: number) => 8 + (t1 > t0 ? ((t - t0) / (t1 - t0)) * (width - 16) : width - 16);
@@ -54,8 +55,12 @@ function SharePriceChart({ samples }: { samples: FloatSample[] }) {
             <circle cx={x(last.t)} cy={y(last.v)} r={4} fill="var(--brand-sky)" stroke="var(--surface)" strokeWidth={2} />
           </svg>
           <p className="tabular mt-1 flex justify-between font-mono text-[10.5px] text-fg-subtle">
-            <span>{clock(samples[0].ts)}</span>
-            <span>{clock(samples[samples.length - 1].ts)}</span>
+            <span>
+              {clock(samples[0].ts)} · {pts[0].v.toFixed(5)}
+            </span>
+            <span>
+              {last.v.toFixed(5)} · {clock(samples[samples.length - 1].ts)}
+            </span>
           </p>
         </>
       )}
@@ -103,7 +108,7 @@ export function FloatView({ data, failed }: { data: FloatOverview | null; failed
 
   return (
     <>
-      <section className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-line bg-surface-1 px-5 py-3.5">
+      <section className="flex flex-wrap items-center gap-x-6 gap-y-2 card rounded-lg px-5 py-3.5">
         <div className="min-w-0">
           <p className="text-[11px] text-fg-subtle">Kredi havuzu (kontrat)</p>
           <p className="mt-0.5 font-mono text-sm">
@@ -117,7 +122,7 @@ export function FloatView({ data, failed }: { data: FloatOverview | null; failed
         </p>
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Kpi label="Havuz büyüklüğü" value={`${usdc(pool.totalAssets, 2)} USDC`} sub="Boşta duran + açık borç + XLM × fiyat" accent />
         <Kpi
           label="Pay fiyatı"

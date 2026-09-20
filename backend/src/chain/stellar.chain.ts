@@ -70,6 +70,16 @@ export class StellarChain implements ChainPort {
     return this.keypair.publicKey();
   }
 
+  get signerAddress(): string {
+    return this.keypair.publicKey();
+  }
+
+  signMessage(data: Buffer): Buffer {
+    // stellar-sdk Uint8Array döndürür; kopyalamadan Buffer görünümü alınır.
+    const sig = this.keypair.sign(data);
+    return Buffer.from(sig.buffer, sig.byteOffset, sig.byteLength);
+  }
+
   private client(contractId: string): Promise<AnyClient> {
     let c = this.clients.get(contractId);
     if (!c) {

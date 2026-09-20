@@ -5,6 +5,7 @@ import { ChannelStore } from '../channel/channel.cache';
 import { ChannelVerifier } from '../channel/channel.verifier';
 import { ReinkeyError } from '../common/errors';
 import { APP_CONFIG, type AppConfig } from '../config/config';
+import { ReceiptsService } from '../audit/receipts.service';
 import { CatalogService } from '../discovery/catalog.service';
 import { ExactVerifier } from './exact.verifier';
 import { payloadScheme } from './headers';
@@ -17,6 +18,9 @@ const Requirements = z
     maxAmountRequired: z.string().regex(/^\d+$/).optional(),
     resource: z.string().optional(),
     unit: z.string().optional(),
+    method: z.string().optional(),
+    /** Makbuza girecek istek özeti (sha256 hex). */
+    requestHash: z.string().regex(/^[0-9a-f]{64}$/).optional(),
   })
   .passthrough();
 
@@ -53,6 +57,7 @@ export class FacilitatorController {
     private readonly exact: ExactVerifier,
     private readonly store: ChannelStore,
     private readonly catalog: CatalogService,
+    private readonly receipts: ReceiptsService,
   ) {}
 
   @Get('supported')
@@ -69,6 +74,8 @@ export class FacilitatorController {
           asset: this.cfg.usdcContractId,
           channelContract: this.cfg.channelContractId,
           areFeesSponsored: true,
+          /** İmzalı makbuzları doğrulayacak açık anahtar (claim'i gönderen anahtarla aynı). */
+          receiptSigner: this.receipts.signer,
         },
       },
     ];
@@ -105,6 +112,8 @@ export class FacilitatorController {
         payTo: r.payTo,
         resource: r.resource ?? 'facilitator:/verify',
         unit: r.unit ?? 'request',
+        ...(typeof r.method === 'string' ? { method: r.method } : {}),
+        ...(typeof r.requestHash === 'string' ? { requestHash: r.requestHash } : {}),
       },
       requirements: r,
       bazaar: p.data.extensions?.bazaar as Record<string, unknown> | undefined,

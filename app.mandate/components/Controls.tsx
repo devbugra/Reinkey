@@ -3,7 +3,8 @@
  * çalışır ve Stellar testnet'e işlem gönderir; dondurma sahibin anahtarıyla
  * zincirde yapılır.
  */
-import { Eraser, Loader2, Play, ShieldAlert, Snowflake, Sun } from "lucide-react";
+import { Eraser, Loader2, MessageSquareWarning, Play, ShieldAlert, Snowflake, Sun } from "lucide-react";
+import type { Scenario } from "@/lib/types";
 import { cn } from "./ui";
 
 type Props = {
@@ -13,7 +14,7 @@ type Props = {
   frozen: boolean | null;
   pending: string | null;
   error: string | null;
-  onRun: (s: "trader" | "compromised") => void;
+  onRun: (s: Scenario) => void;
   onFreeze: (frozen: boolean) => void;
   /** Ekranda temizlenecek bir şey var mı? */
   canClear: boolean;
@@ -58,8 +59,9 @@ function Btn({
 export function Controls(p: Props) {
   const blocked = p.disabled || p.agentRunning;
   return (
-    <section aria-label="Demo kontrolleri" className="rounded-lg border border-line bg-surface-1 px-5 py-4">
-      <div className="flex flex-wrap items-center gap-3">
+    <section aria-label="Demo kontrolleri" className="rounded-lg border border-dashed border-line-strong bg-bg-alt/60 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <span className="me-1 rounded-sm bg-surface-3 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-fg-muted">Demo</span>
         <Btn
           tone="primary"
           onClick={() => p.onRun("trader")}
@@ -78,6 +80,15 @@ export function Controls(p: Props) {
         >
           {p.pending !== "compromised" && <ShieldAlert className="size-4" aria-hidden="true" />}
           Ele geçirilmiş ajan
+        </Btn>
+        <Btn
+          onClick={() => p.onRun("injected")}
+          disabled={blocked}
+          busy={p.pending === "injected"}
+          title="Ajan zehirli bir yanıtı okur ve üç zararlı işlemi gerçekten imzalar; üçünü de zincir reddeder"
+        >
+          {p.pending !== "injected" && <MessageSquareWarning className="size-4" aria-hidden="true" />}
+          Prompt injection
         </Btn>
 
         <span className="mx-1 hidden h-6 w-px bg-line sm:block" aria-hidden="true" />
@@ -113,7 +124,7 @@ export function Controls(p: Props) {
           {p.agentRunning ? (
             <>
               <span className="pulse-dot size-2 rounded-full bg-success" aria-hidden="true" />
-              Ajan çalışıyor{p.scenario === "compromised" ? " (ele geçirilmiş senaryo)" : ""} · işlemler testnet&apos;e gidiyor
+              Ajan çalışıyor{p.scenario === "compromised" ? " (ele geçirilmiş senaryo)" : p.scenario === "injected" ? " (prompt injection senaryosu)" : ""} · işlemler testnet&apos;e gidiyor
             </>
           ) : (
             "Düğmeler gerçek işlem başlatır: Stellar testnet"

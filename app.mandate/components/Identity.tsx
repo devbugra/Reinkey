@@ -25,7 +25,7 @@ export function Identity({
   const [invalid, setInvalid] = useState(false);
 
   return (
-    <section className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-lg border border-line bg-surface-1 px-5 py-3.5">
+    <section className="flex flex-wrap items-center gap-x-4 gap-y-3 card rounded-lg px-5 py-3.5">
       <div className="min-w-0">
         <p className="text-[11px] text-fg-subtle">{label}</p>
         <p className="mt-0.5 flex items-center gap-2 font-mono text-sm">

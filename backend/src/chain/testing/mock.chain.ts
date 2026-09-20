@@ -111,6 +111,12 @@ export class MockChain implements ChainPort {
     return t ? { ...t } : { status: 'NOT_FOUND' as const };
   }
 
+  readonly signerAddress = 'GMOCK';
+
+  signMessage(): Buffer {
+    throw new Error('MockChain: signMessage desteklenmez');
+  }
+
   async readContract<T>(): Promise<T> {
     throw new Error('MockChain: readContract desteklenmez');
   }

@@ -9,7 +9,7 @@ import { useState } from "react";
 import { clock, int } from "@/lib/format";
 import { useSize } from "@/lib/hooks";
 import type { SwapView, Tick } from "@/lib/store";
-import { Empty, Panel } from "./ui";
+import { Empty, Panel, cn } from "./ui";
 
 const MIN_H = 220;
 const M = { top: 16, right: 62, bottom: 24, left: 10 };
@@ -75,7 +75,7 @@ export function Price({ ticks, swaps, streaming }: { ticks: Tick[]; swaps: SwapV
       }
     >
       <div className="flex h-full flex-col">
-        <div ref={ref} className="relative min-h-[220px] flex-1">
+        <div ref={ref} className={cn("relative flex-1", visible.length === 0 ? "min-h-[140px]" : "min-h-[220px]")}>
           {visible.length === 0 ? (
             <div className="flex h-full items-center justify-center">
               <Empty>Ajan fiyat akışına bağlanınca satın aldığı veri burada saniye saniye görünür.</Empty>
