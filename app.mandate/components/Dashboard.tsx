@@ -199,6 +199,8 @@ export default function Dashboard() {
                   rejections={state.rejections}
                   rows={state.rows}
                   perSecond={perSecond}
+                  info={state.info}
+                  wallet={wallet}
                   onAccount={(account) => setNav({ account })}
                 />
               </div>

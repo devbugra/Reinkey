@@ -123,5 +123,21 @@ export function useWallet() {
     return signedTxXdr;
   }, []);
 
-  return { ...state, connect, disconnect, sign };
+  /**
+   * Soroban auth girdisinin ÖNİMAJINI imzalatır ve 64 baytlık ham ed25519
+   * imzayı döner. Reinkey hesabı klasik hesap imzası beklemez; kendi
+   * `Sig::Owner(BytesN<64>)` tipini bekler, bu yüzden işlem imzası değil bu
+   * gerekir. Anahtar yine cüzdandan çıkmaz.
+   */
+  const signAuth = useCallback(
+    async (preimageXdr: string, networkPassphrase: string, address: string): Promise<Uint8Array> => {
+      const kit = await loadKit();
+      const { signedAuthEntry } = await kit.signAuthEntry(preimageXdr, { networkPassphrase, address });
+      const bin = atob(signedAuthEntry);
+      return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    },
+    [],
+  );
+
+  return { ...state, connect, disconnect, sign, signAuth };
 }

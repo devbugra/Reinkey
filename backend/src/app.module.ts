@@ -8,6 +8,7 @@ import { AppConfigModule } from './config/config.module';
 import type { AppConfig } from './config/config';
 import { DemoControlsModule } from './demo/controls.module';
 import { DemoModule } from './demo/demo.module';
+import { DexModule } from './dex/dex.module';
 import { DiscoveryModule } from './discovery/discovery.module';
 import { FloatModule } from './float/float.module';
 import { HealthController } from './health.controller';
@@ -28,6 +29,7 @@ export class AppModule {
         ChannelModule,
         X402Module,
         DemoModule,
+        DexModule,
         AccountsModule,
         DiscoveryModule,
         FloatModule,

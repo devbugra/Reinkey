@@ -156,7 +156,14 @@ export type AccountSnapshot = {
     dexRouter?: string | null;
     /** İzinli (satılan, alınan) çiftler, ör. "USDC→XLM". */
     pairs?: string[];
+    /** Aynı çiftlerin kontrat adresleri: politika yeniden yazılırken gerekir. */
+    pairIds?: [string, string][];
+    asset?: string;
+    dexFactory?: string | null;
+    controller?: string | null;
   };
+  /** Hesabın sahibi (G…). Sınırları yalnızca bu anahtar değiştirebilir. */
+  owner?: string | null;
   spentToday: string;
   day: number;
   frozen: boolean;
@@ -177,6 +184,10 @@ export type DemoInfo = {
   usdc: string;
   xlm: string;
   dexPair: string;
+  dexRouter?: string | null;
+  dexFactory?: string | null;
+  /** Dağıtılmış hesap kodunun hash'i: konsol bununla yeni hesap kurar. */
+  accountWasm?: string | null;
   /** Backend'de DEMO_CONTROLS açık mı (ajan başlatma, dondurma). */
   demoControls?: boolean;
   prices: { bookPerRequest: string; tickerPerSecond: string; chatPerToken: string };

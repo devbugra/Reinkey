@@ -25,6 +25,9 @@ export class InfoController {
       xlm: c.xlmContractId ?? null,
       dexPair: c.dexPairId ?? null,
       dexRouter: c.dexRouterId ?? null,
+      dexFactory: c.dexFactoryId ?? null,
+      /** Konsolun kendi hesabını kurabilmesi için: dağıtılmış hesap kodunun hash'i. */
+      accountWasm: c.accountWasmHash ?? null,
       demoControls: c.demoControls,
       prices: {
         bookPerRequest: c.priceBookPerRequest.toString(),

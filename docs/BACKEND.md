@@ -685,3 +685,23 @@ Meter'ın finans yüzü. Kaynak denetim defteri (`Event`) ve kanal durumu; ayrı
 - Konsol: Meter görünümünde "Gelir raporu", "Kaynak bazında gelir", "Alacak yaşlandırma" ve CSV düğmesi.
 - Canlı doğrulama (20 Eylül): kazanılan 0,1335 = tahsil edilen 0,1335, alacak 0; 574 ödeme 20 tahsilatla (tahsilat başına 28,7 ödeme).
 
+
+---
+
+## 21. EK (20 Eylül, Hat 3): borsa katmanı — `GET /dex/quote`
+
+Kendi likidite havuzumuz yok ve olmayacak: takas Stellar'da zaten var olan likiditede
+(Soroswap) gerçekleşir. Katılan üç şey: rota, kontratın zorunlu tuttuğu kayma koruması
+önerisi ve **politika ön kararı**.
+
+- `GET /dex/quote?side=USDC_XLM&amountIn=…&account=…&slippageBps=100`
+- Çıktı: sabit çarpım eğrisinden `amountOut`, gerçekleşme fiyatı, fiyat etkisi (bps),
+  `minOut`, havuz rezervleri, ajanın imzalayacağı router çağrısı ve `policy` kararı.
+- `policy` kuralları `contracts/reinkey-account` ile birebir: donmuş hesap, router yokluğu,
+  izinsiz çift, sıfır `minOut`, süresi dolmuş politika, işlem ve günlük tavan. Tavanlara
+  yalnızca politikanın varlığı (USDC) satılırken sayılır.
+- Kotasyon ÜCRETSİZDİR: herkese açık zincir verisinden ve hesabın kendi politikasından
+  hesaplanır (`GET /accounts/:addr` gibi). Ücretli olan satılan piyasa verisidir.
+- İkinci fiyat kaynağı olarak kredi havuzunun ihtiyatlı fiyatı (Reflector oracle ile havuzun
+  düşüğü) okunur; kotasyon ile kredi değerlemesi sessizce ayrışamaz.
+- Testler: `src/dex/dex.service.spec.ts` (13 test), her red yolu ayrı.

@@ -5,6 +5,7 @@ import {
   Contract,
   Keypair,
   Operation,
+  StrKey,
   TransactionBuilder,
   authorizeEntry,
   contract,
@@ -208,7 +209,7 @@ export class StellarChain implements ChainPort {
   async getAccount(address: string): Promise<AccountState | null> {
     if (!address.startsWith('C')) return null;
     try {
-      const [policy, spent, frozen, balance, balanceXlm, controller] =
+      const [policy, spent, frozen, balance, balanceXlm, controller, owner] =
         await Promise.all([
           this.read<any>(address, 'get_policy'),
           this.read<any>(address, 'get_spent').catch(() => [0, 0n]),
@@ -223,6 +224,7 @@ export class StellarChain implements ChainPort {
             : Promise.resolve(0n),
           // Eski wasm'larda bu fonksiyon yok.
           this.read<unknown>(address, 'get_controller').catch(() => null),
+          this.read<Uint8Array>(address, 'get_owner').catch(() => null),
         ]);
       const [day, amount] = Array.isArray(spent) ? spent : [0, 0n];
       const pairs: string[] = (policy.pairs ?? []).map(
@@ -242,8 +244,16 @@ export class StellarChain implements ChainPort {
           dexRouter: policy.dex_router ? String(policy.dex_router) : null,
           dexFactory: policy.dex_factory ? String(policy.dex_factory) : null,
           pairs,
+          pairIds: (policy.pairs ?? []).map((p: [unknown, unknown]) => [
+            String(p[0]),
+            String(p[1]),
+          ]),
           controller: controller ? String(controller) : null,
         },
+        // Sahip bir ed25519 anahtarıdır; konsol bağlı cüzdanla karşılaştırır.
+        owner: owner
+          ? StrKey.encodeEd25519PublicKey(Buffer.from(owner))
+          : null,
         spentToday: BigInt(amount),
         day: Number(day),
         frozen: Boolean(frozen),

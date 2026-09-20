@@ -27,8 +27,12 @@ export interface AccountState {
     dexFactory: string | null;
     /** İzinli (satılan, alınan) varlık çiftleri; okunur biçimde: "USDC→XLM". */
     pairs: string[];
+    /** Aynı çiftlerin kontrat adresleri: politika yeniden yazılırken gerekir. */
+    pairIds?: [string, string][];
     controller: string | null;
   };
+  /** Hesabın sahibi (G…): yönetim çağrılarını yalnızca bu anahtar yetkilendirir. */
+  owner?: string | null;
   spentToday: bigint;
   day: number;
   frozen: boolean;

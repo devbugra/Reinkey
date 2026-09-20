@@ -9,7 +9,8 @@ import { Snowflake } from "lucide-react";
 import { env } from "@/lib/env";
 import { big, int, shortAddr, usdc } from "@/lib/format";
 import type { ChannelView, RejectionView, Row } from "@/lib/store";
-import type { AccountSnapshot } from "@/lib/types";
+import type { AccountSnapshot, DemoInfo } from "@/lib/types";
+import { CreateAccount, PolicyEditor, type AdminWallet } from "../AccountAdmin";
 import { Blocked } from "../Blocked";
 import { Meter, Stat } from "../Flow";
 import { Identity } from "../Identity";
@@ -56,6 +57,8 @@ export function ReinsView({
   rejections,
   rows,
   perSecond,
+  info,
+  wallet,
   onAccount,
 }: {
   address: string | null;
@@ -65,6 +68,8 @@ export function ReinsView({
   rejections: RejectionView[];
   rows: Row[];
   perSecond: bigint;
+  info: DemoInfo | null;
+  wallet: AdminWallet;
   onAccount: (address: string | null) => void;
 }) {
   const t = useTranslations("reins");
@@ -78,6 +83,7 @@ export function ReinsView({
     return (
       <>
         <Identity label={t("identity")} value={address} isExample={isExample} placeholder={t("placeholder")} onChange={onAccount} />
+        <CreateAccount info={info} wallet={wallet} onCreated={onAccount} />
         <NoAccount address={address} />
       </>
     );
@@ -146,6 +152,10 @@ export function ReinsView({
 
         <Timeline rows={rows} perSecond={perSecond} account={address} defaultTab="ledger" />
       </div>
+
+      {/* Hesap 3 sn'de bir yeniden okunur; yazma kesinleşince ekran kendiliğinden güncellenir. */}
+      {account && <PolicyEditor key={account.address} account={account} info={info} wallet={wallet} onDone={() => undefined} />}
+      <CreateAccount info={info} wallet={wallet} onCreated={onAccount} />
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title={t("channels")} hint={t("channelsHint")}>

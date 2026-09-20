@@ -55,6 +55,8 @@ const schema = z.object({
   XLM_CONTRACT_ID: optional,
   DEX_PAIR_ID: optional,
   DEX_ROUTER_ID: optional,
+  DEX_FACTORY_ID: optional,
+  ACCOUNT_WASM_HASH: optional,
   DEPLOYMENT_FILE: z.string().default('../deployments/testnet.json'),
 
   // Panel demo kontrolleri: ajanı başlat, hesabı dondur.
@@ -107,6 +109,12 @@ export interface AppConfig {
   xlmContractId?: string;
   dexPairId?: string;
   dexRouterId?: string;
+  dexFactoryId?: string;
+  /**
+   * Dağıtılmış `reinkey-account` wasm'ının hash'i (hex). Konsol bununla
+   * kullanıcının KENDİ hesabını tarayıcıdan kurar: aynı kod, kendi sahibi.
+   */
+  accountWasmHash?: string;
   demoControls: boolean;
   demoAccountId?: string;
   agentOwnerSecret?: string;
@@ -193,6 +201,8 @@ export function loadConfig(raw: NodeJS.ProcessEnv = process.env): AppConfig {
     xlmContractId: e.XLM_CONTRACT_ID ?? dep.xlmContractId,
     dexPairId: e.DEX_PAIR_ID ?? dep.dexPairUsdcXlmId,
     dexRouterId: e.DEX_ROUTER_ID ?? dep.dexRouterId,
+    dexFactoryId: e.DEX_FACTORY_ID ?? dep.dexFactoryId,
+    accountWasmHash: e.ACCOUNT_WASM_HASH ?? dep.accountWasmHash,
     demoControls: e.DEMO_CONTROLS,
     demoAccountId: e.DEMO_ACCOUNT_ID ?? dep.demoAccountId,
     agentOwnerSecret: e.AGENT_OWNER_SECRET,
