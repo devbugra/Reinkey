@@ -114,7 +114,7 @@ export function WorkspaceSwitcher({
                 onClick={() => onRemove(p.id)}
                 aria-label={t("removeLabel", { label: p.label })}
                 title={t("removeTitle")}
-                className="grid size-6 shrink-0 place-items-center rounded-sm text-fg-subtle opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
+                className="grid size-6 shrink-0 place-items-center rounded-sm text-fg-subtle opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
               >
                 <Trash2 className="size-3.5" aria-hidden="true" />
               </button>

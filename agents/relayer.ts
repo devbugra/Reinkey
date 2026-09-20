@@ -21,6 +21,9 @@ export async function loadRelayer(): Promise<Keypair> {
     const m = /RELAYER_SECRET=(S[A-Z0-9]+)/.exec(readFileSync(FILE, "utf8"));
     if (m) return Keypair.fromSecret(m[1]);
   }
+  // Ana ağda friendbot yok: ücret ödeyen hesap elle fonlanıp RELAYER_SECRET ile verilir.
+  if (/Public Global/.test(process.env.STELLAR_NETWORK_PASSPHRASE ?? ""))
+    throw new Error("Ana ağda RELAYER_SECRET zorunlu: agents/.relayer.env dosyasına fonlu bir hesap yazın");
   const kp = Keypair.random();
   const res = await fetch(`https://friendbot.stellar.org?addr=${kp.publicKey()}`);
   if (!res.ok) throw new Error(`friendbot fonlaması başarısız: ${res.status}`);

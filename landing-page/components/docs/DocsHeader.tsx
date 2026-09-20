@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
-import { routes } from "@/content/site";
+import { external, routes } from "@/content/site";
 import { Button } from "@/components/ui/Button";
 import { Wordmark } from "@/components/landing/Wordmark";
 import { DocsSidebar } from "./DocsSidebar";
@@ -22,11 +22,13 @@ export function DocsHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur-xl">
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-4 px-6">
-        <Wordmark href="/" />
+        <Wordmark href="/en" />
         <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-fg-muted">Docs</span>
         <nav aria-label="Products" className="ms-auto hidden items-center gap-1 text-sm md:flex">
           <Link href="/en/meter" className="rounded-full px-3 py-1.5 text-fg-muted transition-colors hover:text-fg">Meter</Link>
           <Link href="/en/reins" className="rounded-full px-3 py-1.5 text-fg-muted transition-colors hover:text-fg">Reins</Link>
+          <Link href="/en/float" className="rounded-full px-3 py-1.5 text-fg-muted transition-colors hover:text-fg">Float</Link>
+          <a href={external.repo} target="_blank" rel="noreferrer" className="rounded-full px-3 py-1.5 text-fg-muted transition-colors hover:text-fg">GitHub</a>
           <a href={routes.openapi} className="rounded-full px-3 py-1.5 text-fg-muted transition-colors hover:text-fg">OpenAPI</a>
         </nav>
         <Button href={routes.panel} size="sm" variant="secondary" className="ms-auto md:ms-2">

@@ -1,0 +1,56 @@
+{
+  "name": "@reinkey/mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Paid tool calls for any MCP client: an AI assistant pays per request, per second or per token on Stellar through an x402 channel session, inside an on-chain budget",
+  "license": "MIT",
+  "keywords": [
+    "reinkey",
+    "mcp",
+    "model-context-protocol",
+    "x402",
+    "stellar",
+    "soroban",
+    "ai-agents",
+    "micropayments"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devbugra/Reinkey.git",
+    "directory": "packages/mcp"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "reinkey-mcp": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepack": "pnpm --filter @reinkey/core build && pnpm --filter @reinkey/sdk build && pnpm run build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@reinkey/sdk": "workspace:*",
+    "@stellar/stellar-sdk": "^17.1.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "typescript": "^7.0.2",
+    "tsx": "^4.23.13"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "bin": {
+      "reinkey-mcp": "./dist/index.js"
+    }
+  }
+}

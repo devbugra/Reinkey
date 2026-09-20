@@ -71,7 +71,9 @@ export interface ChainPort {
     signatureHex: string,
   ): Promise<{ tx: string }>;
   getAccount(address: string): Promise<AccountState | null>;
-  getTransactionStatus(hash: string): Promise<{
+  /** `account` verilirse işlemin zarfında o adresin geçip geçmediği de döner. */
+  getTransactionStatus(hash: string, account?: string): Promise<{
+    involvesAccount?: boolean;
     status: 'SUCCESS' | 'FAILED' | 'NOT_FOUND';
     contractErrorCode?: number;
   }>;

@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import { ArrowRight, Check } from "lucide-react";
-import { anchors, docs } from "@/content/site";
+import { docs, routes, site } from "@/content/site";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { GradientText } from "@/components/ui/GradientText";
@@ -52,13 +52,13 @@ export function Hero() {
 
           <RiseIn delay={120}>
             <p className="mx-auto mt-8 max-w-[58ch] text-lg text-fg-muted">
-              {t("subtitle")}
+              {t("subtitle", { name: site.name })}
             </p>
           </RiseIn>
 
           <RiseIn delay={180}>
             <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button href={anchors.playground} size="lg">
+              <Button href={routes.panel} size="lg">
                 {t("ctaPrimary")}
                 <ArrowRight
                   className="size-4 rtl:-scale-x-100"

@@ -11,7 +11,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ArrowUpRight, Menu, X } from "lucide-react";
-import { env } from "@/lib/env";
+import { env, stellarNetwork } from "@/lib/env";
 import type { Connection } from "@/lib/useFeed";
 import type { View } from "@/lib/useView";
 import { LanguageSwitcher } from "./LanguageSwitcher";
@@ -78,7 +78,7 @@ function Nav({ view, onView }: { view: View; onView: (v: View) => void }) {
         <p className="mb-1.5 ps-8 text-[10.5px] font-medium uppercase tracking-[0.16em] text-fg-subtle">{t("developer")}</p>
         <ul className="flex flex-col">
           {[
-            [t("docs"), `${env.siteUrl}/docs`],
+            [t("docs"), `${env.marketingUrl}/docs`],
             [t("api"), `${env.apiUrl}/docs`],
             ["llms.txt", `${env.apiUrl}/llms.txt`],
           ].map(([label, href]) => (
@@ -111,7 +111,7 @@ function Status({ connection }: { connection: Connection }) {
           <span className={cn("size-2 rounded-full", c.dot)} aria-hidden="true" />
           {t(connection)}
         </p>
-        <p className="mt-1 text-[11px] text-fg-subtle">{t("network")}</p>
+        <p className="mt-1 text-[11px] text-fg-subtle">{t("network", { network: t(stellarNetwork === "public" ? "mainnet" : "testnet") })}</p>
       </div>
       <LanguageSwitcher />
     </div>
@@ -121,7 +121,7 @@ function Status({ connection }: { connection: Connection }) {
 function Brand() {
   const t = useTranslations("shell");
   return (
-    <a href={env.siteUrl} className="flex items-center gap-2.5" aria-label={t("siteLabel")}>
+    <a href={env.marketingUrl} className="flex items-center gap-2.5" aria-label={t("siteLabel")}>
       <Mark className="size-6 text-accent" />
       <span className="font-display text-base font-semibold tracking-tight">Reinkey</span>
       <span className="rounded-full border border-line px-2 py-0.5 text-[10.5px] text-fg-muted">{t("badge")}</span>
@@ -134,6 +134,7 @@ export function Shell({
   onView,
   connection,
   workspace,
+  navKey,
   children,
 }: {
   view: View;
@@ -141,16 +142,27 @@ export function Shell({
   connection: Connection;
   /** Çalışma alanı seçici (rayın tepesinde). */
   workspace?: React.ReactNode;
+  /** Gezinme durumunun özeti: değiştiğinde (görünüm, adres, karşılama) dar ekran çekmecesi kapanır. */
+  navKey: string;
   children: React.ReactNode;
 }) {
   const t = useTranslations("shell");
   const tc = useTranslations("common");
-  const [open, setOpen] = useState(false);
+  const ts = useTranslations("status");
+  // Çekmece, açıldığı gezinme durumuna bağlıdır: çalışma alanı seçicisinden bir adres
+  // seçildiğinde de (yalnızca menüden değil) kendiliğinden kapanır, etki gerekmez.
+  const [openFor, setOpenFor] = useState<string | null>(null);
+  const open = openFor === navKey;
+  const setOpen = (next: boolean | ((v: boolean) => boolean)) =>
+    setOpenFor((typeof next === "function" ? next(open) : next) ? navKey : null);
   useEffect(() => {
     if (!open) return;
     document.documentElement.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenFor(null);
+    window.addEventListener("keydown", onKey);
     return () => {
       document.documentElement.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
     };
   }, [open]);
   const go = (v: View) => {
@@ -199,7 +211,7 @@ export function Shell({
           {children}
         </main>
         <footer className="mx-auto w-full max-w-[1320px] px-4 pb-8 text-[11px] text-fg-subtle sm:px-8">
-          {t("footer", { api: env.apiUrl })}
+          {t("footer", { api: env.apiUrl, network: ts(stellarNetwork === "public" ? "mainnet" : "testnet") })}
         </footer>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { APP_CONFIG, type AppConfig } from '../config/config';
 import { Inject, Injectable } from '@nestjs/common';
 import { EventsService } from '../audit/events.service';
 import { PrismaService } from '../audit/prisma.service';
@@ -25,6 +26,7 @@ export class RevenueService {
     private readonly events: EventsService,
     private readonly store: ChannelStore,
     @Inject(CHAIN) private readonly chain: ChainPort,
+    @Inject(APP_CONFIG) private readonly cfg: AppConfig,
   ) {}
 
   private since(days: number): Date {
@@ -151,7 +153,7 @@ export class RevenueService {
         s.payer,
         usdc(s.amount),
         String(s.paymentsCovered),
-        `https://stellar.expert/explorer/testnet/tx/${s.tx}`,
+        `${this.cfg.explorerTxBase}${s.tx}`,
       ]),
     ];
     return rows.map((row) => row.map((c) => (/[",\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(',')).join('\n') + '\n';

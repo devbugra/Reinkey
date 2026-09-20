@@ -15,11 +15,11 @@ export async function getJson<T>(path: string, signal?: AbortSignal): Promise<T 
 
 export type PostResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
-export async function postJson<T>(path: string, body: unknown): Promise<PostResult<T>> {
+export async function postJson<T>(path: string, body: unknown, headers?: Record<string, string>): Promise<PostResult<T>> {
   try {
     const res = await fetch(`${env.apiUrl}${path}`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...headers },
       body: JSON.stringify(body),
     });
     const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string };

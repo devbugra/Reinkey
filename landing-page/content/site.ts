@@ -40,6 +40,8 @@ export const docs = {
   quickstartMeter: "/docs/meter/quickstart",
   quickstartReins: "/docs/reins/quickstart",
   float: "/docs/float",
+  mcp: "/docs/mcp",
+  console: "/docs/console",
 } as const;
 
 /**
@@ -76,6 +78,8 @@ export const routes = {
 } as const;
 
 export const external = {
+  /** Kaynak kod. Paketler npm'e çıkana kadar kurulum buradan yapılır. */
+  repo: "https://github.com/devbugra/Reinkey",
   stellar: "https://developers.stellar.org",
   x402: "https://github.com/x402-foundation/x402",
   x402Stellar: "https://www.npmjs.com/package/@x402/stellar",

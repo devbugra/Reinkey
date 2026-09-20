@@ -8,7 +8,7 @@ import { EventsService } from './events.service';
 
 const digits = z.string().regex(/^\d+$/);
 const ReportBody = z.object({
-  account: z.string().min(1),
+  account: z.string().min(1).max(64),
   tx: z.string().regex(/^[0-9a-fA-F]{64}$/, 'tx 64 karakter hex olmalı'),
   /** Ajanın simülasyonda gördüğü kod; yalnızca zincirden okunamazsa kullanılır. */
   code: z.string().regex(/^[A-Z0-9_]{3,40}$/).optional(),
@@ -24,7 +24,9 @@ const ReportBody = z.object({
 });
 
 const KNOWN_CODES = new Set(Object.values(CHAIN_ERRORS));
-const POLL_ATTEMPTS = 6;
+// Sunucu isteği uzun tutmaz: bildiren, işlem RPC'ye düşmediyse yeniden dener.
+const POLL_ATTEMPTS = 3;
+const MAX_REPORTED = 5000;
 
 /**
  * §8.3 / §14.2 / §15: ajanların zincir işlemlerini bildirdiği uç. Her bildirim zincirden
@@ -37,6 +39,18 @@ export class ReportController {
     @Inject(CHAIN) private readonly chain: ChainPort,
     private readonly events: EventsService,
   ) {}
+
+  /** Bildirilmiş (tx, tür) çiftleri: aynı işlem defterde bir kez yer alır. */
+  private readonly reported = new Set<string>();
+
+  private once(tx: string, type: string) {
+    const key = `${type}:${tx}`;
+    if (this.reported.has(key))
+      throw new ReinkeyError('BAD_REQUEST', 'Bu işlem zaten bildirildi', 'gateway', 409, tx);
+    if (this.reported.size >= MAX_REPORTED)
+      this.reported.delete(this.reported.values().next().value as string);
+    this.reported.add(key);
+  }
 
   @Post('report')
   @HttpCode(200)
@@ -72,14 +86,14 @@ export class ReportController {
     try {
       // İşlem RPC'ye birkaç saniye gecikmeyle düşebilir.
       for (let i = 0; i < POLL_ATTEMPTS; i++) {
-        status = await this.chain.getTransactionStatus(tx);
+        status = await this.chain.getTransactionStatus(tx, account);
         if (status.status !== 'NOT_FOUND') break;
         await new Promise((r) => setTimeout(r, 1000));
       }
     } catch (e) {
       throw new ReinkeyError(
         'CHAIN_UNAVAILABLE',
-        `İşlem durumu okunamadı: ${(e as Error).message}`,
+        'İşlem durumu şu an okunamıyor',
         'chain',
       );
     }
@@ -88,6 +102,16 @@ export class ReportController {
       throw new ReinkeyError(
         'REPORT_NOT_VERIFIED',
         'İşlem zincirde bulunamadı',
+        'chain',
+        422,
+        tx,
+      );
+
+    // Zarfta hesabın adresi yoksa işlem o hesaba ait değildir: başkasının defterine yazılmaz.
+    if (status.involvesAccount === false)
+      throw new ReinkeyError(
+        'REPORT_NOT_VERIFIED',
+        'İşlem bu hesapla ilişkili değil',
         'chain',
         422,
         tx,
@@ -102,10 +126,12 @@ export class ReportController {
           422,
           tx,
         );
+      this.once(tx, 'dex.swapped');
       const event = this.events.emit(
         'dex.swapped',
         'chain',
-        { account, ...details, tx },
+        // Tutarlar bildirenden gelir (zincirden çözülmüyor): `reported` bunu işaretler.
+        { account, ...details, tx, reported: true },
         { account, tx },
       );
       return { ok: true, status: 'SUCCESS', event };
@@ -124,6 +150,7 @@ export class ReportController {
       code = 'UNKNOWN_CHAIN_ERROR';
       codeSource = 'none';
     }
+    this.once(tx, 'chain.rejected');
     const event = this.events.emit(
       'chain.rejected',
       'chain',

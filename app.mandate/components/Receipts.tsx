@@ -14,7 +14,7 @@ import { env } from "@/lib/env";
 import { clock, shortAddr, usdc } from "@/lib/format";
 import { useReceipts } from "@/lib/useReceipts";
 import type { Receipt } from "@/lib/types";
-import { Empty, Panel, cn } from "./ui";
+import { Empty, Failed, Panel, cn } from "./ui";
 
 const FIELDS = ["v", "network", "signer", "channelId", "payer", "payee", "resource", "method", "unit", "amount", "cumulative", "requestHash", "ts"] as const;
 
@@ -131,7 +131,8 @@ function Row({ r }: { r: Receipt }) {
 
 export function Receipts({ payee, active }: { payee: string | null; active: boolean }) {
   const t = useTranslations("receipts");
-  const data = useReceipts(payee, active);
+  const tc = useTranslations("common");
+  const { data, failed, retry } = useReceipts(payee, active);
 
   return (
     <Panel
@@ -145,7 +146,11 @@ export function Receipts({ payee, active }: { payee: string | null; active: bool
         ) : null
       }
     >
-      {!data ? (
+      {!data && failed ? (
+        <Failed onRetry={retry} retryLabel={tc("retry")}>
+          {t("failed")}
+        </Failed>
+      ) : !data ? (
         <Empty>{t("loading")}</Empty>
       ) : data.receipts.length === 0 ? (
         <Empty>{t("empty")}</Empty>

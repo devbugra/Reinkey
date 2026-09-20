@@ -1,9 +1,9 @@
 {
   "meta": {
-    "title": "{name} — Stellar'da sayaçlı x402 ödemeleri",
-    "description": "Ajanlar tek işlemle bir ödeme kanalı açar, milisaniyede binlerce kez öder; harcama sınırını zincir uygular. Stellar testnet üzerinde canlı.",
-    "ogTitle": "Anahtarı ajana ver. Dizgin sende kalsın.",
-    "ogSubtitle": "Tek işlemle aç, milisaniyede öde, tek işlemle tahsil et."
+    "title": "{name} — Stellar'da makine ödemelerinin oturum katmanı",
+    "description": "Tek işlem oturumu açar, sonraki her çağrı HTTP hızında imzalı bir kupondur, tek işlem tahsil eder. Oturum zincirde yazılı bir bütçe, imzalı makbuz ve istek, saniye ya da token başına ölçüm taşır. Her MCP istemcisi için ücretli araç çağrıları. Stellar testnet'te canlı.",
+    "ogTitle": "HTTP'nin artık cüzdanı var.",
+    "ogSubtitle": "Tek işlemle oturum aç, HTTP hızında öde, tek işlemle tahsil et."
   },
   "common": {
     "languageSwitcher": "Dil",
@@ -13,7 +13,7 @@
     "mainMenu": "Ana menü"
   },
   "nav": {
-    "demo": "Demo",
+    "demo": "Deneme alanı",
     "howItWorks": "Nasıl çalışır",
     "architecture": "Mimari",
     "pricing": "Ücretler",
@@ -27,17 +27,17 @@
     "float": "Float"
   },
   "hero": {
-    "eyebrow": "Sayaçlı x402 · Stellar",
-    "titleLead": "Anahtarı ajana ver.",
-    "titleAccent": "Dizgin sende kalsın.",
-    "subtitle": "Ajanınız bir ödeme kanalı açar ve her çağrıyı, her token'ı zincire gitmeden milisaniyede öder. Satıcı binlerce ödemeyi tek işlemle tahsil eder. Ajanın ne kadar ve kime harcayabileceğine ise sunucu değil, Stellar'daki hesabı karar verir.",
-    "ctaPrimary": "Demoyu dene",
+    "eyebrow": "Makine ödemelerinin oturum katmanı · Stellar",
+    "titleLead": "Tek işlem oturumu açar.",
+    "titleAccent": "Sonraki her çağrı yalnızca öder.",
+    "subtitle": "Stellar'da x402 her ödemeyi zincirde kapatır: çağrı başına beş saniye ve bir ledger kaydı. {name} eksik parçayı ekler: oturum. Ajanınız, ya da MCP üzerinden herhangi bir yapay zekâ asistanı, istek, saniye ya da token başına HTTP hızında imzalı kuponla öder; satıcı binlercesini tek işlemle tahsil eder. Oturumun bütçesi bir sunucuda değil, ajanın Stellar'daki kendi hesabında yazılıdır.",
+    "ctaPrimary": "Ajan hesabı kur",
     "ctaSecondary": "Belgeleri oku",
-    "note": "Stellar testnet üzerinde canlı. Emanet yok, kayıt yok, API anahtarı yok.",
+    "note": "Stellar testnet'te canlı. Emanet yok, kayıt yok, API anahtarı yok.",
     "trust": [
-      "1000 ödeme, 2 zincir işlemi",
-      "Sınırı zincir uygular",
-      "Satıcıya tek satır"
+      "468 ödeme, 3 zincir işlemi",
+      "Bütçeyi hesap uygular, zincirde",
+      "Her MCP istemcisi için ücretli araç çağrısı"
     ],
     "builtOn": "Üzerine kurulu",
     "visual": {
@@ -45,7 +45,7 @@
     }
   },
   "playground": {
-    "eyebrow": "Kendiniz deneyin",
+    "eyebrow": "Tarayıcı içi deneme alanı",
     "title": "Önce ödeyin, sonra sınıra çarpın.",
     "lead": "Kanalı açın, çağrı yapın, yanıtı token token akıtın. Kupon sayısı artarken zincir işlemi sayısının neredeyse hiç değişmediğine bakın. Sonra tavanı zorlayın: red sunucudan değil, hesaptan gelir.",
     "agent": "ajan-01",
@@ -193,15 +193,15 @@
       },
       {
         "name": "Facilitator",
-        "summary": "x402 channel ve exact şemaları",
-        "body": "Kuponu doğrular, tahsilatı süre dolmadan otomatik tetikler ve ağ ücretlerini öder. Fonları çekme yetkisi yoktur.",
-        "note": "exact şeması yedek olarak desteklenir"
+        "summary": "x402 channel şeması",
+        "body": "Kuponu doğrular, tahsilatı oturum süresi dolmadan otomatik tetikler ve tahsilat ücretini öder. Fonları çekme yetkisi yoktur.",
+        "note": "exact şeması barındırılan facilitator'da açık değildir"
       },
       {
         "name": "meter() middleware'i",
         "summary": "Satıcının API'sine tek satır",
         "body": "Uç noktayı fiyatlandırır: çağrı, token ya da saniye başına. Ödeme yoksa 402 döner, geçerli kupon gelince isteği geçirir.",
-        "note": "app.get(\"/api\", meter({ price, unit }), handler)"
+        "note": "app.get(\"/api\", rk.meter({ price, unit }), handler)"
       }
     ],
     "whyStellar": "Neden Stellar: özel hesap auth'u (__check_auth), ücret sponsorluğu ve sentin kesri kadar işlem maliyeti.",
@@ -248,7 +248,7 @@
       },
       {
         "title": "Ajan XLM tutmaz",
-        "body": "Ağ ücretlerini facilitator öder. Ajanın elinde yalnızca USDC olur."
+        "body": "Ajan anahtarında XLM durmaz. Ajanın işlem ücretlerini sizin fonladığınız bir relayer hesabı, tahsilatı facilitator öder."
       },
       {
         "title": "Kendini tanıtan servis",
@@ -327,7 +327,7 @@
         "price": "Açık kaynak",
         "period": "",
         "description": "Kontratlar ve middleware, kendi sunucunuzda.",
-        "cta": "OpenAPI şeması",
+        "cta": "GitHub'da kaynak kod",
         "trial": "Bize ödeme yok.",
         "features": [
           "Channel ve {name} Account kontratları",
@@ -338,9 +338,9 @@
     ],
     "note": "Tabloda uydurma bir rakam yok: fiyat belli olduğunda buraya yazılacak.",
     "endpoints": {
-      "title": "Demo satıcının fiyatları",
-      "lead": "Canlı demodaki uçlar meter() ile korunur: ilk istek 402 ile şartları döner, kuponlu istek yanıtı getirir.",
-      "note": "Testnet USDC. Ağ ücretlerini facilitator öder."
+      "title": "Örnek satıcının fiyatları",
+      "lead": "Örnek satıcının uçları meter() ile korunur: ilk istek 402 ile şartları döner, kuponlu istek yanıtı getirir.",
+      "note": "Testnet USDC. Tahsilat ücretini facilitator öder."
     }
   },
   "faq": {
@@ -349,7 +349,7 @@
     "items": [
       {
         "q": "Facilitator'a güvenmem gerekiyor mu?",
-        "a": "Hayır. Kupon kanal kontratında doğrulanır ve para yalnızca kanalın satıcısına gider. Facilitator yalnızca doğrular, tahsilatı tetikler ve ağ ücretini öder; fonları çekemez."
+        "a": "Hayır. Kupon kanal kontratında doğrulanır ve para yalnızca oturumun satıcısına gider. Facilitator yalnızca doğrular, tahsilatı tetikler ve tahsilat ücretini öder; fonları çekemez."
       },
       {
         "q": "Satıcı kuponu tahsil etmeden kanal kapanırsa ne olur?",
@@ -365,7 +365,7 @@
       },
       {
         "q": "Ajanın XLM tutması gerekiyor mu?",
-        "a": "Hayır. Ağ ücretlerini facilitator öder."
+        "a": "Ajan anahtarının ihtiyacı yok. Oturum açmak bir Stellar işlemidir ve ücretini sizin fonladığınız bir relayer hesabı öder (testnet'te friendbot). Sonraki her ödeme zincir dışıdır; tahsilatı facilitator öder."
       },
       {
         "q": "Neden Stellar?",
@@ -377,7 +377,7 @@
       },
       {
         "q": "Hangi x402 sürümü?",
-        "a": "channel yeni bir şema; exact yedek olarak desteklenir."
+        "a": "channel, x402 v2 ile aynı başlıkları kullanan yeni bir x402 şemasıdır. exact şeması barındırılan facilitator'da açık değildir."
       }
     ]
   },
@@ -393,7 +393,7 @@
     "developers": "Geliştirici",
     "resources": "Kaynaklar",
     "links": {
-      "demo": "Demo",
+      "demo": "Deneme alanı",
       "howItWorks": "Nasıl çalışır",
       "architecture": "Mimari",
       "pricing": "Ücretler",
@@ -457,11 +457,11 @@
         },
         {
           "title": "Standart x402",
-          "body": "PAYMENT-REQUIRED, PAYMENT-SIGNATURE ve PAYMENT-RESPONSE başlıkları x402 v2 ile aynıdır. channel şeması, exact şemasının yanında ikinci bir seçenek olarak sunulur."
+          "body": "PAYMENT-REQUIRED, PAYMENT-SIGNATURE ve PAYMENT-RESPONSE başlıkları x402 v2 ile aynıdır. channel bu başlıklar üzerinde yeni bir şemadır; exact barındırılan facilitator'da açık değildir."
         },
         {
           "title": "Ağ ücreti yok",
-          "body": "Alıcı XLM tutmak zorunda değildir; işlem ücretlerini facilitator öder. Siz yalnızca USDC alırsınız."
+          "body": "Alıcılarınızın ajan anahtarında XLM durmaz, tahsilat ücretini facilitator öder. Size yalnızca USDC gelir."
         },
         {
           "title": "Açıklanabilir redler",
@@ -476,7 +476,7 @@
       ],
       "ctaTitle": "İlk ücretli ucunuzu bugün açın.",
       "ctaPrimary": "Meter hızlı başlangıç",
-      "ctaSecondary": "Canlı demoyu izle"
+      "ctaSecondary": "Konsolu aç"
     },
     "reins": {
       "meta": {
@@ -525,7 +525,7 @@
       "limitsTitle": "Bugün ne var, ne yok",
       "limits": [
         "Stellar testnet üzerinde çalışır; kontratlar henüz denetlenmedi.",
-        "Hesap bugün deploy betiğiyle kurulur; konsoldan tek tıkla kurulum yol haritasındadır.",
+        "Hesabınızı konsoldan kurun: cüzdanı bağlayın, sınırları yazın, tek işlem. Sahip sizin cüzdanınızdır; sınırlar, alıcılar ve dondurma konsoldan sizin imzanızla değişir. Deploy betiği kendi sunucusunda çalıştıranlar için durur.",
         "Zincirde uygulanan işlem sınırı DEX tarafında geçerlidir. Merkezi bir borsanın iç defterindeki işlemleri zincir göremez."
       ],
       "ctaTitle": "Ajanınıza güvenle harcama yetkisi verin.",
@@ -579,7 +579,7 @@
       "limitsTitle": "Bugün ne var, ne yok",
       "limits": [
         "Stellar testnet üzerinde çalışır; kontrat henüz denetlenmedi. Gerçek sermaye yatırmayın.",
-        "Konsol ve API bugün salt okunurdur: yatırma, hat açma ve tasfiye kontrat çağrısıyla yapılır, arayüzü yoktur. Hat açmak yöneticinin elindedir; izinsiz borçlanma yok.",
+        "HTTP API salt okunurdur. Yatırma ve çekme konsolda, kendi cüzdanınızla yapılır. Hat açma ve tasfiye kontrat çağrısıdır; hat açmak yöneticinin kararıdır, izinsiz borçlanma yoktur.",
         "Açık kanallardaki harcanmamış depozito sağlık hesabına katılmaz (ihtiyatlı yönde hata). Yalnızca DEX fiyat kaynağı tanımlıysa fiyat tek bir büyük işlemle oynatılabilir; mainnet için oracle ve TWAP şarttır."
       ],
       "ctaTitle": "Havuzu canlı izleyin.",

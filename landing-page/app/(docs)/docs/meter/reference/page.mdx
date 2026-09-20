@@ -1,16 +1,36 @@
-export const metadata = { title: "Meter reference" };
+export const metadata = {
+  title: "Meter reference",
+  description: "reinkey(), rk.meter() and rk.stream(): options, the 402 body, headers, Bazaar discovery and streaming units.",
+};
 
 # Meter reference
 
 ## `reinkey(options)`
 
-Creates a client bound to one facilitator and one payee. Returns `{ meter }`.
+Creates a client bound to one facilitator and one payee. It reads the network, asset and channel contract from the facilitator's `GET /supported`, so the call is `async`.
 
 | Option | Type | |
 |---|---|---|
 | `facilitator` | `string` | Base URL of the facilitator that verifies and settles vouchers. |
 | `payTo` | `string` | Your Stellar address. Channels must name it as payee or payment is rejected with `WRONG_PAYEE`. |
 | `publicUrl` | `string?` | Public origin of your server, used as the `resource` in payment terms. Derived from the request when omitted; set it when you sit behind a proxy. |
+| `asset` | `string?` | Contract id of the payment asset. Learned from the facilitator when omitted. |
+| `channelContract` | `string?` | Channel contract id. Learned from the facilitator when omitted. |
+| `minDeposit` | `bigint?` | Minimum deposit suggested in the 402. Default: 1000 × the price of one call. |
+| `timeoutMs` | `number?` | Timeout for calls to the facilitator. Default `10000`. |
+| `fetch` | `FetchLike?` | Custom fetch, for tests or a private network layer. Default `globalThis.fetch`. |
+
+Returns:
+
+| Member | |
+|---|---|
+| `meter(options)` | Middleware that makes one endpoint paid. See below. |
+| `stream(req, res, options)` | Runs a per-second or per-token SSE stream after `meter()` took the first slice. See [Streaming units](#streaming-units). |
+| `acceptVoucher(voucher, ctx)` | Low level: submits a bare voucher to the facilitator. Throws `FacilitatorError` on rejection. |
+| `deps(options?)` | Dependencies for the low-level `meter(options, deps)` export. |
+| `network`, `asset`, `channelContract`, `payTo`, `facilitator` | What the client resolved. |
+| `receiptSigner` | Public key that signs receipts, as announced by the facilitator; `null` if it announces none. |
+| `exactEnabled` | Whether the facilitator advertises the `exact` scheme. The hosted facilitator does not. |
 
 ## `rk.meter(options)`
 
@@ -109,24 +129,3 @@ app.get(
 ```
 
 `s.next()` returns `false` and sets `s.ended` when the stream stops: `CHANNEL_EXHAUSTED` (the deposit can't cover the next slice, decided before waiting), `TIMEOUT` (no voucher within `voucherTimeoutMs`, default 10 s), `ACCOUNT_FROZEN`, or `done` when the client disconnects. Every stream produces `stream.started` / `stream.ended` events in the facilitator's ledger, so it shows up in the console like any other payment.
-
-## Headers
-
-| Header | Direction | |
-|---|---|---|
-| `PAYMENT-REQUIRED` | response, on 402 | base64 JSON of the body above |
-| `PAYMENT-SIGNATURE` | request | base64 JSON payment payload (x402 v2) |
-| `PAYMENT-RESPONSE` | response, on success | base64 JSON receipt |
-| `X-PAYMENT` / `X-PAYMENT-RESPONSE` | both | accepted and mirrored for x402 v1 clients |
-
-Expose the response headers in CORS if browsers call your API.
-
-## Streaming units
-
-> **Not yet available to external sellers.** Per-token and per-second streams run on the facilitator's own demo seller today. The slice loop needs a stream session on the verifying side, and that API is not open to third-party servers yet. Per-request metering is complete.
-
-How it works on the demo seller, and how it will work in the package: with `unit: "token"` or `"second"`, the first voucher pays for the first slice and opens the stream. When a slice is used up, the server emits a `payment-required` event with the next `requiredCumulative`, and the buyer sends the next voucher. `@reinkey/sdk`'s `streamPaid()` runs this loop on the buyer side.
-
-A stream ends with one of: `done`, `CHANNEL_EXHAUSTED`, `TIMEOUT` (no voucher within the window) or `ACCOUNT_FROZEN`.
-
-If you want to experiment now, `rk.acceptVoucher()` sends a bare voucher to the facilitator so you can build the slice loop yourself; see the package README.

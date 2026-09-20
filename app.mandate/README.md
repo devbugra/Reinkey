@@ -31,7 +31,7 @@ Metin eklerken: `messages/tr.json` ve `messages/en.json` birlikte güncellenir, 
 Next.js 16 + Tailwind 4, tamamen istemci tarafında çalışır.
 
 ```bash
-cp .env.example .env.local   # PORT=3002, NEXT_PUBLIC_API_URL, NEXT_PUBLIC_SITE_URL
+cp .env.example .env.local   # PORT=3002, NEXT_PUBLIC_API_URL, NEXT_PUBLIC_MARKETING_URL
 npm install
 npm run dev                  # http://localhost:3002
 ```
@@ -64,5 +64,6 @@ Her sayı backend'den ve zincirden gelir; backend'e ulaşılamıyorsa panel boş
 
 ## Notlar
 
+- **Adres adlandırması.** `NEXT_PUBLIC_SITE_URL` her uygulamada "uygulamanın KENDİ adresi" demektir ve konsolda böyle bir değer yoktur: konsolun kanonik adrese, OG'ye ya da sitemap'e ihtiyacı yok. Tanıtım sitesine giden bağlantı `NEXT_PUBLIC_MARKETING_URL` adını taşır (`lib/env.ts` → `env.marketingUrl`). İkisi eskiden aynı adı paylaşıyordu; site reinkey.com'da, konsol reinkey.io'da yayında olduğu için aynı ad iki projede zıt anlama geliyordu.
 - Para her yerde `BigInt`; tutarlar backend'den taban birimle (7 ondalık) string gelir.
 - İşaret (`components/Mark.tsx`) tanıtım sitesindeki `Wordmark.tsx` ile aynı geometriyi kullanır; biri değişirse ikisi birlikte güncellenir.

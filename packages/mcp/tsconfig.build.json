@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "rewriteRelativeImportExtensions": true,
+    "paths": { "@reinkey/sdk": ["../sdk/dist/index.d.ts"] }
+  },
+  "include": ["src/**/*.ts"]
+}

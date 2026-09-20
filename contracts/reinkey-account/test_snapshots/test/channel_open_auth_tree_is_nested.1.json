@@ -71,7 +71,7 @@
                   "i128": "5000000"
                 },
                 {
-                  "bytes": "d7f48059ee8a0e4dd41f509ca07162668c95df556cf487a61bbee84aac1b2145"
+                  "bytes": "a5c39d488b6904dcdfc6609d956b534d17d3d69254bd42d04664536769617257"
                 },
                 {
                   "u32": 150000
@@ -257,7 +257,7 @@
                       "symbol": "voucher_key"
                     },
                     "val": {
-                      "bytes": "d7f48059ee8a0e4dd41f509ca07162668c95df556cf487a61bbee84aac1b2145"
+                      "bytes": "a5c39d488b6904dcdfc6609d956b534d17d3d69254bd42d04664536769617257"
                     }
                   }
                 ]

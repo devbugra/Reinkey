@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Check } from "lucide-react";
-import { anchors, routes, withName } from "@/content/site";
+import { anchors, external, routes, withName } from "@/content/site";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
@@ -20,7 +20,7 @@ type Plan = {
 };
 
 /** Plan sırasıyla eşleşir: testnet entegrasyona, satıcı canlı panele, kendi facilitator'ın şemaya. */
-const PLAN_HREF = [routes.llms, routes.panel, routes.openapi];
+const PLAN_HREF = [routes.llms, routes.panel, external.repo];
 
 /**
  * DEMO SATICININ FİYATLARI.

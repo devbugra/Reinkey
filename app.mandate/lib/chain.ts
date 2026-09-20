@@ -16,7 +16,8 @@ import { t } from "./t";
 
 export type ChainEnv = { rpcUrl: string; networkPassphrase: string };
 
-export type SubmitResult = { hash: string };
+/** `confirmed: false` = gönderildi ama 60 sn içinde kesinleştiği görülmedi. */
+export type SubmitResult = { hash: string; confirmed: boolean };
 
 async function sdk() {
   return import("@stellar/stellar-sdk");
@@ -67,17 +68,17 @@ export async function invoke(opts: {
   for (let i = 0; i < 30; i++) {
     await new Promise((r) => setTimeout(r, 2000));
     const got = await server.getTransaction(sent.hash);
-    if (got.status === "SUCCESS") return { hash: sent.hash };
+    if (got.status === "SUCCESS") return { hash: sent.hash, confirmed: true };
     if (got.status === "FAILED") throw new Error(reason(got.resultXdr?.toXDR("base64") ?? "FAILED"));
   }
-  // Zaman aşımı: işlem yine de geçebilir, kullanıcı explorer'dan bakar.
-  return { hash: sent.hash };
+  // Zaman aşımı: işlem yine de geçebilir; başarı denmez, kullanıcı explorer'dan bakar.
+  return { hash: sent.hash, confirmed: false };
 }
 
 /** Kontrat hata kodunu okunur hâle getirir (ör. `Error(Contract, #4)` → CONTRACT_4). */
 function reason(text: string): string {
   const m = /Error\(Contract, #(\d+)\)/.exec(text);
-  if (m) return `Kontrat reddetti (kod ${m[1]})`;
+  if (m) return t()("errors.contractRejected", { code: m[1] });
   if (/InsufficientLiquidity|#5\b/.test(text)) return t()("errors.liquidity");
   if (/trustline|TrustLine/i.test(text)) return t()("errors.trustline");
   if (/insufficient|balance/i.test(text)) return t()("errors.balance");

@@ -14,6 +14,7 @@
  * tarayıcıda çalışır; bu yüzden ilk kullanımda dinamik olarak yüklenir.
  */
 import { useCallback, useEffect, useState } from "react";
+import { stellarNetwork } from "./env";
 import { t } from "./t";
 
 const KEY = "reinkey.wallet";
@@ -35,8 +36,8 @@ async function loadKit(): Promise<Kit> {
       import("@creit.tech/stellar-wallets-kit/modules/hana"),
     ]);
     StellarWalletsKit.init({
-      // Testnet: demo ve deploy edilen kontratların ağı.
-      network: Networks.TESTNET,
+      // Backend'in ağıyla aynı olmalı (NEXT_PUBLIC_STELLAR_NETWORK).
+      network: stellarNetwork === "public" ? Networks.PUBLIC : Networks.TESTNET,
       modules: [
         new freighter.FreighterModule(),
         new xbull.xBullModule(),

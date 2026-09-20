@@ -17,7 +17,7 @@ export class InfoController {
       /** İstemcinin zincire doğrudan bağlanabilmesi için (cüzdanla imzalı işlemler). */
       networkPassphrase: c.networkPassphrase,
       rpcUrl: c.rpcUrl,
-      explorerTxBase: 'https://stellar.expert/explorer/testnet/tx/',
+      explorerTxBase: c.explorerTxBase,
       account: c.demoAccountId ?? null,
       seller: c.sellerPayTo,
       channelContract: c.channelContractId,
@@ -29,6 +29,8 @@ export class InfoController {
       /** Konsolun kendi hesabını kurabilmesi için: dağıtılmış hesap kodunun hash'i. */
       accountWasm: c.accountWasmHash ?? null,
       demoControls: c.demoControls,
+      /** Kontroller `x-demo-key` başlığı istiyor mu (anahtarın kendisi dönmez). */
+      demoKeyRequired: c.demoControls && !!c.demoControlKey,
       prices: {
         bookPerRequest: c.priceBookPerRequest.toString(),
         tickerPerSecond: c.priceTickerPerSecond.toString(),

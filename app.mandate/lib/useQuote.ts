@@ -8,7 +8,7 @@ import type { DexQuote, DexSide } from "./types";
 export function useQuote(params: { side: DexSide; amountIn: bigint | null; account: string | null; slippageBps: number }) {
   const [quote, setQuote] = useState<DexQuote | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
   const { side, amountIn, account, slippageBps } = params;
 
   const active = !!amountIn && amountIn > 0n;
@@ -25,7 +25,7 @@ export function useQuote(params: { side: DexSide; amountIn: bigint | null; accou
       const d = await getJson<DexQuote>(`/dex/quote?${q}`, ctrl.signal);
       if (stopped) return;
       setQuote(d);
-      setError(d ? null : "Kotasyon alınamadı: havuz okunamıyor olabilir");
+      setError(!d);
       setLoading(false);
     }, 400);
     return () => {
@@ -36,5 +36,5 @@ export function useQuote(params: { side: DexSide; amountIn: bigint | null; accou
   }, [active, side, amountIn, account, slippageBps]);
 
   // Tutar silindiğinde eski kotasyon gösterilmez; durum etkide değil burada türetilir.
-  return active ? { quote, loading, error } : { quote: null, loading: false, error: null };
+  return active ? { quote, loading, error } : { quote: null, loading: false, error: false };
 }

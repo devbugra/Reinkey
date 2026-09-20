@@ -144,7 +144,7 @@ export async function invokeAsOwner(opts: {
   owner: string;
   sign: TxSigner;
   signAuth: AuthSigner;
-}): Promise<{ hash: string }> {
+}): Promise<{ hash: string; confirmed: boolean }> {
   const { Account, Contract, Operation, TransactionBuilder, rpc } = await sdk();
   const server = new rpc.Server(opts.env.rpcUrl, { allowHttp: opts.env.rpcUrl.startsWith("http://") });
   const source = await server.getAccount(opts.owner);
@@ -191,7 +191,7 @@ export async function createAccount(opts: {
   owner: string;
   policy: PolicyInput;
   sign: TxSigner;
-}): Promise<{ hash: string; contractId: string }> {
+}): Promise<{ hash: string; contractId: string; confirmed: boolean }> {
   const { Address, Operation, TransactionBuilder, rpc, scValToNative, xdr } = await sdk();
   const server = new rpc.Server(opts.env.rpcUrl, { allowHttp: opts.env.rpcUrl.startsWith("http://") });
   const source = await server.getAccount(opts.owner);
@@ -215,13 +215,13 @@ export async function createAccount(opts: {
   const sim = await server.simulateTransaction(tx);
   if (rpc.Api.isSimulationError(sim)) throw new Error(reason(sim.error));
   const prepared = rpc.assembleTransaction(tx, sim).build();
-  const { hash, returnValue } = await submit(server, prepared, opts.env, opts.owner, opts.sign);
+  const { hash, returnValue, confirmed } = await submit(server, prepared, opts.env, opts.owner, opts.sign);
 
   // Yeni hesabın adresi: host fonksiyonunun dönüş değeri. Simülasyon da aynısını
   // verir ama kesin olan zincirin döndürdüğüdür.
   const scv = returnValue ?? sim.result?.retval;
   const contractId = scv ? (scValToNative(scv) as string) : "";
-  return { hash, contractId };
+  return { hash, contractId, confirmed };
 }
 
 type Server = InstanceType<typeof import("@stellar/stellar-sdk").rpc.Server>;
@@ -233,7 +233,7 @@ async function submit(
   env: ChainEnv,
   address: string,
   sign: TxSigner,
-): Promise<{ hash: string; returnValue?: import("@stellar/stellar-sdk").xdr.ScVal }> {
+): Promise<{ hash: string; confirmed: boolean; returnValue?: import("@stellar/stellar-sdk").xdr.ScVal }> {
   const { TransactionBuilder } = await sdk();
   const signedXdr = await sign(tx.toXDR(), env.networkPassphrase, address);
   const signed = TransactionBuilder.fromXDR(signedXdr, env.networkPassphrase);
@@ -242,11 +242,11 @@ async function submit(
   for (let i = 0; i < 30; i++) {
     await new Promise((r) => setTimeout(r, 2000));
     const got = await server.getTransaction(sent.hash);
-    if (got.status === "SUCCESS") return { hash: sent.hash, returnValue: got.returnValue };
+    if (got.status === "SUCCESS") return { hash: sent.hash, confirmed: true, returnValue: got.returnValue };
     if (got.status === "FAILED") throw new Error(reason(got.resultXdr?.toXDR("base64") ?? "FAILED"));
   }
-  // Zaman aşımı: işlem yine de geçmiş olabilir, kullanıcı explorer'dan bakar.
-  return { hash: sent.hash };
+  // Zaman aşımı: işlem yine de geçmiş olabilir. "Yazıldı" DENMEZ; kullanıcı explorer'dan bakar.
+  return { hash: sent.hash, confirmed: false };
 }
 
 /** reinkey-account hata kodları: ham `Error(Contract, #N)` kullanıcıya gösterilmez. */

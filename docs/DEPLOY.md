@@ -30,14 +30,23 @@ alanda da sunulan ana bilgisayar adı `www`'dür; env değerlerine bu yüzden ş
 | landing-page (Vercel) | `NEXT_PUBLIC_SITE_URL` | `https://www.reinkey.com` |
 | landing-page | `NEXT_PUBLIC_API_URL` | `https://reinkey.onrender.com` |
 | landing-page | `NEXT_PUBLIC_APP_URL` | `https://www.reinkey.io` |
-| app.mandate (Vercel) | `NEXT_PUBLIC_SITE_URL` | `https://www.reinkey.com` |
+| app.mandate (Vercel) | `NEXT_PUBLIC_MARKETING_URL` | `https://www.reinkey.com` |
 | app.mandate | `NEXT_PUBLIC_API_URL` | `https://reinkey.onrender.com` |
 | backend (Render) | `PUBLIC_URL` | `https://reinkey.onrender.com` |
 | backend | `CORS_ORIGINS` | `https://www.reinkey.com,https://www.reinkey.io` |
 
-Konsoldaki Reinkey logosu `NEXT_PUBLIC_SITE_URL`'e bağlanır. Konsol reinkey.io'da
-olduğu için bu değer **tanıtım sitesini** göstermek zorundadır; konsolun kendi
-adresi yazılırsa logo kullanıcıyı bulunduğu sayfaya geri atar.
+**Adlandırma kuralı.** `NEXT_PUBLIC_SITE_URL` her uygulamada "uygulamanın KENDİ
+adresi" demektir; başka bir servise giden her adres o servisin adını taşır. Bu
+yüzden konsolda `NEXT_PUBLIC_SITE_URL` yoktur: konsolun kanonik adrese, OG'ye ya
+da sitemap'e ihtiyacı yok, tanıtım sitesine giden bağlantı ise
+`NEXT_PUBLIC_MARKETING_URL` adını taşır. İkisi eskiden aynı adı paylaşıyordu ve
+aynı ad iki projede zıt anlama geliyordu — Vercel'de yan yana duran iki projede
+er geç yanlış doldurulacak bir alandı.
+
+Konsoldaki Reinkey logosu ve bütün belge bağlantıları `NEXT_PUBLIC_MARKETING_URL`'e
+gider. Buraya konsolun kendi adresi yazılırsa logo kullanıcıyı bulunduğu sayfaya
+geri atar; kırık değil, hiçbir şey yapmayan bir bağlantı olur. Konsol bu durumu
+tarayıcı konsoluna hata olarak yazar (`lib/env.ts`).
 
 Yalnızca konsol tarayıcıdan backend'e bağlanır, dolayısıyla CORS'ta asıl gereken
 köken `https://www.reinkey.io`'dur. Tanıtım sitesi backend'e istek atmaz (CSP'de
@@ -140,8 +149,15 @@ Giriş betiği önce `prisma migrate deploy` çalıştırır; ilk açılışta t
 ## 3. Konsol (app.mandate) — Vercel
 
 - Root directory: `app.mandate`.
-- Ortam değişkenleri (`app.mandate/.env.example`): `NEXT_PUBLIC_API_URL` (backend), `NEXT_PUBLIC_SITE_URL` (site).
-- `NEXT_PUBLIC_SITE_URL` **tanıtım sitesini** gösterir (`https://www.reinkey.com`), konsolun kendi adresini değil. Kabuktaki Reinkey logosu bu değere bağlanır; buraya `reinkey.io` yazılırsa logo kullanıcıyı bulunduğu sayfaya geri atar.
+- Ortam değişkenleri (`app.mandate/.env.example`):
+
+| Değişken | Değer |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | Backend adresi (`PUBLIC_URL` ile aynı) |
+| `NEXT_PUBLIC_MARKETING_URL` | Tanıtım sitesinin adresi — `https://www.reinkey.com` |
+| `NEXT_PUBLIC_STELLAR_NETWORK` | `testnet` ya da `public`; backend'in ağıyla aynı olmalı |
+
+- Konsolda `NEXT_PUBLIC_SITE_URL` **tanımlanmaz**. Kabuktaki logo ve belge bağlantıları `NEXT_PUBLIC_MARKETING_URL`'e gider; buraya `reinkey.io` yazılırsa logo kullanıcıyı bulunduğu sayfaya geri atar.
 - Konsol tamamen istemci tarafındadır; backend'e tarayıcıdan bağlanır. Bu yüzden konsol adresi backend'in `CORS_ORIGINS`'inde olmak zorunda.
 
 ## 4. CORS'u kapat ve doğrula

@@ -158,6 +158,20 @@ export function Empty({ children }: { children: React.ReactNode }) {
   return <p className="px-5 py-8 text-center text-sm text-fg-subtle">{children}</p>;
 }
 
+/** Veri okunamadı: sonsuz "yükleniyor" yerine sebebi ve yeniden deneme. */
+export function Failed({ children, onRetry, retryLabel }: { children: React.ReactNode; onRetry?: () => void; retryLabel?: string }) {
+  return (
+    <div className="grid justify-items-center gap-2 px-5 py-8 text-center" role="alert">
+      <p className="text-sm text-fg-muted">{children}</p>
+      {onRetry && (
+        <button type="button" onClick={onRetry} className="rounded-md border border-line px-2.5 py-1 text-xs text-fg-muted hover:text-fg">
+          {retryLabel}
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** Üç bölmeli çubuk: tahsil edilen | kabul edilmiş ama tahsil edilmemiş | kalan. */
 export function DepositBar({
   claimed,

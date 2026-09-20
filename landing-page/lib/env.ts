@@ -14,6 +14,10 @@ function required(name: string, value: string | undefined): string {
       `${name} tanımlı değil. .env.example dosyasını .env.local olarak kopyalayıp doldurun.`,
     );
   }
+  // Canlıya localhost adresiyle çıkmak: bağlantılar ziyaretçinin kendi makinesine gider.
+  if (process.env.NODE_ENV === "production" && process.env.VERCEL && /localhost|127\.0\.0\.1/.test(value)) {
+    throw new Error(`${name} üretimde localhost olamaz: ${value}`);
+  }
   return value.replace(/\/$/, "");
 }
 

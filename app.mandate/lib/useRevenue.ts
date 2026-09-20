@@ -7,6 +7,8 @@ import type { RevenueReport } from "./types";
 
 export function useRevenue(payTo: string | null, active: boolean, bucket: "hour" | "day") {
   const [data, setData] = useState<RevenueReport | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     if (!active || !payTo) return;
@@ -14,7 +16,9 @@ export function useRevenue(payTo: string | null, active: boolean, bucket: "hour"
     let stopped = false;
     const load = async () => {
       const d = await getJson<RevenueReport>(`/sellers/${payTo}/revenue?bucket=${bucket}`, ctrl.signal);
-      if (d && !stopped) setData(d);
+      if (stopped) return;
+      if (d) setData(d);
+      setFailed(!d);
     };
     void load();
     const t = setInterval(load, 10_000);
@@ -23,8 +27,9 @@ export function useRevenue(payTo: string | null, active: boolean, bucket: "hour"
       ctrl.abort();
       clearInterval(t);
     };
-  }, [payTo, active, bucket]);
+  }, [payTo, active, bucket, nonce]);
 
   // Başka bir satıcıya geçildiğinde eski satıcının raporu gösterilmesin.
-  return data && data.payTo === payTo ? data : null;
+  const mine = data && data.payTo === payTo ? data : null;
+  return { data: mine, failed: failed && !mine, retry: () => setNonce((n) => n + 1) };
 }

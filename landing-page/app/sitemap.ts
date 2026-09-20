@@ -16,22 +16,30 @@ const DOCS = [
   "/docs/float",
   "/docs/reason-codes",
   "/docs/api",
+  "/docs/mcp",
+  "/docs/console",
+  "/docs/testnet",
+  "/docs/limits",
+  "/docs/security",
 ];
+
+/** Her derlemede "bugün değişti" demek arama motoruna yalan söylemektir; içerik değişince elle güncellenir. */
+const LAST_MODIFIED = new Date("2026-09-20");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const localized = PAGES.flatMap((page) => {
     const languages = Object.fromEntries(routing.locales.map((l) => [l, `${SITE_URL}/${l}${page}`]));
     return routing.locales.map((locale) => ({
       url: `${SITE_URL}/${locale}${page}`,
-      lastModified: new Date(),
+      lastModified: LAST_MODIFIED,
       changeFrequency: "weekly" as const,
       priority: page === "" ? (locale === routing.defaultLocale ? 1 : 0.8) : 0.7,
-      alternates: { languages: { ...languages, "x-default": `${SITE_URL}/tr${page}` } },
+      alternates: { languages: { ...languages, "x-default": `${SITE_URL}/en${page}` } },
     }));
   });
   const docs = DOCS.map((path) => ({
     url: `${SITE_URL}${path}`,
-    lastModified: new Date(),
+    lastModified: LAST_MODIFIED,
     changeFrequency: "weekly" as const,
     priority: 0.6,
   }));

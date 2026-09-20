@@ -5,7 +5,13 @@ export const docsNav = [
     items: [
       { href: "/docs", label: "Introduction" },
       { href: "/docs/concepts", label: "How it works" },
+      { href: "/docs/console", label: "Console guide" },
+      { href: "/docs/testnet", label: "Testnet setup" },
     ],
+  },
+  {
+    title: "AI assistants",
+    items: [{ href: "/docs/mcp", label: "Paid MCP tool calls" }],
   },
   {
     title: "Reinkey Meter",
@@ -30,6 +36,8 @@ export const docsNav = [
     items: [
       { href: "/docs/reason-codes", label: "Reason codes" },
       { href: "/docs/api", label: "Facilitator API" },
+      { href: "/docs/limits", label: "Limits" },
+      { href: "/docs/security", label: "Security model" },
     ],
   },
 ] as const;

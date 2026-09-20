@@ -29,6 +29,7 @@ export function Footer() {
         { label: t("links.openapi"), href: routes.openapi },
         { label: t("links.llms"), href: routes.llms },
         { label: t("links.panel"), href: routes.panel },
+        { label: "GitHub", href: external.repo },
       ],
     },
     {

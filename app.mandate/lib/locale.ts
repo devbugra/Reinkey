@@ -9,7 +9,7 @@
  * kullanıcının kendi tercihidir, verinin bir parçası değil.
  *
  * Sıra: `?lang=` (destek bağlantıları için tek seferlik) → önceki seçim →
- * tarayıcının dili → Türkçe.
+ * tarayıcının dili → İngilizce (Türkçe konuşmayan herkes için ortak dil).
  *
  * Depo React dışında da okunur (`lib/t.ts`), bu yüzden modül düzeyinde durur
  * ve `useSyncExternalStore` ile bileşenlere bağlanır.
@@ -40,7 +40,7 @@ function detect(): Locale {
     /* depolama kapalı: seçim yalnızca bu sekmede yaşar */
   }
   const nav = typeof navigator === "undefined" ? "" : navigator.language.toLowerCase();
-  return LOCALES.find((l) => nav.startsWith(l)) ?? "tr";
+  return LOCALES.find((l) => nav.startsWith(l)) ?? "en";
 }
 
 function snapshot(): Locale {
@@ -48,9 +48,9 @@ function snapshot(): Locale {
   return current;
 }
 
-/** React dışı okuyucular için: sunucuda ve ilk boyamada Türkçeye düşer. */
+/** React dışı okuyucular için: sunucuda ve ilk boyamada İngilizceye düşer. */
 export function currentLocale(): Locale {
-  if (typeof window === "undefined") return "tr";
+  if (typeof window === "undefined") return "en";
   return snapshot();
 }
 

@@ -7,6 +7,8 @@ import type { Receipt } from "./types";
 
 export function useReceipts(payee: string | null, active: boolean, limit = 8) {
   const [data, setData] = useState<{ signer: string; receipts: Receipt[] } | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     if (!active || !payee) return;
@@ -17,7 +19,9 @@ export function useReceipts(payee: string | null, active: boolean, limit = 8) {
         `/receipts?payee=${payee}&limit=${limit}`,
         ctrl.signal,
       );
-      if (d && !stopped) setData(d);
+      if (stopped) return;
+      if (d) setData(d);
+      setFailed(!d);
     };
     void load();
     const t = setInterval(load, 10_000);
@@ -26,7 +30,7 @@ export function useReceipts(payee: string | null, active: boolean, limit = 8) {
       ctrl.abort();
       clearInterval(t);
     };
-  }, [payee, active, limit]);
+  }, [payee, active, limit, nonce]);
 
-  return data;
+  return { data, failed: failed && !data, retry: () => setNonce((n) => n + 1) };
 }

@@ -1,4 +1,7 @@
-export const metadata = { title: "Reins quickstart" };
+export const metadata = {
+  title: "Reins quickstart",
+  description: "Create an agent account from the console, fund a relayer, open a session and pay per call, per second or per token within on-chain limits.",
+};
 
 # Reins quickstart
 
@@ -10,36 +13,52 @@ Give an agent a Stellar account it can pay from, with limits the network enforce
 npm i @reinkey/sdk
 ```
 
-## 2. Deploy an account with a policy
+> The packages are pre-release. Until they are on npm, use them from the monorepo: clone [github.com/devbugra/Reinkey](https://github.com/devbugra/Reinkey), run `pnpm install` at the root, and import `@reinkey/sdk` from the workspace (or `pnpm build && pnpm pack` in `packages/sdk`).
 
-A Reinkey account is a contract. Its constructor takes the **owner** key (you) and a **policy** (what the agent may do). Today accounts are deployed with the scripts in the repository:
+## 2. Create an account with a policy
+
+A Reinkey account is a contract. Its constructor takes the **owner** key (you) and a **policy** (what the agent may do).
+
+Open the [console](https://www.reinkey.io) → **Reins** → **Create your own agent account**. Connect a Stellar wallet, set the per-transaction cap, daily cap, allowed payees, validity and whether exchange trades are allowed, and sign one transaction.
+
+- Your wallet becomes the **owner**. Only it can change the limits or freeze the account later.
+- The **agent key** is generated in your browser and its secret is shown once. It never reaches our server.
+- You get the account address (`C…`). Send it testnet USDC — see [Testnet setup](/docs/testnet).
+
+See [Policy & rejections](/docs/reins/policy) for every field and the [Console guide](/docs/console) for the screens.
+
+> Self-hosting the whole stack instead? `./scripts/deploy-testnet.sh` deploys the `channel` and `reinkey-account` contracts with the Stellar CLI and writes the identifiers to `deployments/testnet.json`.
+
+## 3. Fund a relayer, connect the agent
+
+The agent is never the transaction source. A **relayer** account that you fund submits the agent's transactions and pays their fees; the agent only signs the authorization entry, so the agent key holds no XLM. On testnet, create a keypair and fund it with friendbot:
 
 ```bash
-./scripts/deploy-testnet.sh
+curl "https://friendbot.stellar.org?addr=<RELAYER_PUBLIC_KEY>"
 ```
 
-The script deploys the `channel` and `reinkey-account` contracts, funds the account with testnet USDC and writes the identifiers to `deployments/testnet.json`. See [Policy & rejections](/docs/reins/policy) for every field.
-
-> One-click account creation from the console is on the roadmap. Until then, deployment needs the Stellar CLI.
-
-## 3. Connect the agent
+Contract identifiers come from the facilitator: `GET /demo/info` returns `channelContract`, `usdc`, `xlm`, `dexRouter`, `rpcUrl` and `networkPassphrase`.
 
 ```ts
 import { Keypair } from "@stellar/stellar-sdk";
 import { ReinkeyAccount } from "@reinkey/sdk";
 
+const info = await (await fetch(`${api}/demo/info`)).json();
+
 const account = new ReinkeyAccount({
-  rpcUrl: "https://soroban-testnet.stellar.org",
-  networkPassphrase: "Test SDF Network ; September 2015",
-  accountId,            // C… the Reinkey account
-  channelContractId,
-  usdcContractId,
+  rpcUrl: info.rpcUrl,
+  networkPassphrase: info.networkPassphrase,
+  accountId,                              // C… the Reinkey account you created
+  channelContractId: info.channelContract,
+  usdcContractId: info.usdc,
+  xlmContractId: info.xlm,                // needed by swap() and openChannelWith()
+  dexRouterId: info.dexRouter,            // needed by swap() and openChannelWith()
   agent: Keypair.fromSecret(process.env.AGENT_SECRET),     // the key named in the policy
-  relayer: Keypair.fromSecret(process.env.RELAYER_SECRET), // pays network fees
+  relayer: Keypair.fromSecret(process.env.RELAYER_SECRET), // pays the agent's transaction fees
 });
 ```
 
-The agent is never the transaction source. A **relayer** submits and pays the fee; the agent only signs the authorization entry. The agent holds USDC and nothing else.
+Settlement (`claim`) is a separate transaction and its fee is paid by the facilitator, not by you.
 
 ## 4. Open a channel
 

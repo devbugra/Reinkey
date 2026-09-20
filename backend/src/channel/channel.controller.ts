@@ -92,7 +92,7 @@ export class ChannelController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Elle tahsilat' })
   async claim(@Param('id') id: string) {
-    const r = await this.claims.claim(parseChannelId(id));
+    const r = await this.claims.manualClaim(parseChannelId(id));
     return r ?? { claimed: false, reason: 'Tahsil edilecek kupon yok' };
   }
 }

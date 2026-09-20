@@ -40,10 +40,14 @@ import {
 
 export type Connection = "connecting" | "live" | "offline";
 
+/** Hesabın okunma durumu: "yok" ile "okunamadı" aynı şey değildir. */
+export type AccountStatus = "loading" | "found" | "missing" | "error";
+
 const FLUSH_MS = 100;
 const STATS_MS = 2000;
 const ACCOUNT_MS = 3000;
-const OFFLINE_AFTER_MS = 4000;
+// Ücretsiz katmanda uyuyan bir servis 4 sn'de uyanmaz: erken "ulaşılamıyor" demeyelim.
+const OFFLINE_AFTER_MS = 20_000;
 // Yeniden bağlanmada son 200 olay tekrar gelir; küme bundan çok daha geniş
 // tutulur ki uzun oturumda eski kimlikler düşüp olaylar iki kez sayılmasın.
 const MAX_SEEN = 50_000;
@@ -100,6 +104,12 @@ export function useFeed(accountOverride: string | null = null) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [actionError, setActionError] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  // Durum, ait olduğu adresle birlikte tutulur: adres değişince etki içinde setState
+  // çağırmadan kendiliğinden "loading"e düşer.
+  const [accountRead, setAccountRead] = useState<{ key: string; status: AccountStatus }>({ key: "", status: "loading" });
+  const [channelsLoaded, setChannelsLoaded] = useState(false);
+  const demoControls = useRef(false);
 
   const buffer = useRef<FeedEvent[]>([]);
   const seen = useRef<Set<string>>(new Set());
@@ -200,12 +210,14 @@ export function useFeed(accountOverride: string | null = null) {
       const info = await getJson<DemoInfo>("/demo/info", ctrl.signal);
       if (!info || stopped) return false;
       accountAddr.current = info.account;
+      demoControls.current = !!info.demoControls;
       dispatch({ type: "info", info });
       return true;
     };
     const loadChannels = async () => {
       const list = await getJson<ChannelSnapshot[]>("/channels", ctrl.signal);
       if (!list || stopped) return;
+      setChannelsLoaded(true);
       for (const c of list) {
         // Temizlenmiş ekranda eski (kapanmış) kanallar geri gelmesin.
         if (cutRef.current && !c.open) continue;
@@ -220,15 +232,28 @@ export function useFeed(accountOverride: string | null = null) {
     const pollAccount = async () => {
       if (!accountAddr.current && !(await loadInfo())) return;
       const addr = accountOverride ?? accountAddr.current;
-      const a = await getJson<AccountSnapshot & { found?: boolean }>(`/accounts/${addr}`, ctrl.signal);
+      const key = `${epoch}:${accountOverride ?? ""}`;
+      // "Yok" (404) ile "okunamadı" (ağ, 5xx) ayrılır: geçici bir hata hesabı yok saydırmasın.
+      const res = await fetch(`${env.apiUrl}/accounts/${addr}`, { signal: ctrl.signal, cache: "no-store" }).catch(() => null);
       if (stopped) return;
-      // Başka bir adrese bakılırken bulunamayan hesap, demo hesabının verisiyle karışmasın.
-      if (a && a.found !== false) dispatch({ type: "account", account: a });
-      else if (accountOverride) dispatch({ type: "account", account: null });
+      const a = res?.ok ? ((await res.json().catch(() => null)) as (AccountSnapshot & { found?: boolean }) | null) : null;
+      if (a && a.found !== false) {
+        dispatch({ type: "account", account: a });
+        setAccountRead({ key, status: "found" });
+      } else if (res && (res.status === 404 || a?.found === false)) {
+        // Başka bir adrese bakılırken bulunamayan hesap, örnek hesabın verisiyle karışmasın.
+        dispatch({ type: "account", account: null });
+        setAccountRead({ key, status: "missing" });
+      } else {
+        setAccountRead((r) => (r.key === key && r.status === "found" ? r : { key, status: "error" }));
+      }
+      // Örnek akış kontrolleri kapalıysa bu uç yoktur: 3 sn'de bir 404 üretmeyelim.
+      if (!demoControls.current) return;
       const ag = await getJson<AgentStatus>("/demo/agent", ctrl.signal);
       if (ag && !stopped) dispatch({ type: "agent", agent: ag });
     };
 
+    dispatch({ type: "account", account: null });
     void loadInfo().then(() => pollAccount());
     void loadChannels();
     void pollStats();
@@ -263,7 +288,17 @@ export function useFeed(accountOverride: string | null = null) {
   );
 
   /** Borsa adına elle tahsilat: biriken kuponlar tek zincir işlemiyle tahsil edilir. */
-  const claim = useCallback((channelId: string) => act("claim", `/channels/${channelId}/claim`, {}), [act]);
+  const claim = useCallback(
+    async (channelId: string) => {
+      setPendingId(channelId);
+      try {
+        return await act("claim", `/channels/${channelId}/claim`, {});
+      } finally {
+        setPendingId(null);
+      }
+    },
+    [act],
+  );
 
   /** Ekranı temizle: şu andan eski olayları gizle, sayaçları bu andan başlat. */
   const clear = useCallback(async () => {
@@ -325,6 +360,9 @@ export function useFeed(accountOverride: string | null = null) {
     clear,
     showAll,
     pending,
+    pendingId,
+    accountStatus: accountRead.key === `${epoch}:${accountOverride ?? ""}` ? accountRead.status : ("loading" as AccountStatus),
+    channelsLoaded,
     actionError,
     clearError: () => setActionError(null),
   } as const;

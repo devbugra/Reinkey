@@ -41,7 +41,7 @@ export function Identity({
       </div>
 
       <form
-        className="ml-auto flex items-center gap-2"
+        className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto"
         onSubmit={(e) => {
           e.preventDefault();
           const v = draft.trim().toUpperCase();
@@ -51,7 +51,7 @@ export function Identity({
           onChange(v);
         }}
       >
-        <label className="relative">
+        <label className="relative min-w-0 flex-1 sm:flex-none">
           <span className="sr-only">{placeholder}</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-fg-subtle" aria-hidden="true" />
           <input
@@ -64,7 +64,7 @@ export function Identity({
             spellCheck={false}
             aria-invalid={invalid}
             className={cn(
-              "h-9 w-64 rounded-md border bg-bg pl-8 pr-3 font-mono text-xs text-fg placeholder:font-sans placeholder:text-fg-subtle",
+              "h-9 w-full rounded-md border bg-bg pl-8 pr-3 sm:w-64 font-mono text-xs text-fg placeholder:font-sans placeholder:text-fg-subtle",
               invalid ? "border-danger" : "border-line-strong",
             )}
           />

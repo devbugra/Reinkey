@@ -4,7 +4,7 @@
 
 Buyers (typically AI agents using [Reinkey Reins](../sdk/README.md), `@reinkey/sdk`) open a payment channel to your Stellar address once, then attach a signed, off-chain voucher to every call. The middleware hands each voucher to a Reinkey facilitator, which verifies it in a few milliseconds and later claims the accumulated amount on-chain to your address in a single transaction. You never hold a key, run a node or touch Soroban.
 
-> **Status: pre-release.** Stellar **testnet only**. The smart contracts are **unaudited**. The package is **not yet published to npm**; the install line below is what it will be. `https://api.reinkey.dev` in the examples is a placeholder for a hosted facilitator; today you run the facilitator yourself (`backend/` in this repository).
+> **Status: pre-release.** Stellar **testnet only**. The smart contracts are **unaudited**. The package is **not yet published to npm**; the install line below is what it will be. Until then, build it from the monorepo ([github.com/devbugra/Reinkey](https://github.com/devbugra/Reinkey)): `pnpm install` at the root, then `pnpm build && pnpm pack` in `packages/meter`. `https://reinkey.onrender.com` is the hosted testnet facilitator; you can also run your own (`backend/` in this repository).
 
 ## Install
 
@@ -21,7 +21,7 @@ import express from "express";
 import { reinkey, EXPOSED_HEADERS, type PaidRequest } from "@reinkey/meter";
 
 const rk = await reinkey({
-  facilitator: "https://api.reinkey.dev", // your facilitator's base URL
+  facilitator: "https://reinkey.onrender.com", // your facilitator's base URL
   payTo: "G…SELLER",                      // your Stellar address; channels must name it as payee
 });
 
@@ -64,7 +64,7 @@ If browsers call your API, expose the x402 headers in CORS: `cors({ exposedHeade
 | `timeoutMs` | `number` | `10000` | Timeout for each facilitator call. |
 | `fetch` | `FetchLike` | `globalThis.fetch` | Custom fetch (tests, proxies, retries). |
 
-The returned object has `meter(opts)`, `deps(opts?)`, `acceptVoucher(voucher, ctx)` and the discovered `network`, `asset`, `channelContract`, `exactEnabled`.
+The returned object has `meter(opts)`, `stream(req, res, opts)`, `deps(opts?)`, `acceptVoucher(voucher, ctx)` and the resolved `network`, `asset`, `channelContract`, `payTo`, `facilitator`, `receiptSigner` and `exactEnabled`.
 
 ### `rk.meter(options)`
 
@@ -103,7 +103,7 @@ The returned object has `meter(opts)`, `deps(opts?)`, `acceptVoucher(voucher, ct
       "extra": {
         "channelContract": "C…CHANNEL",
         "minDeposit": "5000000",
-        "facilitator": "https://api.reinkey.dev",
+        "facilitator": "https://reinkey.onrender.com",
         "areFeesSponsored": true
       }
     }
@@ -139,77 +139,6 @@ The receipt on `req.payment` / `PAYMENT-RESPONSE` for the channel scheme:
 The authoritative list lives in [`backend/src/common/reason-codes.ts`](../../backend/src/common/reason-codes.ts) and [`packages/core/src/codes.ts`](../core/src/codes.ts). Codes are passed through verbatim; unknown rejection codes are returned as 402. The `message` of a facilitator rejection is passed through as the facilitator wrote it (the current facilitator writes these in Turkish); rely on `error`, not on `message`.
 
 Non-402 failures (429, 5xx) are returned as a plain `{ error, source, message }` body without `accepts`.
-
-## Per-token and per-second streams
-
-What the package does today: `rk.meter({ unit: "second", sliceSeconds: 10, … })` advertises the slice in the 402 and charges the **first slice** before your handler runs. That part is complete.
-
-What it does **not** do for you: keep the stream open slice after slice. In the Reinkey backend that is handled by an in-process `StreamSessions` service plus `POST /channels/:id/voucher`; those sessions are created in the facilitator's memory by its own demo controllers and **cannot be opened over HTTP**, so an external seller cannot use them.
-
-You can run the slice loop yourself with `rk.acceptVoucher()`, which submits a bare follow-up voucher to `{facilitator}/verify`. The sketch below speaks the same wire protocol as the backend's streams (`session` / `payment-required` SSE events, vouchers posted to `/channels/:id/voucher`), so `streamPaid()` from `@reinkey/sdk` can consume it with `apiUrl` set to **your** server. It has been exercised with a mocked facilitator only, not end-to-end against a live channel — treat it as a starting point.
-
-```ts
-import { randomUUID } from "node:crypto";
-import { FacilitatorError, type ChannelReceipt, type PaidRequest } from "@reinkey/meter";
-
-const SLICE = 10;                        // seconds per voucher
-const PER_SECOND = 1000n;
-const SLICE_COST = PER_SECOND * BigInt(SLICE);
-const waiting = new Map<string, { channelId: string; paid: () => void }>();
-
-app.get(
-  "/ticker",
-  rk.meter({ price: PER_SECOND, unit: "second", sliceSeconds: SLICE }),
-  async (req: PaidRequest<express.Request>, res) => {
-    const first = req.payment as ChannelReceipt;      // first slice is already paid
-    const streamId = randomUUID();
-    let accepted = BigInt(first.accepted);
-    let open = true;
-    req.on("close", () => { open = false; waiting.delete(streamId); });
-
-    res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" });
-    const send = (event: string, data: unknown) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-    send("session", { streamId, channelId: first.channelId, unit: "second", sliceSeconds: SLICE });
-
-    for (let s = 0; open; s++) {
-      if (s > 0 && s % SLICE === 0) {
-        send("payment-required", { streamId, requiredCumulative: (accepted + SLICE_COST).toString() });
-        const ok = await new Promise<boolean>((resolve) => {
-          const t = setTimeout(() => resolve(false), 10_000);
-          waiting.set(streamId, { channelId: first.channelId, paid: () => { clearTimeout(t); resolve(true); } });
-        });
-        waiting.delete(streamId);
-        if (!ok) { send("error", { code: "TIMEOUT" }); break; }
-        accepted += SLICE_COST;
-      }
-      send("tick", { index: s, value: Math.random() });
-      await new Promise((r) => setTimeout(r, 1000));
-    }
-    res.end();
-  },
-);
-
-// Follow-up vouchers. Same path and body as the Reinkey backend, so @reinkey/sdk's streamPaid() works.
-app.post("/channels/:id/voucher", express.json(), async (req, res) => {
-  const w = waiting.get(req.body.streamId);
-  if (!w || w.channelId !== req.params.id)
-    return res.status(404).json({ error: "STREAM_NOT_FOUND", source: "gateway", message: "Unknown stream" });
-  try {
-    const receipt = await rk.acceptVoucher(
-      { channelId: req.params.id, cumulative: req.body.cumulative, signature: req.body.signature },
-      { price: SLICE_COST, resource: `https://seller.example/ticker`, unit: "second" },
-    );
-    w.paid();
-    res.json(receipt);
-  } catch (e) {
-    if (e instanceof FacilitatorError)
-      return res.status(e.status).json({ error: e.code, source: e.source, message: e.message });
-    throw e;
-  }
-});
-```
-
-Caveat: `accepted + SLICE_COST` assumes no other voucher advanced the channel in the meantime. If one buyer runs several paid calls on the same channel concurrently, read the current value from the last receipt you saw or from `GET {facilitator}/channels/:id` before asking for the next slice.
 
 ## Streams: per token, per second
 

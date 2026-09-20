@@ -18,7 +18,7 @@ import { LEDGERS_PER_DAY, createAccount, invokeAsOwner, newAgentKey, policyScVal
 import { getJson } from "@/lib/api";
 import type { ChainEnv } from "@/lib/chain";
 import { describeCode } from "@/lib/codes";
-import { big, shortAddr, txUrl } from "@/lib/format";
+import { big, int, shortAddr, txUrl } from "@/lib/format";
 import type { AccountSnapshot, DemoInfo } from "@/lib/types";
 import { Panel, cn } from "./ui";
 
@@ -27,6 +27,8 @@ const SCALE = 10_000_000n;
 export type AdminWallet = {
   address: string | null;
   connecting: boolean;
+  /** Cüzdan bağlanamadıysa sebebi; kullanıcı pencereyi kapattıysa null. */
+  error?: string | null;
   connect: () => Promise<string | null>;
   sign: (xdr: string, networkPassphrase: string, address: string) => Promise<string>;
   signAuth: (preimageXdr: string, networkPassphrase: string, address: string) => Promise<Uint8Array>;
@@ -72,7 +74,10 @@ const primary =
 const secondary =
   "inline-flex h-9 items-center justify-center gap-2 rounded-md border border-line-strong px-3 text-sm text-fg hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-45";
 
-function Result({ error, done, doneLabel }: { error: string | null; done: string | null; doneLabel: string }) {
+type Done = { hash: string; confirmed: boolean };
+
+function Result({ error, done, doneLabel }: { error: string | null; done: Done | null; doneLabel: string }) {
+  const t = useTranslations("admin");
   return (
     <>
       {error && (
@@ -81,10 +86,10 @@ function Result({ error, done, doneLabel }: { error: string | null; done: string
         </p>
       )}
       {done && (
-        <p className="flex items-center gap-2 rounded-md bg-success-bg px-3 py-2 text-xs text-success">
-          {doneLabel}
-          {txUrl(done) && (
-            <a href={txUrl(done)!} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 underline underline-offset-2">
+        <p className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-xs", done.confirmed ? "bg-success-bg text-success" : "bg-warning-bg text-warning")}>
+          {done.confirmed ? doneLabel : t("unconfirmed")}
+          {txUrl(done.hash) && (
+            <a href={txUrl(done.hash)!} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 underline underline-offset-2">
               tx <ExternalLink className="size-3" aria-hidden="true" />
             </a>
           )}
@@ -104,11 +109,14 @@ export function PolicyEditor({
   account,
   info,
   wallet,
+  isExample = false,
   onDone,
 }: {
   account: AccountSnapshot;
   info: DemoInfo | null;
   wallet: AdminWallet;
+  /** Örnek hesap: sahibi biziz; ziyaretçiye "sahip cüzdanını bağla" demek çıkmaz sokaktır. */
+  isExample?: boolean;
   /** Yazma kesinleşince hesabı yeniden okut. */
   onDone: () => void;
 }) {
@@ -122,7 +130,7 @@ export function PolicyEditor({
   const [extendDays, setExtendDays] = useState("");
   const [busy, setBusy] = useState<"policy" | "freeze" | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<string | null>(null);
+  const [done, setDone] = useState<Done | null>(null);
 
   const owner = account.owner ?? null;
   const isOwner = !!owner && wallet.address === owner;
@@ -141,15 +149,20 @@ export function PolicyEditor({
       <Panel title={t("editTitle")} hint={t("editHint")}>
         <div className="grid gap-3 px-5 py-4">
           <p className="text-sm leading-relaxed text-fg-muted">
-            {owner ? t("ownerOnly", { owner: shortAddr(owner, 6, 6) }) : t("ownerUnknown")}
+            {isExample ? t("exampleOwner") : owner ? t("ownerOnly", { owner: shortAddr(owner, 6, 6) }) : t("ownerUnknown")}
           </p>
-          {wallet.address ? (
+          {isExample ? null : wallet.address ? (
             <p className="text-xs text-warning">{t("wrongWallet", { address: shortAddr(wallet.address, 6, 6) })}</p>
           ) : (
             <button type="button" disabled={wallet.connecting} onClick={() => void wallet.connect()} className={cn(primary, "justify-self-start")}>
               {wallet.connecting ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <WalletIcon className="size-4" aria-hidden="true" />}
               {t("connectOwner")}
             </button>
+          )}
+          {!isExample && wallet.error && (
+            <p className="text-xs text-danger" role="alert">
+              {wallet.error}
+            </p>
           )}
         </div>
       </Panel>
@@ -164,14 +177,13 @@ export function PolicyEditor({
   const dexAvailable = !!(info?.dexRouter && info.dexFactory && info.usdc && info.xlm);
   const invalid = !perTxV || !dailyV || capOrder || !!addrs.bad || addrs.list.length === 0 || daysBad;
 
-  const run = async (kind: "policy" | "freeze", work: (env: ChainEnv, owner: string) => Promise<{ hash: string }>) => {
+  const run = async (kind: "policy" | "freeze", work: (env: ChainEnv, owner: string) => Promise<Done>) => {
     if (!env || !wallet.address) return;
     setBusy(kind);
     setError(null);
     setDone(null);
     try {
-      const { hash } = await work(env, wallet.address);
-      setDone(hash);
+      setDone(await work(env, wallet.address));
       onDone();
     } catch (e) {
       setError(explain(e));
@@ -268,12 +280,13 @@ export function PolicyEditor({
         </label>
         {addrs.bad && <p className="text-xs text-danger">{t("badAddress", { address: shortAddr(addrs.bad, 8, 4) })}</p>}
         {!addrs.bad && addrs.list.length === 0 && <p className="text-xs text-danger">{t("needPayee")}</p>}
+        {daysBad && <p className="text-xs text-danger">{t("badDays")}</p>}
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1.5">
             <span className="text-[11px] text-fg-subtle">{t("extend")}</span>
             <input value={extendDays} onChange={(e) => setExtendDays(e.target.value)} inputMode="numeric" placeholder="0" className={field} />
-            <span className="text-[11px] text-fg-subtle">{t("extendHint", { ledger: p.expiresLedger.toLocaleString("tr-TR") })}</span>
+            <span className="text-[11px] text-fg-subtle">{t("extendHint", { ledger: int(p.expiresLedger) })}</span>
           </label>
           <label className={cn("flex items-start gap-2.5 rounded-md border border-line px-3 py-2.5", !dexAvailable && !dex && "opacity-50")}>
             <input type="checkbox" checked={dex} disabled={!dexAvailable && !dex} onChange={(e) => setDex(e.target.checked)} className="mt-0.5 accent-[var(--accent)]" />
@@ -351,12 +364,13 @@ export function CreateAccount({
   const [open, setOpen] = useState(false);
   const [perTx, setPerTx] = useState("1");
   const [daily, setDaily] = useState("5");
-  const [payees, setPayees] = useState(() => info?.seller ?? "");
+  // Boş başlar: örnek satıcıyı sessizce kullanıcının zincirdeki politikasına yazdırmayalım.
+  const [payees, setPayees] = useState("");
   const [days, setDays] = useState("30");
   const [dex, setDex] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [created, setCreated] = useState<{ contractId: string; hash: string; agentSecret: string; agentPublic: string } | null>(null);
+  const [created, setCreated] = useState<{ contractId: string; hash: string; confirmed: boolean; agentSecret: string; agentPublic: string } | null>(null);
 
   const ready = !!(env && info?.accountWasm && info.usdc && info.channelContract);
   const dexAvailable = !!(info?.dexRouter && info.dexFactory && info.xlm);
@@ -367,6 +381,7 @@ export function CreateAccount({
         <div className="grid gap-4 px-5 py-4">
           <CopyRow label={t("accountId")} value={created.contractId} />
           <CopyRow label={t("agentSecret")} value={created.agentSecret} secret />
+          {!created.confirmed && <p className="rounded-md bg-warning-bg px-3 py-2 text-xs leading-relaxed text-warning">{t("unconfirmed")}</p>}
           <p className="rounded-md bg-warning-bg px-3 py-2 text-xs leading-relaxed text-warning">{t("secretOnce")}</p>
           <ol className="grid list-decimal gap-1.5 ps-4 text-xs leading-relaxed text-fg-muted">
             <li>{t("next1")}</li>
@@ -416,6 +431,7 @@ export function CreateAccount({
     setError(null);
     try {
       const owner = wallet.address ?? (await wallet.connect());
+      // Bağlanamadıysa sebep aşağıda (wallet.error) görünür; kullanıcı pencereyi kapattıysa sessizce durulur.
       if (!owner) return;
       const latest = await latestLedger();
       if (!latest) throw new Error(t("noLedger"));
@@ -437,9 +453,9 @@ export function CreateAccount({
             ]
           : [],
       };
-      const { hash, contractId } = await createAccount({ env, wasmHash: info.accountWasm, owner, policy, sign: wallet.sign });
+      const { hash, contractId, confirmed } = await createAccount({ env, wasmHash: info.accountWasm, owner, policy, sign: wallet.sign });
       if (!contractId) throw new Error(t("noContractId"));
-      setCreated({ contractId, hash, agentSecret: agent.secret, agentPublic: agent.publicKey });
+      setCreated({ contractId, hash, confirmed, agentSecret: agent.secret, agentPublic: agent.publicKey });
     } catch (e) {
       setError(explain(e));
     } finally {
@@ -471,10 +487,28 @@ export function CreateAccount({
 
         <label className="grid gap-1.5">
           <span className="text-[11px] text-fg-subtle">{t("payees")}</span>
-          <textarea value={payees} onChange={(e) => setPayees(e.target.value)} rows={2} spellCheck={false} className={cn(field, "h-auto py-2 text-[11.5px] leading-relaxed")} />
+          <textarea
+            value={payees}
+            onChange={(e) => setPayees(e.target.value)}
+            rows={2}
+            spellCheck={false}
+            placeholder={t("payeesPlaceholder")}
+            className={cn(field, "h-auto py-2 text-[11.5px] leading-relaxed placeholder:font-sans")}
+          />
           <span className="text-[11px] text-fg-subtle">{t("payeesHint")}</span>
         </label>
+        {info?.seller && !addrs.list.includes(info.seller) && (
+          <button
+            type="button"
+            onClick={() => setPayees((v) => (v.trim() ? `${v.trim()}\n${info.seller}` : info.seller))}
+            className="justify-self-start text-xs text-accent hover:underline"
+          >
+            {t("useExampleSeller")}
+          </button>
+        )}
         {addrs.bad && <p className="text-xs text-danger">{t("badAddress", { address: shortAddr(addrs.bad, 8, 4) })}</p>}
+        {!addrs.bad && addrs.list.length === 0 && payees.trim() === "" && <p className="text-xs text-fg-subtle">{t("needPayee")}</p>}
+        {daysBad && <p className="text-xs text-danger">{t("badDays")}</p>}
 
         <label className={cn("flex items-start gap-2.5 rounded-md border border-line px-3 py-2.5", !dexAvailable && "opacity-50")}>
           <input type="checkbox" checked={dex} disabled={!dexAvailable} onChange={(e) => setDex(e.target.checked)} className="mt-0.5 accent-[var(--accent)]" />
@@ -484,7 +518,7 @@ export function CreateAccount({
           </span>
         </label>
 
-        <Result error={error} done={null} doneLabel="" />
+        <Result error={error ?? (wallet.address ? null : (wallet.error ?? null))} done={null} doneLabel="" />
 
         <div className="flex flex-wrap gap-2">
           <button type="button" disabled={busy || invalid || !ready} onClick={() => void submit()} className={primary}>

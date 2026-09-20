@@ -10,16 +10,17 @@ import { env } from "@/lib/env";
 import { big, int, shortAddr, usdc } from "@/lib/format";
 import type { ChannelView, RejectionView, Row } from "@/lib/store";
 import type { AccountSnapshot, DemoInfo } from "@/lib/types";
+import type { AccountStatus } from "@/lib/useFeed";
 import { CreateAccount, PolicyEditor, type AdminWallet } from "../AccountAdmin";
 import { Blocked } from "../Blocked";
 import { Meter, Stat } from "../Flow";
 import { Identity } from "../Identity";
 import { Timeline } from "../Timeline";
-import { Empty, Panel, cn } from "../ui";
+import { Empty, Failed, Panel, cn } from "../ui";
 
 /**
- * Adreste bir Reinkey hesabı yoksa: boş politika kartı göstermek yerine nasıl
- * kurulacağı anlatılır. Hesap bir kontrattır; bugün deploy betiğiyle kurulur.
+ * Adreste bir Reinkey hesabı yoksa: boş politika kartı göstermek yerine ne olduğu
+ * anlatılır. Kurulum hemen üstteki "hesap kur" kartındadır; burada tekrarlanmaz.
  */
 function NoAccount({ address }: { address: string }) {
   const t = useTranslations("reins");
@@ -27,20 +28,14 @@ function NoAccount({ address }: { address: string }) {
     <Panel title={t("noAccount")} hint={t("noAccountHint")}>
       <div className="grid gap-4 px-5 py-4">
         <p className="text-sm leading-relaxed text-fg-muted">{t("noAccountBody", { address: shortAddr(address, 6, 6) })}</p>
-        <div>
-          <p className="text-xs font-medium text-fg">{t("howTo")}</p>
-          <pre className="mt-2 overflow-x-auto rounded-md border border-line bg-bg px-4 py-3 font-mono text-[11.5px] leading-relaxed text-fg-muted">
-            <code>{"git clone …/Reinkey && cd Reinkey\n./scripts/deploy-testnet.sh"}</code>
-          </pre>
-          <p className="mt-2 text-[11px] leading-relaxed text-fg-subtle">{t("howToNote")}</p>
-        </div>
+        <p className="text-sm leading-relaxed text-fg-muted">{t("howToNote")}</p>
         <p className="text-xs text-fg-subtle">
           {t("more")}{" "}
-          <a href={`${env.siteUrl}/docs/reins/quickstart`} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+          <a href={`${env.marketingUrl}/docs/reins/quickstart`} target="_blank" rel="noreferrer" className="text-accent hover:underline">
             {t("quickstart")}
           </a>{" "}
           ·{" "}
-          <a href={`${env.siteUrl}/docs/reins/policy`} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+          <a href={`${env.marketingUrl}/docs/reins/policy`} target="_blank" rel="noreferrer" className="text-accent hover:underline">
             {t("policyDocs")}
           </a>
         </p>
@@ -52,7 +47,8 @@ function NoAccount({ address }: { address: string }) {
 export function ReinsView({
   address,
   isExample,
-  account,
+  account: snapshot,
+  status,
   channels,
   rejections,
   rows,
@@ -64,6 +60,8 @@ export function ReinsView({
   address: string | null;
   isExample: boolean;
   account: AccountSnapshot | null;
+  /** "Yok" ile "okunamadı" ayrıdır: geçici bir hata kullanıcıya hesabı yokmuş gibi gösterilmez. */
+  status: AccountStatus;
   channels: Record<string, ChannelView>;
   rejections: RejectionView[];
   rows: Row[];
@@ -78,8 +76,11 @@ export function ReinsView({
     .sort((a, b) => Number(b.id) - Number(a.id));
   const locked = mine.filter((c) => c.open).reduce((s, c) => s + (c.deposit > c.accepted ? c.deposit - c.accepted : 0n), 0n);
 
-  // Adres verilmiş ama hesap okunamadıysa (kayıtlı değil, yanlış tür): kurulumu anlat.
-  if (address && !account && !isExample)
+  // Adres değiştiği anda eski hesabın politikası yeni adresin altında görünmesin.
+  const account = snapshot && snapshot.address === address ? snapshot : null;
+
+  // Zincir adreste bir hesap OLMADIĞINI söylediyse (okunamadıysa değil): kurulumu anlat.
+  if (address && !account && !isExample && status === "missing")
     return (
       <>
         <Identity label={t("identity")} value={address} isExample={isExample} placeholder={t("placeholder")} onChange={onAccount} />
@@ -145,6 +146,8 @@ export function ReinsView({
                 </div>
               )}
             </div>
+          ) : status === "error" ? (
+            <Failed>{t("readFailed")}</Failed>
           ) : (
             <Empty>{t("reading")}</Empty>
           )}
@@ -154,7 +157,7 @@ export function ReinsView({
       </div>
 
       {/* Hesap 3 sn'de bir yeniden okunur; yazma kesinleşince ekran kendiliğinden güncellenir. */}
-      {account && <PolicyEditor key={account.address} account={account} info={info} wallet={wallet} onDone={() => undefined} />}
+      {account && <PolicyEditor key={account.address} account={account} info={info} wallet={wallet} isExample={isExample} onDone={() => undefined} />}
       <CreateAccount info={info} wallet={wallet} onCreated={onAccount} />
 
       <div className="grid gap-4 xl:grid-cols-2">

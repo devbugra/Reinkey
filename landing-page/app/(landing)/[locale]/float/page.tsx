@@ -16,7 +16,14 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/float">)
     title: t("title"),
     description: t("description"),
     alternates: { canonical: `${env.siteUrl}/${locale}/float`, languages },
-    openGraph: { title: `${site.name} ${t("title")}`, description: t("description") },
+    // Üst düzenin openGraph alanları birleşmez, ezilir: url, siteName ve type burada yinelenir.
+    openGraph: {
+      type: "website",
+      siteName: site.name,
+      url: `${env.siteUrl}/${locale}/float`,
+      title: `${site.name} ${t("title")}`,
+      description: t("description"),
+    },
   };
 }
 

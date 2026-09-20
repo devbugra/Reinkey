@@ -406,16 +406,38 @@ export class StellarChain implements ChainPort {
         );
   }
 
-  async getTransactionStatus(hash: string) {
+  async getTransactionStatus(hash: string, account?: string) {
     const r = await this.server.getTransaction(hash);
-    if (r.status === rpc.Api.GetTransactionStatus.SUCCESS)
-      return { status: 'SUCCESS' as const };
     if (r.status === rpc.Api.GetTransactionStatus.NOT_FOUND)
       return { status: 'NOT_FOUND' as const };
+    const involvesAccount = account
+      ? this.envelopeMentions(r, account)
+      : undefined;
+    if (r.status === rpc.Api.GetTransactionStatus.SUCCESS)
+      return { status: 'SUCCESS' as const, involvesAccount };
     return {
       status: 'FAILED' as const,
       contractErrorCode: this.findContractError(r),
+      involvesAccount,
     };
+  }
+
+  /**
+   * İşlem zarfında adresin ham 32 baytı geçiyor mu. Hesap bir işlemi yetkilendirdiyse
+   * (auth girdisi) ya da çağrının tarafıysa (transfer `from`, takas `to`) adresi
+   * zarftadır; ilgisiz bir işlemi başkasının hesabına yazdırmak böylece engellenir.
+   */
+  private envelopeMentions(r: unknown, account: string): boolean {
+    try {
+      const env = (r as { envelopeXdr?: { toXDR(): Buffer } }).envelopeXdr;
+      if (!env) return false;
+      const raw = StrKey.isValidContract(account)
+        ? StrKey.decodeContract(account)
+        : StrKey.decodeEd25519PublicKey(account);
+      return Buffer.from(env.toXDR()).includes(Buffer.from(raw));
+    } catch {
+      return false;
+    }
   }
 
   /**

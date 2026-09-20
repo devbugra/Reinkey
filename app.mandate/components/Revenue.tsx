@@ -12,7 +12,7 @@ import { env } from "@/lib/env";
 import { duration, int, shortAddr, usdc } from "@/lib/format";
 import { currentLocale } from "@/lib/locale";
 import { useRevenue } from "@/lib/useRevenue";
-import { Empty, Panel, cn } from "./ui";
+import { Empty, Failed, Panel, cn } from "./ui";
 
 const label = (resource: string) => {
   try {
@@ -31,12 +31,19 @@ const UNIT: Record<string, "unitRequest" | "unitToken" | "unitSecond"> = {
 export function Revenue({ seller, active }: { seller: string | null; active: boolean }) {
   const t = useTranslations("revenue");
   const [bucket, setBucket] = useState<"hour" | "day">("hour");
-  const r = useRevenue(seller, active, bucket);
+  const tc = useTranslations("common");
+  const { data: r, failed, retry } = useRevenue(seller, active, bucket);
 
   if (!r)
     return (
       <Panel title={t("title")}>
-        <Empty>{seller ? t("loading") : t("noSeller")}</Empty>
+        {failed && seller ? (
+          <Failed onRetry={retry} retryLabel={tc("retry")}>
+            {t("failed")}
+          </Failed>
+        ) : (
+          <Empty>{seller ? t("loading") : t("noSeller")}</Empty>
+        )}
       </Panel>
     );
 

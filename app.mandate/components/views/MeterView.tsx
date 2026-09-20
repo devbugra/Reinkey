@@ -92,9 +92,9 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`,
         <Panel title={t("helpTitle")} hint={t("helpHint")}>
           <ul className="divide-y divide-line text-sm">
             {[
-              [t("helpQuickstart"), `${env.siteUrl}/docs/meter/quickstart`],
-              [t("helpReference"), `${env.siteUrl}/docs/meter/reference`],
-              [t("helpCodes"), `${env.siteUrl}/docs/reason-codes`],
+              [t("helpQuickstart"), `${env.marketingUrl}/docs/meter/quickstart`],
+              [t("helpReference"), `${env.marketingUrl}/docs/meter/reference`],
+              [t("helpCodes"), `${env.marketingUrl}/docs/reason-codes`],
             ].map(([label, href]) => (
               <li key={href}>
                 <a href={href} target="_blank" rel="noreferrer" className="block px-5 py-2.5 text-fg-muted hover:text-fg">
@@ -116,6 +116,8 @@ export function MeterView({
   claims,
   canClaim,
   claiming,
+  claimingId,
+  loaded,
   onClaim,
   onSeller,
 }: {
@@ -125,6 +127,10 @@ export function MeterView({
   claims: ClaimView[];
   canClaim: boolean;
   claiming: boolean;
+  /** Tahsilatı süren kanal: gösterge yalnızca o satırda döner. */
+  claimingId: string | null;
+  /** Kanal listesi backend'den geldi mi: gelmeden "hiç kanal yok" denmez. */
+  loaded: boolean;
   onClaim: (channelId: string) => void;
   onSeller: (address: string | null) => void;
 }) {
@@ -134,6 +140,17 @@ export function MeterView({
     .sort((a, b) => Number(b.id) - Number(a.id));
   const ids = new Set(mine.map((c) => c.id));
   const myClaims = claims.filter((c) => ids.has(c.channelId));
+
+  // Liste gelmeden "kanal yok" sonucuna varılmaz: yerleşik bir satıcıya kurulum anlatmak yanıltıcı olur.
+  if (seller && mine.length === 0 && !loaded)
+    return (
+      <>
+        <Identity label={t("identity")} value={seller} isExample={isExample} placeholder={t("placeholder")} onChange={onSeller} />
+        <Panel title={t("channelsTitle")}>
+          <Empty>{t("loadingChannels")}</Empty>
+        </Panel>
+      </>
+    );
 
   // Henüz hiç kanal yoksa bu adres için ödeme de yoktur: sıfırlar yerine kurulum anlatılır.
   if (seller && mine.length === 0)
@@ -216,7 +233,7 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`;
                               disabled={!canClaim || claiming}
                               className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-line-strong bg-surface-2 px-2.5 py-1.5 text-xs font-medium hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-45"
                             >
-                              {claiming ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <Receipt className="size-3.5" aria-hidden="true" />}
+                              {claiming && claimingId === c.id ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <Receipt className="size-3.5" aria-hidden="true" />}
                               {t("claim")}
                             </button>
                           )}
@@ -236,7 +253,7 @@ app.get("/book", rk.meter({ price: 5000n, unit: "request" }), handler);`;
             title={t("integration")}
             hint={t("integrationHint")}
             action={
-              <a href={`${env.siteUrl}/docs/meter/quickstart`} target="_blank" rel="noreferrer" className="shrink-0 text-xs text-accent hover:underline">
+              <a href={`${env.marketingUrl}/docs/meter/quickstart`} target="_blank" rel="noreferrer" className="shrink-0 text-xs text-accent hover:underline">
                 {t("quickstart")}
               </a>
             }

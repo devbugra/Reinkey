@@ -26,6 +26,8 @@ export class ClaimService implements OnModuleInit, OnApplicationShutdown {
   private readonly log = new Logger('Claims');
   private readonly inFlight = new Set<bigint>();
   private tickRunning = false;
+  /** Elle tahsilatın kanal başına son zamanı (bekleme süresi için). */
+  private readonly lastManual = new Map<bigint, number>();
 
   constructor(
     @Inject(APP_CONFIG) private readonly cfg: AppConfig,
@@ -83,6 +85,43 @@ export class ClaimService implements OnModuleInit, OnApplicationShutdown {
     if (unclaimed <= 0n) return false;
     if (unclaimed >= this.cfg.claimThreshold) return true;
     return ch.expiryLedger - ledger <= this.cfg.claimExpiryMarginLedgers;
+  }
+
+  /**
+   * Herkese açık uçtan gelen elle tahsilat. `claim` facilitator'a zincir ücreti
+   * ödetir; bu yüzden kimliksiz çağrı iki koşula bağlıdır:
+   *  - birikmiş tutar elle tahsilat tabanının altında değilse (ya da otomatik
+   *    tahsilat zaten yapılacak durumdaysa),
+   *  - aynı kanal için bekleme süresi dolmuşsa.
+   * "1 stroop'luk kupon → claim" döngüsü böylece sunucuya işlem ödetemez.
+   */
+  async manualClaim(id: bigint, now = Date.now()): Promise<ClaimResult | null> {
+    const ch = await this.store.get(id);
+    if (!ch)
+      throw new ReinkeyError('CHANNEL_NOT_FOUND', `Kanal ${id} bulunamadı`);
+    const unclaimed = ch.lastAccepted - ch.claimed;
+    if (unclaimed <= 0n) return null;
+    if (
+      unclaimed < this.cfg.manualClaimMin &&
+      !this.isDue(ch, this.ledger.current())
+    )
+      throw new ReinkeyError(
+        'BAD_REQUEST',
+        `Birikmiş tutar elle tahsilat tabanının altında (${unclaimed} < ${this.cfg.manualClaimMin} taban birim); eşik ya da süre dolunca kendiliğinden tahsil edilir`,
+        'facilitator',
+      );
+    const wait =
+      (this.lastManual.get(id) ?? 0) + this.cfg.manualClaimCooldownSeconds * 1000 - now;
+    if (wait > 0)
+      throw new ReinkeyError(
+        'RATE_LIMITED',
+        `Bu kanal ${Math.ceil(wait / 1000)} sn sonra yeniden tahsil edilebilir`,
+        'facilitator',
+      );
+    this.lastManual.set(id, now);
+    if (this.lastManual.size > 10_000)
+      this.lastManual.delete(this.lastManual.keys().next().value as bigint);
+    return this.claim(id);
   }
 
   /** Elle ya da zamanlayıcıyla tahsilat. Tahsil edilecek bir şey yoksa `null`. */

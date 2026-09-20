@@ -168,11 +168,11 @@ export function Onboarding({
 
       <p className="text-xs text-fg-subtle">
         {t("noAccount")}{" "}
-        <a href={`${env.siteUrl}/docs/reins/quickstart`} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+        <a href={`${env.marketingUrl}/docs/reins/quickstart`} target="_blank" rel="noreferrer" className="text-accent hover:underline">
           {t("reinsQuickstart")}
         </a>{" "}
         · {t("sellNote")}{" "}
-        <a href={`${env.siteUrl}/docs/meter/quickstart`} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+        <a href={`${env.marketingUrl}/docs/meter/quickstart`} target="_blank" rel="noreferrer" className="text-accent hover:underline">
           {t("meterQuickstart")}
         </a>
       </p>

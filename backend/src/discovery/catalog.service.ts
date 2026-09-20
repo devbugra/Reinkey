@@ -35,6 +35,28 @@ export interface Seen {
 }
 
 const MAX_LIMIT = 100;
+const MAX_URL = 2048;
+const MAX_DESCRIPTION = 500;
+const MAX_JSON = 16_384;
+
+/**
+ * Kataloğa girebilecek hâle getirir ya da null döner. Katalog ajanlara sunulur:
+ * satıcının gönderdiği serbest metin ve JSON sınırlanır, bedava kaynak listelenmez.
+ */
+export function admissible(s: Seen): Seen | null {
+  if (s.price <= 0n) return null;
+  if (s.resource.length > MAX_URL || !/^https?:\/\//i.test(s.resource)) return null;
+  const fits = (v: unknown) => v === undefined || JSON.stringify(v).length <= MAX_JSON;
+  return {
+    ...s,
+    unit: s.unit.slice(0, 16),
+    method: s.method?.slice(0, 8),
+    description: s.description?.slice(0, MAX_DESCRIPTION),
+    // Sığmayan uzantı atılır; kayıt varsayılan meta veriyle yine yapılır.
+    accepts: fits(s.accepts) ? s.accepts : undefined,
+    bazaar: fits(s.bazaar) ? s.bazaar : undefined,
+  };
+}
 
 @Injectable()
 export class CatalogService implements OnModuleInit {
@@ -77,7 +99,9 @@ export class CatalogService implements OnModuleInit {
    * Tek SQL ile (INSERT … ON CONFLICT): /verify yazımı beklemez, art arda gelen
    * ödemelerin yazımları çakışır; Prisma upsert'i bu yarışta tekil anahtar hatası verirdi.
    */
-  async record(s: Seen, paid = true) {
+  async record(seen: Seen, paid = true) {
+    const s = admissible(seen);
+    if (!s) return;
     const method = (s.method ?? 'GET').toUpperCase();
     const metadata =
       s.bazaar ?? bazaarExtension({ unit: s.unit as 'request' | 'token' | 'second' }, method);
@@ -88,14 +112,17 @@ export class CatalogService implements OnModuleInit {
       VALUES (${s.resource}, ${method}, ${s.payTo}, ${s.unit}, ${s.price}, ${s.description ?? ''}, ${JSON.stringify(accepts)}::jsonb, ${JSON.stringify(metadata)}::jsonb, ${inc}, now(), now())
       ON CONFLICT ("url") DO UPDATE SET
         "method" = EXCLUDED."method",
-        "payTo" = EXCLUDED."payTo",
         "unit" = EXCLUDED."unit",
         "price" = EXCLUDED."price",
         "description" = CASE WHEN ${s.description !== undefined} THEN EXCLUDED."description" ELSE "Resource"."description" END,
         "accepts" = CASE WHEN ${s.accepts !== undefined} THEN EXCLUDED."accepts" ELSE "Resource"."accepts" END,
         "metadata" = CASE WHEN ${s.bazaar !== undefined} THEN EXCLUDED."metadata" ELSE "Resource"."metadata" END,
         "payments" = "Resource"."payments" + ${inc},
-        "lastPaidAt" = CASE WHEN ${paid} THEN now() ELSE "Resource"."lastPaidAt" END`;
+        "lastPaidAt" = CASE WHEN ${paid} THEN now() ELSE "Resource"."lastPaidAt" END
+      WHERE "Resource"."payTo" = EXCLUDED."payTo"`;
+    // WHERE: bir adres ilk kimin ödemesiyle listelendiyse onundur. Başka bir
+    // `payTo` ile gelen ödeme kaydı DEĞİŞTİRMEZ; aksi hâlde 1 stroop'luk geçerli bir
+    // kuponla herkes başkasının kaynağını kendi adresine yönlendirebilirdi.
   }
 
   async list(q: { limit?: number; offset?: number; payTo?: string } = {}) {

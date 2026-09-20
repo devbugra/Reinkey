@@ -22,6 +22,8 @@ const SCALE = 10_000_000n;
 type Wallet = {
   address: string | null;
   connecting: boolean;
+  /** Cüzdan bağlanamadıysa sebebi; kullanıcı pencereyi kapattıysa null. */
+  error?: string | null;
   connect: () => Promise<string | null>;
   sign: (xdr: string, networkPassphrase: string, address: string) => Promise<string>;
 };
@@ -54,7 +56,7 @@ export function FloatActions({
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<string | null>(null);
+  const [done, setDone] = useState<{ hash: string; confirmed: boolean } | null>(null);
   const [balance, setBalance] = useState<bigint | null>(null);
 
   // Nesne kimliği her render'da değişmesin: etkiyi boşuna tetiklerdi.
@@ -96,6 +98,11 @@ export function FloatActions({
           {wallet.connecting ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Wallet className="size-4" aria-hidden="true" />}
           {t("connect")}
         </button>
+        {wallet.error && (
+          <p className="text-xs text-danger" role="alert">
+            {wallet.error}
+          </p>
+        )}
       </div>
     );
 
@@ -116,7 +123,7 @@ export function FloatActions({
           ? [wallet.address, value]
           : // withdraw pay alır: tutar / pay fiyatı (aşağı yuvarlanır).
             [wallet.address, (value * SCALE) / sharePrice];
-      const { hash } = await invoke({
+      const result = await invoke({
         env,
         contractId: pool.pool,
         method: mode,
@@ -124,7 +131,7 @@ export function FloatActions({
         source: wallet.address,
         sign: wallet.sign,
       });
-      setDone(hash);
+      setDone(result);
       setAmount("");
       onDone();
     } catch (e) {
@@ -191,7 +198,8 @@ export function FloatActions({
             <span className="text-xs text-fg-muted">USDC</span>
             <button
               type="button"
-              onClick={() => setAmount((Number(max) / Number(SCALE)).toFixed(2))}
+              // Aşağı yuvarlanır ve BigInt'ten yazılır: toFixed yukarı yuvarlayıp üst sınırı aşabiliyordu.
+              onClick={() => setAmount(`${max / SCALE}.${(max % SCALE).toString().padStart(7, "0").slice(0, 2)}`)}
               className="rounded-md border border-line px-2 py-1 text-[11px] text-fg-muted hover:text-fg"
             >
               {t("max")}
@@ -213,10 +221,10 @@ export function FloatActions({
         </p>
       )}
       {done && (
-        <p className="flex items-center gap-2 rounded-md bg-success-bg px-3 py-2 text-xs text-success">
-          {t("done")}
-          {txUrl(done) && (
-            <a href={txUrl(done)!} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 underline underline-offset-2">
+        <p className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-xs", done.confirmed ? "bg-success-bg text-success" : "bg-warning-bg text-warning")}>
+          {done.confirmed ? t("done") : t("unconfirmed")}
+          {txUrl(done.hash) && (
+            <a href={txUrl(done.hash)!} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 underline underline-offset-2">
               tx <ExternalLink className="size-3" aria-hidden="true" />
             </a>
           )}

@@ -15,7 +15,7 @@ const optional = z
 
 const schema = z.object({
   PORT: int.default(3000),
-  PUBLIC_URL: z.string().default('http://localhost:3000'),
+  PUBLIC_URL: optional,
   CORS_ORIGINS: z
     .string()
     .default('http://localhost:3001,http://localhost:3002'),
@@ -42,9 +42,23 @@ const schema = z.object({
 
   CLAIM_THRESHOLD: big.default(1_000_000n),
   CLAIM_INTERVAL_SECONDS: int.default(30),
+  // Herkese açık elle tahsilat: taban tutar ve kanal başına bekleme süresi.
+  MANUAL_CLAIM_MIN: big.default(1000n),
+  MANUAL_CLAIM_COOLDOWN_SECONDS: int.default(30),
   CLAIM_EXPIRY_MARGIN_LEDGERS: int.default(120),
   VOUCHER_EXPIRY_SAFETY_LEDGERS: int.default(60),
   RATE_LIMIT_PER_MINUTE: int.default(1200),
+  // IP başına: genel tavan ödeme yolunu da kapsar (geniş); dar tavan sunucuya
+  // zincir ücreti ödeten uçlar içindir. 0 = kapalı.
+  IP_RATE_LIMIT_PER_MINUTE: int.default(3000),
+  IP_COSTLY_LIMIT_PER_MINUTE: int.default(30),
+  /** Aynı IP'den en çok kaç açık SSE bağlantısı. */
+  SSE_MAX_PER_IP: int.default(10),
+  /** Verilirse örnek akış kontrolleri `x-demo-key` başlığı ister. */
+  DEMO_CONTROL_KEY: optional,
+  NODE_ENV: optional,
+  /** Render'ın servise verdiği dış adres; PUBLIC_URL boşsa buradan türetilir. */
+  RENDER_EXTERNAL_URL: optional,
 
   PRICE_BOOK_PER_REQUEST: big.default(5000n),
   PRICE_CHAT_PER_TOKEN: big.default(200n),
@@ -93,15 +107,26 @@ export interface AppConfig {
   rpcUrl: string;
   networkPassphrase: string;
   network: string;
+  /** Ana ağ mı: friendbot, demo ajanı ve explorer adresi buna göre değişir. */
+  isMainnet: boolean;
+  explorerTxBase: string;
   channelContractId: string;
   usdcContractId: string;
   facilitatorSecret: string;
   sellerPayTo: string;
   claimThreshold: bigint;
   claimIntervalSeconds: number;
+  manualClaimMin: bigint;
+  manualClaimCooldownSeconds: number;
   claimExpiryMarginLedgers: number;
   voucherExpirySafetyLedgers: number;
   rateLimitPerMinute: number;
+  ipRateLimitPerMinute: number;
+  ipCostlyLimitPerMinute: number;
+  sseMaxPerIp: number;
+  demoControlKey?: string;
+  /** Üretimde PUBLIC_URL localhost'ta kaldıysa: 402 yanıtları kullanılamaz adres taşır. */
+  publicUrlSuspect: boolean;
   priceBookPerRequest: bigint;
   priceChatPerToken: bigint;
   priceTickerPerSecond: bigint;
@@ -128,6 +153,8 @@ export interface AppConfig {
   chatModel: string;
   chatMode: 'fallback' | 'llm';
 }
+
+const MAINNET_PASSPHRASE = 'Public Global Stellar Network ; September 2015';
 
 /** Deploy çıktısı: .env'de boş bırakılan kimlikler buradan tamamlanır. */
 function readDeployment(file: string): Record<string, string> {
@@ -160,6 +187,18 @@ export function loadConfig(raw: NodeJS.ProcessEnv = process.env): AppConfig {
   const usdcContractId = e.USDC_CONTRACT_ID ?? dep.usdcContractId;
   const sellerPayTo = e.SELLER_PAY_TO ?? dep.sellerPublicKey;
 
+  // PUBLIC_URL 402 gövdesine, makbuzlara ve kataloğa girer. Üretimde unutulursa
+  // Render'ın verdiği dış adrese düşülür; o da yoksa açılışta yüksek sesle uyarılır.
+  const production = e.NODE_ENV === 'production';
+  const explicit = e.PUBLIC_URL;
+  const publicUrl = (
+    explicit && !(production && /localhost|127\.0\.0\.1/.test(explicit))
+      ? explicit
+      : ((production ? e.RENDER_EXTERNAL_URL : undefined) ??
+        explicit ??
+        'http://localhost:3000')
+  ).replace(/\/$/, '');
+
   const missing = Object.entries({
     CHANNEL_CONTRACT_ID: channelContractId,
     USDC_CONTRACT_ID: usdcContractId,
@@ -176,7 +215,7 @@ export function loadConfig(raw: NodeJS.ProcessEnv = process.env): AppConfig {
 
   return {
     port: e.PORT,
-    publicUrl: e.PUBLIC_URL.replace(/\/$/, ''),
+    publicUrl,
     corsOrigins: e.CORS_ORIGINS.split(',')
       .map((o) => o.trim().replace(/\/$/, ''))
       .filter(Boolean),
@@ -185,15 +224,27 @@ export function loadConfig(raw: NodeJS.ProcessEnv = process.env): AppConfig {
     rpcUrl: e.STELLAR_RPC_URL,
     networkPassphrase: e.STELLAR_NETWORK_PASSPHRASE,
     network: e.X402_NETWORK,
+    isMainnet: e.STELLAR_NETWORK_PASSPHRASE === MAINNET_PASSPHRASE,
+    explorerTxBase: `https://stellar.expert/explorer/${
+      e.STELLAR_NETWORK_PASSPHRASE === MAINNET_PASSPHRASE ? 'public' : 'testnet'
+    }/tx/`,
     channelContractId: channelContractId!,
     usdcContractId: usdcContractId!,
     facilitatorSecret: e.FACILITATOR_SECRET!,
     sellerPayTo: sellerPayTo!,
     claimThreshold: e.CLAIM_THRESHOLD,
     claimIntervalSeconds: e.CLAIM_INTERVAL_SECONDS,
+    manualClaimMin: e.MANUAL_CLAIM_MIN,
+    manualClaimCooldownSeconds: e.MANUAL_CLAIM_COOLDOWN_SECONDS,
     claimExpiryMarginLedgers: e.CLAIM_EXPIRY_MARGIN_LEDGERS,
     voucherExpirySafetyLedgers: e.VOUCHER_EXPIRY_SAFETY_LEDGERS,
     rateLimitPerMinute: e.RATE_LIMIT_PER_MINUTE,
+    ipRateLimitPerMinute: e.IP_RATE_LIMIT_PER_MINUTE,
+    ipCostlyLimitPerMinute: e.IP_COSTLY_LIMIT_PER_MINUTE,
+    sseMaxPerIp: e.SSE_MAX_PER_IP,
+    demoControlKey: e.DEMO_CONTROL_KEY,
+    publicUrlSuspect:
+      e.NODE_ENV === 'production' && /localhost|127\.0\.0\.1/.test(publicUrl),
     priceBookPerRequest: e.PRICE_BOOK_PER_REQUEST,
     priceChatPerToken: e.PRICE_CHAT_PER_TOKEN,
     priceTickerPerSecond: e.PRICE_TICKER_PER_SECOND,
@@ -203,7 +254,9 @@ export function loadConfig(raw: NodeJS.ProcessEnv = process.env): AppConfig {
     dexRouterId: e.DEX_ROUTER_ID ?? dep.dexRouterId,
     dexFactoryId: e.DEX_FACTORY_ID ?? dep.dexFactoryId,
     accountWasmHash: e.ACCOUNT_WASM_HASH ?? dep.accountWasmHash,
-    demoControls: e.DEMO_CONTROLS,
+    // Ana ağda sunucunun anahtarıyla ajan başlatmak/dondurmak yok: gerçek para.
+    demoControls:
+      e.DEMO_CONTROLS && e.STELLAR_NETWORK_PASSPHRASE !== MAINNET_PASSPHRASE,
     demoAccountId: e.DEMO_ACCOUNT_ID ?? dep.demoAccountId,
     agentOwnerSecret: e.AGENT_OWNER_SECRET,
     agentsDir: e.AGENTS_DIR,

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   Inject,
   Injectable,
@@ -10,9 +11,9 @@ import {
   OnApplicationShutdown,
   Post,
 } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiExcludeController } from '@nestjs/swagger';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -33,6 +34,42 @@ type Scenario = keyof typeof SCENARIOS;
 // eslint-disable-next-line no-control-regex
 const ANSI = /\u001b\[[0-9;]*[A-Za-z]/g;
 const MAX_RUN_MS = 10 * 60_000;
+const FREEZE_COOLDOWN_MS = 10_000;
+const RUN_COOLDOWN_MS = 5_000;
+
+/**
+ * Ajan sürecine geçen ortam: tam liste. Facilitator anahtarı, veritabanı adresi
+ * ve LLM anahtarı çocuğa verilmez; çıktısı herkese açık SSE'ye aktığı için
+ * orada görünebilecek hiçbir sır süreçte bulunmamalı.
+ */
+const CHILD_ENV = [
+  'PATH',
+  'HOME',
+  'TMPDIR',
+  'LANG',
+  'NODE_OPTIONS',
+  'STELLAR_NETWORK_PASSPHRASE',
+  'RELAYER_SECRET',
+  // Senaryo ayarları (agents/*.ts)
+  'ATTACKER_ADDRESS',
+  'BOOK_CALLS',
+  'DEPOSIT',
+  'OVER_CAP',
+  'SWAP_IN',
+] as const;
+
+/** Stellar gizli anahtarı ve API anahtarı biçimleri: günlüğe düşerse maskelenir. */
+const SECRETS = /\bS[A-Z2-7]{55}\b|\bsk-[A-Za-z0-9_-]{16,}\b/g;
+export const redact = (line: string) => line.replace(SECRETS, '[gizlendi]');
+
+/** `x-demo-key` başlığını sabit zamanlı karşılaştırır. Anahtar tanımlı değilse kontrol yoktur. */
+export function demoKeyOk(expected: string | undefined, given: string | undefined): boolean {
+  if (!expected) return true;
+  if (!given) return false;
+  const a = Buffer.from(expected);
+  const b = Buffer.from(given);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 /**
  * Panelden başlatılan GERÇEK ajan süreci. Betikler `agents/` altındadır ve testnet'e
@@ -78,14 +115,16 @@ export class AgentRunner implements OnApplicationShutdown {
     if (!existsSync(tsx) || !existsSync(script))
       throw new ReinkeyError(
         'NOT_SUPPORTED',
-        `Ajan betiği bulunamadı: ${script} (agents/ içinde pnpm install çalıştırın)`,
+        'Ajan betikleri bu sunucuda kurulu değil (agents/ bağımlılıkları eksik)',
       );
 
     const runId = randomUUID();
     const child = spawn(tsx, [script], {
       cwd: dir,
       env: {
-        ...process.env,
+        ...Object.fromEntries(
+          CHILD_ENV.flatMap((k) => (process.env[k] ? [[k, process.env[k]]] : [])),
+        ),
         API_URL: this.cfg.publicUrl,
         NO_COLOR: '1',
         FORCE_COLOR: '0',
@@ -103,7 +142,7 @@ export class AgentRunner implements OnApplicationShutdown {
       const src = child[stream];
       if (!src) return;
       createInterface({ input: src }).on('line', (raw) => {
-        const line = raw.replace(ANSI, '').trimEnd();
+        const line = redact(raw.replace(ANSI, '')).trimEnd();
         if (line) this.events.emit('agent.log', 'gateway', { runId, scenario, line, stream }, meta);
       });
     };
@@ -137,9 +176,13 @@ const RunBody = z.object({
 });
 const FreezeBody = z.object({ frozen: z.boolean() });
 
-@ApiTags('demo')
+// Sunucunun anahtarıyla zincire yazan uçlar: herkese açık API belgesinde yer almaz.
+@ApiExcludeController()
 @Controller('demo')
 export class DemoControlsController {
+  private lastRun = 0;
+  private lastFreeze = 0;
+
   constructor(
     @Inject(APP_CONFIG) private readonly cfg: AppConfig,
     @Inject(CHAIN) private readonly chain: ChainPort,
@@ -148,33 +191,38 @@ export class DemoControlsController {
     private readonly frozen: FrozenRegistry,
   ) {}
 
+  private guard(key: string | undefined, last: number, cooldownMs: number) {
+    if (!demoKeyOk(this.cfg.demoControlKey, key))
+      throw new ReinkeyError('UNAUTHORIZED', 'x-demo-key başlığı eksik ya da yanlış', 'gateway', 401);
+    const wait = last + cooldownMs - Date.now();
+    if (wait > 0)
+      throw new ReinkeyError(
+        'RATE_LIMITED',
+        `Bu kontrol ${Math.ceil(wait / 1000)} sn sonra yeniden kullanılabilir`,
+      );
+  }
+
   @Get('agent')
-  @ApiOperation({ summary: 'Demo ajanı çalışıyor mu' })
   agent() {
     return this.runner.status();
   }
 
   @Post('agent/run')
   @HttpCode(202)
-  @ApiOperation({
-    summary:
-      'Gerçek demo ajanını başlatır (testnet). Çıktı SSE: agent.log / agent.exited',
-  })
-  @ApiBody({ schema: { example: { scenario: 'trader' } } })
-  run(@Body() body: unknown) {
+  run(@Body() body: unknown, @Headers('x-demo-key') key?: string) {
+    this.guard(key, this.lastRun, RUN_COOLDOWN_MS);
     const p = RunBody.safeParse(body);
     if (!p.success)
       throw new ReinkeyError('BAD_REQUEST', 'scenario: "trader" | "compromised" | "injected"');
-    return this.runner.run(p.data.scenario);
+    const started = this.runner.run(p.data.scenario);
+    this.lastRun = Date.now();
+    return started;
   }
 
   @Post('owner/freeze')
   @HttpCode(200)
-  @ApiOperation({
-    summary: 'Sahip imzasıyla demo hesabını zincirde dondurur / çözer',
-  })
-  @ApiBody({ schema: { example: { frozen: true } } })
-  async freeze(@Body() body: unknown) {
+  async freeze(@Body() body: unknown, @Headers('x-demo-key') key?: string) {
+    this.guard(key, this.lastFreeze, FREEZE_COOLDOWN_MS);
     const p = FreezeBody.safeParse(body);
     if (!p.success) throw new ReinkeyError('BAD_REQUEST', 'frozen: boolean');
     const account = this.cfg.demoAccountId;
@@ -183,6 +231,8 @@ export class DemoControlsController {
         'NOT_SUPPORTED',
         'DEMO_ACCOUNT_ID ve AGENT_OWNER_SECRET tanımlı değil',
       );
+    // Zincire gitmeden işaretlenir: eşzamanlı istekler de bekleme süresine takılsın.
+    this.lastFreeze = Date.now();
     const { tx } = await this.chain.setFrozen(
       account,
       p.data.frozen,

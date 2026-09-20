@@ -200,6 +200,8 @@ export type PaidStreamOptions = {
   /** İlk dilim için peşin ödenecek tutar; 402 şartlarından da okunabilir. */
   firstSlice?: bigint;
   onEvent?: (e: StreamEvent) => void;
+  /** Alıcı akışı istediği an keser; o ana kadar teslim edilen dilimler ödenmiş olur, fazlası değil. */
+  signal?: AbortSignal;
 };
 
 export type PaidStreamResult = {
@@ -251,6 +253,7 @@ export async function streamPaid(o: PaidStreamOptions): Promise<PaidStreamResult
   const voucher = o.signer.next(firstSlice!);
   const res = await fetch(o.url, {
     ...init,
+    signal: o.signal,
     headers: { ...(init.headers as Record<string, string>), ...encodePaymentHeader(o.signer.payload(voucher, o.network)) },
   });
   if (!res.ok) throw new Error(`akış reddedildi: ${res.status} ${await res.text()}`);
@@ -267,6 +270,7 @@ async function consume(
   let vouchers = firstCharged === null ? 0 : 1;
   let channelId = o.signer.opts.channelId.toString();
 
+  try {
   for await (const ev of parseSse(res)) {
     o.onEvent?.(ev);
     if (ev.type === "session") {
@@ -303,6 +307,10 @@ async function consume(
       if (typeof d.vouchers === "number") vouchers = d.vouchers;
       return { events, charged, vouchers, endedWith: "done" };
     }
+  }
+  } catch (e) {
+    // Alıcı kesti: bu bir hata değil, ölçülü ödemenin olağan sonu.
+    if (!o.signal?.aborted) throw e;
   }
   return { events, charged, vouchers, endedWith: "done" };
 }

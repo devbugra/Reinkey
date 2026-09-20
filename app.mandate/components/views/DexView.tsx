@@ -11,7 +11,8 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { ArrowDown, CircleCheck, CircleX, Info } from "lucide-react";
-import { int, usdc } from "@/lib/format";
+import { int, percent, shortAddr, usdc } from "@/lib/format";
+import { currentLocale } from "@/lib/locale";
 import type { DexSide } from "@/lib/types";
 import { useQuote } from "@/lib/useQuote";
 import { Empty, Panel, cn } from "../ui";
@@ -29,7 +30,7 @@ function parseAmount(text: string): bigint | null {
 }
 
 const price = (v: string | bigint, digits = 5) =>
-  (Number(typeof v === "bigint" ? v : BigInt(v)) / Number(SCALE)).toLocaleString("tr-TR", {
+  (Number(typeof v === "bigint" ? v : BigInt(v)) / Number(SCALE)).toLocaleString(currentLocale(), {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
@@ -43,7 +44,7 @@ function Row({ label, value, title }: { label: string; value: React.ReactNode; t
   );
 }
 
-export function DexView({ account }: { account: string | null }) {
+export function DexView({ account, isExample }: { account: string | null; isExample: boolean }) {
   const t = useTranslations("dex");
   const [side, setSide] = useState<DexSide>("USDC_XLM");
   const [text, setText] = useState("0.5");
@@ -103,18 +104,19 @@ export function DexView({ account }: { account: string | null }) {
 
           <div className="grid gap-1.5">
             <span className="text-[11px] text-fg-subtle">{t("slippage")}</span>
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5" role="group" aria-label={t("slippage")}>
               {SLIPPAGES.map((bps) => (
                 <button
                   key={bps}
                   type="button"
+                  aria-pressed={slippageBps === bps}
                   onClick={() => setSlippageBps(bps)}
                   className={cn(
                     "tabular rounded-md border px-2.5 py-1 text-xs",
                     slippageBps === bps ? "border-accent/60 bg-accent/10 text-fg" : "border-line text-fg-muted hover:text-fg",
                   )}
                 >
-                  %{(bps / 100).toLocaleString("tr-TR")}
+                  {percent(bps, bps % 100 ? 1 : 0)}
                 </button>
               ))}
             </div>
@@ -132,7 +134,7 @@ export function DexView({ account }: { account: string | null }) {
                 label={t("impact")}
                 value={
                   <span className={cn(impact > 300 ? "text-danger" : impact > 100 ? "text-warning" : "text-fg")}>
-                    %{(impact / 100).toLocaleString("tr-TR", { maximumFractionDigits: 2 })}
+                    {percent(impact)}
                   </span>
                 }
               />
@@ -143,7 +145,19 @@ export function DexView({ account }: { account: string | null }) {
       </Panel>
 
       <div className="grid content-start gap-4">
-        <Panel title={t("verdictTitle")} hint={t("verdictHint")}>
+        <Panel
+          title={t("verdictTitle")}
+          hint={t("verdictHint")}
+          action={
+            // Kararın HANGİ hesaba göre verildiği görünür olmalı: adres vermeyen biri örnek hesabın kurallarını görür.
+            account ? (
+              <span className="flex shrink-0 items-center gap-1.5 font-mono text-[11px] text-fg-subtle" title={t("evaluatedTitle")}>
+                {shortAddr(account, 4, 4)}
+                {isExample && <span className="rounded-full bg-surface-3 px-2 py-0.5 font-sans text-fg-muted">{t("exampleBadge")}</span>}
+              </span>
+            ) : null
+          }
+        >
           {!quote ? (
             <Empty>{error ? t("error") : loading ? t("loading") : t("empty")}</Empty>
           ) : !quote.policy.caps ? (

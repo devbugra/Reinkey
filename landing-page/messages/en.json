@@ -1,9 +1,9 @@
 {
   "meta": {
-    "title": "{name} — Metered x402 payments on Stellar",
-    "description": "Agents open a payment channel in one transaction and pay thousands of times in milliseconds, while the chain enforces how much they can spend. Live on Stellar testnet.",
-    "ogTitle": "Give your agent the keys. Keep the reins.",
-    "ogSubtitle": "Open in one transaction, pay in milliseconds, settle in one transaction."
+    "title": "{name} — The session layer for machine payments on Stellar",
+    "description": "One transaction opens a session, every call after that is a signed voucher at HTTP speed, one transaction settles. The session carries an on-chain budget, signed receipts and metering by request, second or token. Paid tool calls for any MCP client. Live on Stellar testnet.",
+    "ogTitle": "HTTP got a wallet.",
+    "ogSubtitle": "Open a session in one transaction, pay at HTTP speed, settle in one transaction."
   },
   "common": {
     "languageSwitcher": "Language",
@@ -13,7 +13,7 @@
     "mainMenu": "Main menu"
   },
   "nav": {
-    "demo": "Demo",
+    "demo": "Playground",
     "howItWorks": "How it works",
     "architecture": "Architecture",
     "pricing": "Pricing",
@@ -27,17 +27,17 @@
     "float": "Float"
   },
   "hero": {
-    "eyebrow": "Metered x402 · Stellar",
-    "titleLead": "Give your agent the keys.",
-    "titleAccent": "Keep the reins.",
-    "subtitle": "Your agent opens a payment channel and pays for every call, every token, in milliseconds, without touching the chain. The seller settles thousands of payments in a single transaction. How much the agent can spend, and with whom, is decided by its account on Stellar, not by a server.",
-    "ctaPrimary": "Try the demo",
+    "eyebrow": "Session layer for machine payments · Stellar",
+    "titleLead": "One transaction opens the session.",
+    "titleAccent": "Every call after that just pays.",
+    "subtitle": "x402 on Stellar settles every payment on-chain: five seconds and one ledger entry per call. {name} adds the missing piece, a session. Your agent, or any AI assistant over MCP, pays per request, per second or per token with signed vouchers at HTTP speed; the seller settles thousands of them in one transaction. The session's budget lives in the agent's own account on Stellar, not on a server.",
+    "ctaPrimary": "Create an agent account",
     "ctaSecondary": "Read the docs",
     "note": "Live on Stellar testnet. No custody, no sign-up, no API keys.",
     "trust": [
-      "1,000 payments, 2 transactions",
-      "Limits enforced on-chain",
-      "One line for sellers"
+      "468 payments, 3 chain transactions",
+      "Budget enforced by the account, on-chain",
+      "Paid tool calls for any MCP client"
     ],
     "builtOn": "Built on",
     "visual": {
@@ -45,7 +45,7 @@
     }
   },
   "playground": {
-    "eyebrow": "Try it yourself",
+    "eyebrow": "In-browser playground",
     "title": "Pay first, then hit the limit.",
     "lead": "Open a channel, make calls, stream a response token by token. Watch the voucher count climb while the transaction count barely moves. Then push the cap: the rejection comes from the account, not from a server.",
     "agent": "agent-01",
@@ -193,15 +193,15 @@
       },
       {
         "name": "Facilitator",
-        "summary": "x402 channel and exact schemes",
-        "body": "Verifies vouchers, triggers settlement automatically before the channel expires, and pays network fees. It has no authority to withdraw funds.",
-        "note": "exact is supported as a fallback"
+        "summary": "x402 channel scheme",
+        "body": "Verifies vouchers, triggers settlement automatically before the session expires, and pays the settlement fee. It has no authority to withdraw funds.",
+        "note": "exact is not enabled on the hosted facilitator"
       },
       {
         "name": "meter() middleware",
         "summary": "One line in the seller's API",
         "body": "Prices an endpoint per call, per token or per second. Without payment it answers 402; with a valid voucher the request goes through.",
-        "note": "app.get(\"/api\", meter({ price, unit }), handler)"
+        "note": "app.get(\"/api\", rk.meter({ price, unit }), handler)"
       }
     ],
     "whyStellar": "Why Stellar: custom account auth (__check_auth), fee sponsorship, and transactions that cost a fraction of a cent.",
@@ -248,7 +248,7 @@
       },
       {
         "title": "No XLM needed",
-        "body": "The facilitator pays network fees. The agent only holds USDC."
+        "body": "The agent key holds no XLM. A relayer account you fund pays the agent's transaction fees; the facilitator pays for settlement."
       },
       {
         "title": "Self-describing service",
@@ -327,7 +327,7 @@
         "price": "Open source",
         "period": "",
         "description": "The contracts and middleware, on your own server.",
-        "cta": "OpenAPI schema",
+        "cta": "Source on GitHub",
         "trial": "Nothing to pay us.",
         "features": [
           "Channel and {name} Account contracts",
@@ -338,9 +338,9 @@
     ],
     "note": "No made-up numbers here: prices will show up once they're set.",
     "endpoints": {
-      "title": "Demo seller prices",
-      "lead": "The endpoints in the live demo are protected by meter(): the first request returns 402 with the terms, and a request carrying a voucher gets the response.",
-      "note": "Testnet USDC. The facilitator pays network fees."
+      "title": "Example seller prices",
+      "lead": "The example seller's endpoints are protected by meter(): the first request returns 402 with the terms, and a request carrying a voucher gets the response.",
+      "note": "Testnet USDC. Settlement fees are paid by the facilitator."
     }
   },
   "faq": {
@@ -349,7 +349,7 @@
     "items": [
       {
         "q": "Do I have to trust the facilitator?",
-        "a": "No. Vouchers are verified by the channel contract, and funds only go to the channel's seller. The facilitator verifies, triggers settlement and pays network fees; it can't withdraw anything."
+        "a": "No. Vouchers are verified by the channel contract, and funds only go to the session's seller. The facilitator verifies, triggers settlement and pays the settlement fee; it can't withdraw anything."
       },
       {
         "q": "What if the channel closes before the seller settles?",
@@ -365,7 +365,7 @@
       },
       {
         "q": "Does the agent need to hold XLM?",
-        "a": "No. The facilitator pays network fees."
+        "a": "The agent key doesn't. Opening a session is a Stellar transaction, paid by a relayer account you fund (friendbot on testnet). Every payment after that is off-chain, and settlement is paid by the facilitator."
       },
       {
         "q": "Why Stellar?",
@@ -377,7 +377,7 @@
       },
       {
         "q": "Which version of x402?",
-        "a": "channel is a new scheme; exact is supported as a fallback."
+        "a": "channel is a new x402 scheme with the same headers as x402 v2. The exact scheme is not enabled on the hosted facilitator."
       }
     ]
   },
@@ -393,7 +393,7 @@
     "developers": "Developers",
     "resources": "Resources",
     "links": {
-      "demo": "Demo",
+      "demo": "Playground",
       "howItWorks": "How it works",
       "architecture": "Architecture",
       "pricing": "Pricing",
@@ -457,11 +457,11 @@
         },
         {
           "title": "Standard x402",
-          "body": "PAYMENT-REQUIRED, PAYMENT-SIGNATURE and PAYMENT-RESPONSE are the same headers as x402 v2. The channel scheme is offered next to exact as a second option."
+          "body": "PAYMENT-REQUIRED, PAYMENT-SIGNATURE and PAYMENT-RESPONSE are the same headers as x402 v2. channel is a new scheme on those headers; exact is not enabled on the hosted facilitator."
         },
         {
           "title": "No network fees",
-          "body": "Buyers don't need to hold XLM; the facilitator pays transaction fees. You only ever receive USDC."
+          "body": "Your buyers' agent keys hold no XLM, and settlement fees are paid by the facilitator. You only ever receive USDC."
         },
         {
           "title": "Explainable rejections",
@@ -476,7 +476,7 @@
       ],
       "ctaTitle": "Open your first paid endpoint today.",
       "ctaPrimary": "Meter quickstart",
-      "ctaSecondary": "Watch the live demo"
+      "ctaSecondary": "Open the console"
     },
     "reins": {
       "meta": {
@@ -525,7 +525,7 @@
       "limitsTitle": "What exists today, and what doesn't",
       "limits": [
         "Runs on Stellar testnet; the contracts haven't been audited yet.",
-        "Accounts are deployed with a script today; one-click setup from the console is on the roadmap.",
+        "Create your account from the console: connect a wallet, set the limits, one transaction. Your wallet is the owner; limits, payees and freeze are changed from the console with your signature. The deploy script remains for self-hosting.",
         "On-chain trade limits apply on the DEX side. The chain can't see trades inside a centralized exchange's internal ledger."
       ],
       "ctaTitle": "Give your agent spending power, safely.",
@@ -579,7 +579,7 @@
       "limitsTitle": "What exists today, and what doesn't",
       "limits": [
         "Runs on Stellar testnet; the contract hasn't been audited. Don't deposit real capital.",
-        "The console and API are read-only today: depositing, opening a line and liquidating are contract calls with no UI. Opening a line is the admin's decision; there is no permissionless borrowing.",
+        "The HTTP API is read-only. Depositing and withdrawing are done in the console with your own wallet. Opening a line and liquidating are contract calls; opening a line is the admin's decision, so there is no permissionless borrowing.",
         "Unspent deposits in open channels aren't counted in health (an error on the cautious side). With only the DEX price source configured, the price can be moved by a single large trade; mainnet needs the oracle and a TWAP."
       ],
       "ctaTitle": "Watch the pool live.",

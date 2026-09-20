@@ -1,3 +1,4 @@
+import { stellarNetwork } from "./env";
 /**
  * Görüntüleme yardımcıları. Para her zaman BigInt; number'a yalnızca oran için
  * çevrilir.
@@ -94,5 +95,5 @@ export function percent(bps: number, digits = 2): string {
 /** Yalnızca gerçek işlem hash'i (64 hex) explorer'a bağlanır. */
 export function txUrl(hash: string | undefined | null): string | null {
   if (!hash || !/^[0-9a-f]{64}$/i.test(hash)) return null;
-  return `https://stellar.expert/explorer/testnet/tx/${hash}`;
+  return `https://stellar.expert/explorer/${stellarNetwork}/tx/${hash}`;
 }
