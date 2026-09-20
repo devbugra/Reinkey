@@ -12,6 +12,12 @@
     "closeMenu": "Close menu",
     "mainMenu": "Main menu"
   },
+  "notFound": {
+    "title": "This page doesn't exist.",
+    "body": "The address is wrong or the page moved. Everything about the product is on the home page; everything about building on it is in the docs.",
+    "home": "Go to the home page",
+    "docs": "Read the docs"
+  },
   "nav": {
     "demo": "Playground",
     "howItWorks": "How it works",
@@ -104,7 +110,7 @@
     },
     "reset": "Reset",
     "disclaimer": "Simulation: runs in your browser and makes no network requests. Rules, prices and reason codes match the product; on-chain steps are shown as ≈5 s instead of actually waiting.",
-    "chatText": "Every ledger on Stellar closes in about five seconds. That is quick for a single payment, but far too slow if you want to pay for every call or every token on its own. That is why payment channels exist. The agent opens a channel once and locks a deposit in the contract. From then on, each request carries a signed, cumulative voucher that never touches the chain. The seller checks it in milliseconds, answers right away, and settles whatever has built up in one transaction whenever it likes. Because vouchers are cumulative, the seller only keeps the latest one; an old voucher can never be worth more. When the deposit runs out, the stream stops, even in the middle of a sentence. The spending limit lives in the agent's account. The chain, not a server, enforces the daily cap, the per-transaction cap and the list of allowed payees. Even a compromised agent cannot send funds to its own wallet, because that address is not on the list. The facilitator pays network fees, verifies vouchers and triggers settlement on time, but it cannot touch the money. Anyone can verify a voucher, and funds only ever go to the channel's seller. So a thousand payments fit into two transactions: one to open the channel and one to settle it. You give your agent the keys. You keep the reins."
+    "chatText": "Every ledger on Stellar closes in about five seconds. That is quick for a single payment, but far too slow if you want to pay for every call or every token on its own. That is why payment channels exist. The agent opens a channel once and locks a deposit in the contract. From then on, each request carries a signed, cumulative voucher that never touches the chain. The seller checks it in milliseconds, answers right away, and settles whatever has built up in one transaction whenever it likes. Because vouchers are cumulative, the seller only keeps the latest one; an old voucher can never be worth more. When the deposit runs out, the stream stops, even in the middle of a sentence. The spending limit lives in the agent's account. The chain, not a server, enforces the daily cap, the per-transaction cap and the list of allowed payees. Even a compromised agent cannot send funds to its own wallet, because that address is not on the list. The agent's own transactions are submitted by a relayer account you fund, so the agent key never holds XLM; the facilitator verifies vouchers, triggers settlement on time and pays the settlement fee, but it cannot touch the money. Anyone can verify a voucher, and funds only ever go to the channel's seller. So a thousand payments fit into two transactions: one to open the channel and one to settle it. You give your agent the keys. You keep the reins."
   },
   "compare": {
     "eyebrow": "The difference",
@@ -214,7 +220,7 @@
       "seller": "Seller API",
       "sellerSub": "meter() · 402 or 200",
       "facilitator": "Facilitator",
-      "facilitatorSub": "verify · claim · pay fees",
+      "facilitatorSub": "verify · claim · pay the claim fee",
       "account": "{name} Account",
       "accountSub": "__check_auth · caps, payees",
       "channel": "Channel contract",

@@ -1,4 +1,10 @@
-export const metadata = { title: "Policy & rejections" };
+import { docsMeta } from "@/content/docs";
+
+export const metadata = docsMeta(
+  "/docs/reins/policy",
+  "Policy & rejections",
+  "Every field of a Reinkey account's on-chain policy, what the owner can change from the console, and how a rejection reaches you as a failed transaction.",
+);
 
 # Policy & rejections
 
@@ -15,7 +21,11 @@ The policy is stored in the account contract and checked in `__check_auth` on ev
 | `payees` | Addresses the account may pay or open channels to. |
 | `channel` | The one channel contract it may call. |
 | `expires_ledger` | After this ledger the agent key stops working. |
-| `dex_router`, `pairs` | Optional. The router it may swap on and the allowed `(sell, buy)` asset pairs. |
+| `dex_router` | Optional. The one DEX router it may swap on. `None` means swaps are off entirely (`CONTEXT_NOT_ALLOWED`). |
+| `dex_factory` | Optional, and required for a swap. The router's factory: the contract asks it for the pair address of the `(sell, buy)` pair, so a swap can't be routed through a pool the account didn't mean. Without it a swap fails with `CONTEXT_NOT_ALLOWED`. |
+| `pairs` | The allowed `(sell, buy)` asset pairs. A pair in one direction does not allow the other; list both if you want both. |
+
+The account also stores two things beside the policy: its **owner** (the `G…` key that may change all of the above) and an optional **controller**. While a controller is set, the owner's signature stops authorizing anything — `CONTROLLER_LOCKED`. That is how [Float](/docs/float) lends into an account without collateral.
 
 Read it from the SDK:
 
@@ -28,12 +38,16 @@ const { day, amount } = await account.getSpent();
 
 The owner key (not the agent key) can, each in one transaction:
 
-| Call | Effect |
-|---|---|
-| `set_policy(policy)` | Replace the policy. |
-| `freeze()` / `unfreeze()` | While frozen, every agent authorization fails with `ACCOUNT_FROZEN`. |
-| `recall(asset, to, amount)` | Pull funds out of the account. |
-| `set_controller(address)` | Delegate owner actions to another contract. |
+| Call | Effect | In the console |
+|---|---|---|
+| `set_policy(policy)` | Replace the policy. | **Yes** — Reins → policy editor. |
+| `freeze()` / `unfreeze()` | While frozen, every agent authorization fails with `ACCOUNT_FROZEN`. | **Yes** — one button. |
+| `recall(asset, to, amount)` | Pull funds out of the account. | No. SDK or Stellar CLI. |
+| `set_controller(address)` | Delegate owner actions to another contract. | No. SDK or Stellar CLI. |
+
+**You don't need a script for the first two.** Open the [console](/docs/console) → **Reins** with the account address, connect the owner wallet, and edit the caps, the payee list, the validity or the exchange permission, or freeze the account. Each write asks for two signatures: one `Sig::Owner` authorization of the contract call, and one for the transaction fee. The console never sees a key — it builds the call, your wallet signs it, and it goes straight to Stellar. Our server is not in that path and could not change a limit if it wanted to.
+
+The editor is hidden unless the connected wallet is the account's `owner`, and it is replaced by a notice when a controller is set.
 
 ## Rejections come from the chain
 

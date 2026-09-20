@@ -1,6 +1,11 @@
 import { routes } from "@/content/site";
+import { docsMeta } from "@/content/docs";
 
-export const metadata = { title: "Meter quickstart" };
+export const metadata = docsMeta(
+  "/docs/meter/quickstart",
+  "Meter quickstart",
+  "Put a price on an Express endpoint and get paid per request in USDC on Stellar, without running a node or holding a key.",
+);
 
 # Meter quickstart
 

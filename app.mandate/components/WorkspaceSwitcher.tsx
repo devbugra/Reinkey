@@ -49,12 +49,15 @@ export function WorkspaceSwitcher({
       : t("exampleSub");
 
   return (
-    <div className="grid gap-1">
+    // `min-w-0`: alt başlık tek satır (truncate) olduğu için ızgara/esnek öğelerin
+    // kendiliğinden en küçük genişliği metin kadar olur ve düğme rayı taşarak
+    // sayfa başlığının üstüne binerdi.
+    <div className="grid min-w-0 gap-1">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 rounded-md border border-line bg-surface-1 px-3 py-2 text-start transition-colors hover:bg-surface-2"
+        className="flex w-full min-w-0 items-center gap-2 rounded-md border border-line bg-surface-1 px-3 py-2 text-start transition-colors hover:bg-surface-2"
       >
         <span className="min-w-0 flex-1">
           <span className="block truncate text-xs font-medium text-fg">{title}</span>
@@ -64,7 +67,7 @@ export function WorkspaceSwitcher({
       </button>
 
       {open && (
-        <ul className="grid gap-0.5 rounded-md border border-line bg-bg-alt p-1">
+        <ul className="grid min-w-0 gap-0.5 rounded-md border border-line bg-bg-alt p-1">
           {unsaved && (
             <li>
               <button
@@ -73,7 +76,7 @@ export function WorkspaceSwitcher({
                   setOpen(false);
                   onSave(unsaved);
                 }}
-                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-start text-xs text-accent hover:bg-surface-2"
+                className="flex w-full min-w-0 items-center gap-2 rounded-sm px-2 py-1.5 text-start text-xs text-accent hover:bg-surface-2"
               >
                 <BookmarkPlus className="size-3.5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 flex-1 truncate">{t("save")}</span>
@@ -87,14 +90,14 @@ export function WorkspaceSwitcher({
                 setOpen(false);
                 onExample();
               }}
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-start text-xs text-fg-muted hover:bg-surface-2 hover:text-fg"
+              className="flex w-full min-w-0 items-center gap-2 rounded-sm px-2 py-1.5 text-start text-xs text-fg-muted hover:bg-surface-2 hover:text-fg"
             >
               {!active && !unsaved && <Check className="size-3.5 text-accent" aria-hidden="true" />}
               <span className={cn("min-w-0 flex-1 truncate", !active && !unsaved && "text-fg")}>{t("example")}</span>
             </button>
           </li>
           {profiles.map((p) => (
-            <li key={p.id} className="group flex items-center gap-1">
+            <li key={p.id} className="group flex min-w-0 items-center gap-1">
               <button
                 type="button"
                 onClick={() => {
@@ -127,7 +130,7 @@ export function WorkspaceSwitcher({
                 setOpen(false);
                 onAdd();
               }}
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-start text-xs text-accent hover:bg-surface-2"
+              className="flex w-full min-w-0 items-center gap-2 rounded-sm px-2 py-1.5 text-start text-xs text-accent hover:bg-surface-2"
             >
               <Plus className="size-3.5" aria-hidden="true" />
               {t("add")}
@@ -141,7 +144,7 @@ export function WorkspaceSwitcher({
                 if (wallet.address) wallet.disconnect();
                 else wallet.connect();
               }}
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-start text-xs text-fg-muted hover:bg-surface-2 hover:text-fg"
+              className="flex w-full min-w-0 items-center gap-2 rounded-sm px-2 py-1.5 text-start text-xs text-fg-muted hover:bg-surface-2 hover:text-fg"
             >
               {wallet.connecting ? (
                 <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden="true" />

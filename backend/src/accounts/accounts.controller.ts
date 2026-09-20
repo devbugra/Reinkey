@@ -6,6 +6,7 @@ import { CHAIN, type ChainPort } from '../chain/chain.port';
 import { ChannelStore } from '../channel/channel.cache';
 import { channelView } from '../channel/channel.controller';
 import { ReinkeyError } from '../common/errors';
+import { addressParam, intParam } from '../common/params';
 
 const MAX_PAGE = 200;
 
@@ -23,7 +24,8 @@ export class AccountsController {
   @ApiOperation({
     summary: 'Hesap durumu (politika, harcama) + açık kanalları',
   })
-  async get(@Param('addr') addr: string) {
+  async get(@Param('addr') addrRaw: string) {
+    const addr = addressParam(addrRaw, 'any', 'addr');
     let state: Awaited<ReturnType<ChainPort['getAccount']>> = null;
     try {
       state = await this.chain.getAccount(addr);
@@ -53,7 +55,7 @@ export class AccountsController {
     @Query('limit') limit?: string,
   ) {
     await this.events.flush();
-    const take = Math.min(Math.max(Number(limit) || 50, 1), MAX_PAGE);
+    const take = intParam(limit, 50, 1, MAX_PAGE, 'limit');
     const before = cursor && /^\d+$/.test(cursor) ? BigInt(cursor) : undefined;
     const rows = await this.prisma.event.findMany({
       where: { account: addr, ...(before ? { id: { lt: before } } : {}) },

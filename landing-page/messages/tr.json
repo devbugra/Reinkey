@@ -12,6 +12,12 @@
     "closeMenu": "Menüyü kapat",
     "mainMenu": "Ana menü"
   },
+  "notFound": {
+    "title": "Böyle bir sayfa yok.",
+    "body": "Adres yanlış ya da sayfa taşınmış. Ürünle ilgili her şey ana sayfada, üzerine geliştirmekle ilgili her şey belgelerde.",
+    "home": "Ana sayfaya git",
+    "docs": "Belgeleri oku"
+  },
   "nav": {
     "demo": "Deneme alanı",
     "howItWorks": "Nasıl çalışır",
@@ -104,7 +110,7 @@
     },
     "reset": "Sıfırla",
     "disclaimer": "Simülasyon: tarayıcıda çalışır, ağa istek atmaz. Kurallar, fiyatlar ve sebep kodları ürünle aynıdır; zincir işlemleri beklenmez, ≈5 sn olarak gösterilir.",
-    "chatText": "Stellar'da her ledger yaklaşık beş saniyede kapanır. Bu, tek bir ödeme için kısa bir süredir ama her çağrıyı ya da her token'ı ayrı ayrı ödemek için çok uzundur. Ödeme kanalı bu yüzden var. Ajan kanalı bir kez açar ve depozitoyu kontrata kilitler. Sonrasında her istekte zincire hiç gitmeden imzalı ve kümülatif bir kupon gönderir. Satıcı kuponu milisaniyeler içinde doğrular, yanıtı hemen döner ve biriken tutarı istediği zaman tek bir işlemle tahsil eder. Kupon kümülatif olduğu için satıcı yalnızca sonuncusunu saklar; eski bir kupon hiçbir zaman daha fazla para getirmez. Depozito biterse akış da biter, cümlenin tam ortasında bile. Harcama sınırı ise ajanın hesabında yazılıdır. Günlük tavanı, tek işlem tavanını ve izinli alıcıları sunucu değil zincir uygular. Ajan ele geçirilse bile parayı kendi cüzdanına gönderemez, çünkü o adres izinli listede değildir. Facilitator ağ ücretlerini öder, kuponları doğrular ve tahsilatı zamanında tetikler, ama paraya dokunamaz. Kuponu herkes doğrulayabilir; para yalnızca kanalın satıcısına gider. Böylece bin ödeme iki zincir işlemine sığar: biri kanalı açmak, biri tahsil etmek için. Anahtarı ajana verirsiniz, dizgin sizde kalır."
+    "chatText": "Stellar'da her ledger yaklaşık beş saniyede kapanır. Bu, tek bir ödeme için kısa bir süredir ama her çağrıyı ya da her token'ı ayrı ayrı ödemek için çok uzundur. Ödeme kanalı bu yüzden var. Ajan kanalı bir kez açar ve depozitoyu kontrata kilitler. Sonrasında her istekte zincire hiç gitmeden imzalı ve kümülatif bir kupon gönderir. Satıcı kuponu milisaniyeler içinde doğrular, yanıtı hemen döner ve biriken tutarı istediği zaman tek bir işlemle tahsil eder. Kupon kümülatif olduğu için satıcı yalnızca sonuncusunu saklar; eski bir kupon hiçbir zaman daha fazla para getirmez. Depozito biterse akış da biter, cümlenin tam ortasında bile. Harcama sınırı ise ajanın hesabında yazılıdır. Günlük tavanı, tek işlem tavanını ve izinli alıcıları sunucu değil zincir uygular. Ajan ele geçirilse bile parayı kendi cüzdanına gönderemez, çünkü o adres izinli listede değildir. Ajanın kendi işlemlerini sizin fonladığınız bir relayer hesabı gönderir, böylece ajan anahtarında hiç XLM durmaz; facilitator kuponları doğrular, tahsilatı zamanında tetikler ve tahsilat ücretini öder, ama paraya dokunamaz. Kuponu herkes doğrulayabilir; para yalnızca kanalın satıcısına gider. Böylece bin ödeme iki zincir işlemine sığar: biri kanalı açmak, biri tahsil etmek için. Anahtarı ajana verirsiniz, dizgin sizde kalır."
   },
   "compare": {
     "eyebrow": "Fark",
@@ -214,7 +220,7 @@
       "seller": "Satıcı API'si",
       "sellerSub": "meter() · 402 ya da 200",
       "facilitator": "Facilitator",
-      "facilitatorSub": "doğrula · tahsil et · ücret öde",
+      "facilitatorSub": "doğrula · tahsil et · tahsilat ücretini öde",
       "account": "{name} Account",
       "accountSub": "__check_auth · tavan, alıcı",
       "channel": "Channel kontratı",

@@ -1,16 +1,21 @@
 import { routes } from "@/content/site";
+import { docsMeta } from "@/content/docs";
 
-export const metadata = { title: "Float: credit pool" };
+export const metadata = docsMeta(
+  "/docs/float",
+  "Float: credit pool",
+  "A lending pool for agent accounts: capital handed to a Reinkey account can't leave its policy, so it needs no collateral. Deposit and withdraw from the console; the HTTP API is read-only.",
+);
 
 # Reinkey Float
 
 Float is a lending pool for agent accounts. It rests on one property of [Reins](/docs/reins/policy): funds in a Reinkey account can only go where its policy allows. When control of the account is handed to the pool, the owner's signature stops working too, so credit placed in the account **cannot leave the system**. Capital that can't escape needs no collateral.
 
-> **Testnet, unaudited, read-only surface.** The pool contract is deployed and tested, and the facilitator exposes it over HTTP. Depositing, opening a line and liquidating are contract calls today; there is no UI for them and no permissionless borrowing.
+> **Testnet, unaudited.** The pool contract is deployed and tested. **Deposit and withdraw are live in the [console](/docs/console)**, signed by your own wallet and sent straight to Stellar. **The HTTP API is read-only** — every `/float` endpoint reads by simulation and never submits a transaction. Opening a credit line and liquidating are contract calls with no UI, and `open_line` is the pool admin's decision: there is no permissionless borrowing.
 
 ## How it works
 
-1. **Deposit.** An investor deposits USDC and receives shares. `share price = (idle USDC + outstanding debt + pool XLM × price) / total shares`.
+1. **Deposit.** An investor deposits USDC and receives shares. `share price = (idle USDC + outstanding debt + pool XLM × price) / total shares`. This is a wallet-signed `deposit(from, amount)` in the console's **Float** view; `withdraw(from, shares)` burns them back, limited to the pool's idle USDC.
 2. **Hand over.** The account owner calls `set_controller(pool)` on a Reinkey account. From then on only the pool can change its policy, freeze it or recall funds.
 3. **Open a line.** The pool admin calls `open_line(account, limit, beneficiary)`: `limit` USDC moves into the account and is recorded as debt.
 4. **Work.** The agent pays sellers through channels and trades on the allowed DEX pairs, inside the account's caps.
@@ -23,6 +28,8 @@ An account's value is `USDC + XLM × price`. The price is conservative: the **lo
 With only the pool price configured, a single large trade can move it and trigger an unfair liquidation (a loss to the borrower, not the lender). Mainnet needs the oracle and a TWAP.
 
 ## Read the pool
+
+The HTTP surface is **read-only**: these endpoints read the contract by simulation and never submit a transaction. Money only moves when a wallet signs, in the [console](/docs/console) or against the contract directly.
 
 The testnet endpoint is <code>{routes.api}</code>.
 
@@ -58,14 +65,14 @@ All amounts are 7-decimal base units as strings. `sharePrice` and `price` use th
 | `GET /float/lines/:account` | One account's line and health: `debt`, `value`, `usdc`, `xlm`, `price`, `healthBps` (value / debt), `liqThresholdBps`, `liquidatable`. |
 | `GET /float/positions/:address` | An investor's shares, their USDC value today and their share of the pool. |
 
-Everything is read by simulation; these endpoints never submit a transaction.
+Everything is read by simulation; these endpoints never submit a transaction. Reason codes `40`–`49` come from this contract — see [Reason codes](/docs/reason-codes).
 
 ## Contract interface
 
 | Call | Who | Effect |
 |---|---|---|
-| `deposit(from, amount)` → shares | anyone | Deposit USDC, mint shares at the current share price. |
-| `withdraw(from, shares)` → USDC | share holder | Burn shares for USDC, limited to the idle balance. |
+| `deposit(from, amount)` → shares | anyone | Deposit USDC, mint shares at the current share price. Wired to a wallet in the console. |
+| `withdraw(from, shares)` → USDC | share holder | Burn shares for USDC, limited to the idle balance. Wired to a wallet in the console. |
 | `transfer(from, to, amount)` | share holder | Shares are a transferable balance. |
 | `open_line(account, limit, beneficiary)` | admin | Requires the account's controller to be this pool. |
 | `health(account)` | anyone | Value, debt, balances, price, `liquidatable`. |

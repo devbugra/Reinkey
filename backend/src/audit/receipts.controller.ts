@@ -3,6 +3,7 @@ import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 import { ReinkeyError } from '../common/errors';
 import { ReceiptsService } from './receipts.service';
+import { intParam } from '../common/params';
 
 const AttestBody = z.object({ responseHash: z.string().regex(/^[0-9a-f]{64}$/) });
 
@@ -22,7 +23,7 @@ export class ReceiptsController {
     @Query('channelId') channelId?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.receipts.list({ payee, channelId, limit: limit ? Number(limit) : undefined });
+    return this.receipts.list({ payee, channelId, limit: intParam(limit, 50, 1, 200, 'limit') });
   }
 
   @Get(':id')

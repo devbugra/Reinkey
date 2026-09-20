@@ -1,0 +1,97 @@
+import { routes, external } from "@/content/site";
+import { docsMeta } from "@/content/docs";
+
+export const metadata = docsMeta(
+  "/docs/testnet",
+  "Testnet setup",
+  "Fund a relayer with friendbot, get the contract ids from /demo/info, and understand which USDC the hosted testnet facilitator actually uses.",
+);
+
+# Testnet setup
+
+Everything Reinkey runs on today is **Stellar testnet**. Testnet is reset periodically by SDF; treat every balance and every contract id here as disposable.
+
+## Contract ids come from the facilitator
+
+Never hard-code them. One request returns everything a client needs:
+
+```bash
+curl -s "$REINKEY_API/demo/info"
+```
+
+```json
+{
+  "network": "stellar:testnet",
+  "networkPassphrase": "Test SDF Network ; September 2015",
+  "rpcUrl": "https://soroban-testnet.stellar.org",
+  "channelContract": "C…", "usdc": "C…", "xlm": "C…",
+  "dexRouter": "C…", "dexFactory": "C…", "dexPair": "C…",
+  "accountWasm": "717675c3…", "seller": "G…",
+  "prices": { "bookPerRequest": "5000", "tickerPerSecond": "1000", "chatPerToken": "200" }
+}
+```
+
+The hosted facilitator is <code>{routes.api}</code>. `accountWasm` is the hash of the deployed `reinkey-account` code — it is what the [console](/docs/console) deploys when you create an account, so your account runs the same bytecode as everything else here.
+
+## 1. Fund a relayer with friendbot
+
+The agent key is never the transaction source. A **relayer** — an ordinary `G…` account you fund — submits the agent's transactions and pays their fees; the agent only signs the authorization entry. That is why the agent key holds no XLM.
+
+```bash
+# generate a keypair however you like, then:
+curl "https://friendbot.stellar.org?addr=<RELAYER_PUBLIC_KEY>"
+```
+
+Friendbot funds it with test XLM. Pass the secret as `relayer` to `ReinkeyAccount`, or as `RELAYER_SECRET` to [`@reinkey/mcp`](/docs/mcp).
+
+Use a relayer that nothing else shares. Two processes sending from the same account collide on sequence numbers and transactions get dropped — `invokeWithAuth` retries twice, but a dedicated account is simpler.
+
+There is no friendbot on mainnet; there, you fund the relayer yourself.
+
+## 2. Getting test USDC
+
+**Read this before you wonder why a transfer fails.** The USDC the hosted facilitator is configured with is **not Circle's testnet USDC.** It is a custom test asset issued by this project:
+
+| | |
+|---|---|
+| Asset | `USDC:GCVOIYU4VKWHYEDAYDACFPXQ6YBF7GZFSW5YBB3EKJL5AJD55VV2TEQQ` |
+| SAC contract | `CDULCH6T5JMYY4IGOSC3LZYQLYECRMGBDNTNZIG3MA27BJUKVEJ7RDPV` |
+| Decimals | 7 — `5000` is 0.0005 USDC |
+
+Circle's testnet USDC (issuer `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5`) is a different asset; a channel funded with it is rejected with `WRONG_ASSET`. The repository records Circle's SAC id as a reference only. Always take `usdc` from `GET /demo/info`.
+
+The custom issuer exists so the demo can mint to its own accounts without depending on an external faucet. **The flip side: there is no public USDC faucet.** Three ways to get some:
+
+**a. Buy it with XLM on the testnet DEX.** The project deployed a Soroswap `USDC/XLM` pair, and the SDK will do the swap and open the session in one call:
+
+```ts
+const { channelId, swap } = await account.openChannelWith({
+  payee, deposit: 100_000n, voucherSecret, payWith: "XLM",
+});
+```
+
+Your account needs XLM first. Friendbot only funds `G…` accounts, so send XLM from a funded `G…` account to your `C…` account through the native SAC (`xlm` in `/demo/info`), then swap. The `XLM → USDC` pair must be in the account's policy — tick **allow exchange trades** when you create it.
+
+**b. Run your own stack.** `./scripts/deploy-testnet.sh` in the repository creates the issuer, deploys the contracts and the DEX, mints test USDC and writes every id to `deployments/testnet.json`. Point `REINKEY_API` at your own `backend/` and you control the faucet.
+
+**c. Ask.** Open an issue on <a href={external.repo}>the repository</a> with your account address.
+
+## 3. Check that it worked
+
+```bash
+curl -s "$REINKEY_API/accounts/<YOUR_ACCOUNT_C_ADDRESS>"
+```
+
+You get the policy, `spentToday`, `frozen`, the USDC and XLM balances, and any open channels. The same view, with a chart, is the **Reins** page in the <a href={routes.panel}>console</a>.
+
+If the address isn't found, the account wasn't deployed (or you're pointing at the wrong network). If the balance is zero, the transfer used the wrong asset — see above.
+
+## Explorer
+
+Every transaction hash in the ledger and in the console links to `https://stellar.expert/explorer/testnet/tx/<hash>`. A rejection is a real failed transaction there, with the contract error number that maps to a [reason code](/docs/reason-codes).
+
+## Next
+
+- [Reins quickstart](/docs/reins/quickstart) — create an account, open a session, pay.
+- [Meter quickstart](/docs/meter/quickstart) — charge for your own endpoint.
+- [Limits](/docs/limits) — the facilitator's rate limits and settlement thresholds.

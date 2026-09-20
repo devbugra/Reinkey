@@ -4,7 +4,7 @@
 
 An agent gets a key that can only spend what an on-chain policy allows (per-transaction cap, daily cap, allowed payees and contexts, expiry, owner freeze). The limits are enforced by the Reinkey Account contract, not by the SDK, so a compromised agent cannot exceed them. The seller-side counterpart is [Reinkey Meter](../meter/README.md) (`@reinkey/meter`).
 
-> **Status: pre-release.** Stellar **testnet only**. The smart contracts are **unaudited**. The package is **not yet published to npm**; the install line below is what it will be.
+> **Status: pre-release.** Stellar **testnet only**. The smart contracts are **unaudited**. The package is **not yet published to npm**; the install line below is what it will be. Until then, build it from the monorepo ([github.com/devbugra/Reinkey](https://github.com/devbugra/Reinkey)): `pnpm install` at the root, then `pnpm build && pnpm pack` in `packages/sdk` — or import `@reinkey/sdk` straight from the workspace.
 
 ## Pay with any asset
 

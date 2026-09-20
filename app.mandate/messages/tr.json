@@ -2,6 +2,7 @@
   "common": {
     "loading": "Yükleniyor…",
     "refresh": "Yenile",
+    "retry": "Yeniden dene",
     "close": "Kapat",
     "show": "Göster",
     "older": "Daha eski kayıtlar",
@@ -30,17 +31,20 @@
   "shell": {
     "siteLabel": "Reinkey tanıtım sitesi",
     "badge": "Console",
-    "footer": "Veri kaynağı {api} · işlem bağlantıları stellar.expert'e gider · Stellar testnet, emanetsiz."
+    "footer": "Veri kaynağı {api} · işlem bağlantıları stellar.expert'e gider · {network}, emanetsiz."
   },
   "status": {
     "live": "Canlı",
     "connecting": "Bağlanıyor…",
     "offline": "Backend'e ulaşılamıyor",
-    "network": "Stellar testnet · emanetsiz"
+    "network": "{network} · emanetsiz",
+    "testnet": "Stellar testnet",
+    "mainnet": "Stellar ana ağı"
   },
   "offline": {
     "title": "Backend'e ulaşılamıyor: {api}",
-    "body": "Konsol veriyi backend'den okur. Başlatmak için:"
+    "body": "Konsol veriyi backend'den okur. Başlatmak için:",
+    "bodyRemote": "Yeniden bağlanılıyor. Servis uykuda olabilir; uyanması yarım dakikayı bulabilir."
   },
   "onboarding": {
     "eyebrow": "Reinkey Console",
@@ -56,7 +60,7 @@
       "title": "Bir ajan çalıştırıyorum",
       "body": "Ajanın zincirde yazılı politikası: tavanlar, izinli alıcılar, izinli çiftler. Her red sebebiyle görünür.",
       "placeholder": "Reinkey hesabı: C…",
-      "hint": "Ajanın harcama yetkisini tutan hesap kontratı. Henüz yoksa aşağıdaki betikle kurulur."
+      "hint": "Ajanın harcama yetkisini tutan hesap kontratı. Henüz yoksa Reins ekranındaki \"Kendi ajan hesabını kur\" kartından tek işlemle kurabilirsiniz."
     },
     "float": {
       "title": "Sermaye sağlıyorum",
@@ -79,7 +83,7 @@
   },
   "workspace": {
     "example": "Örnek hesap",
-    "exampleSub": "Stellar testnet · salt okunur",
+    "exampleSub": "Stellar testnet · paylaşılan kum havuzu",
     "unsavedSub": "{role} · kaydedilmedi",
     "save": "Bu adresi kaydet",
     "add": "Adres ekle",
@@ -117,6 +121,7 @@
   "summary": {
     "thisRun": "Bu turda",
     "soFar": "Şu ana kadar",
+    "networkWide": "sayaçlar ağ geneli",
     "showAll": "tümünü göster",
     "payments": "ödeme",
     "chainTxs": "zincir işlemi",
@@ -311,6 +316,7 @@
     "signer": "imzalayan {address}",
     "signerTitle": "Makbuzları imzalayan anahtar; zincirde claim'i gönderen anahtarla aynı",
     "loading": "Makbuzlar okunuyor…",
+    "failed": "Makbuzlar okunamadı. Backend çalışıyor mu?",
     "empty": "Bu adrese henüz ödeme yapılmadı.",
     "idTitle": "Makbuz kimliği (gövdenin sha256'sı)",
     "requestTitle": "İstek özeti: ne istendi",
@@ -329,6 +335,7 @@
   "revenue": {
     "title": "Gelir raporu",
     "loading": "Rapor defterden hesaplanıyor…",
+    "failed": "Rapor okunamadı. Backend çalışıyor mu?",
     "noSeller": "Satıcı adresi okunuyor…",
     "hint": "Son {days} gün · denetim defterinden · {payments} ödeme, {buyers} alıcı",
     "rangeAria": "Zaman aralığı",
@@ -375,6 +382,7 @@
     "channelsTitle": "Kanallar",
     "channelsHint": "Size ödeme yapan her alıcının kanalı · mor: tahsil edildi · mavi: tahsilat bekliyor",
     "channelsEmpty": "Bu adrese ödeme yapan kanal yok.",
+    "loadingChannels": "Kanallar okunuyor…",
     "reading": "Satıcı adresi okunuyor…",
     "colChannel": "Kanal",
     "colBuyer": "Alıcı",
@@ -434,6 +442,7 @@
     "payees": "İzinli alıcılar",
     "pairs": "İzinli işlem çiftleri",
     "reading": "Hesap zincirden okunuyor…",
+    "readFailed": "Hesap okunamadı. Backend'e ulaşılamıyor olabilir; birkaç saniyede bir yeniden denenir.",
     "channels": "Hesabın kanalları",
     "channelsHint": "Her kanal, hesabın bir satıcıya ayırdığı en fazla tutardır",
     "channelsEmpty": "Bu hesabın bilinen kanalı yok.",
@@ -443,7 +452,7 @@
     "noAccountHint": "Adres zincirde okunamadı ya da bir hesap kontratı değil",
     "noAccountBody": "Reinkey hesabı, ajanın harcama yetkisini tutan bir Soroban kontratıdır: tavanlar, izinli alıcılar ve izinli işlem çiftleri onun içinde yazılıdır. Girdiğiniz adres ({address}) böyle bir hesaba ait değil.",
     "howTo": "Hesap nasıl kurulur",
-    "howToNote": "Betik kontratları deploy eder, hesabı testnet USDC ile fonlar ve kimlikleri deployments/testnet.json dosyasına yazar. Konsoldan tek tıkla kurulum yol haritasında.",
+    "howToNote": "Hesabı hemen yukarıdaki \"Kendi ajan hesabını kur\" kartından kurabilirsiniz: cüzdanınız sahip olur, sınırları siz yazarsınız, ajan anahtarı tarayıcınızda üretilir. Tek zincir işlemi; betik çalıştırmak gerekmez.",
     "more": "Ayrıntı:",
     "quickstart": "Reins hızlı başlangıç",
     "policyDocs": "Politika ve redler"
@@ -509,12 +518,14 @@
     "tooMuchWithdraw": "Bu kadar payınız yok.",
     "shortLiquidity": "Havuzda o kadar boşta USDC yok; çekim zincirde reddedilir.",
     "done": "İşlem zincirde kesinleşti.",
+    "unconfirmed": "Gönderildi, henüz kesinleştiği görülmedi — işlemi explorer'dan kontrol edin.",
     "signing": "Cüzdanda imzalayın…",
     "note": "İşlem cüzdanınızda imzalanır ve doğrudan Stellar testnet'e gider. Testnet: gerçek para yatırmayın."
   },
   "errors": {
     "backend": "Backend'e ulaşılamadı",
     "nothingToClaim": "Tahsil edilecek kupon yok",
+    "contractRejected": "Kontrat işlemi reddetti (hata #{code})",
     "liquidity": "Havuzda boşta duran USDC yetersiz",
     "trustline": "USDC trustline yok: cüzdanınızda USDC varlığı tanımlı değil",
     "balance": "Bakiye yetersiz",
@@ -530,6 +541,7 @@
     "DAILY_CAP_EXCEEDED": "Günlük tavan aşıldı",
     "PAIR_NOT_ALLOWED": "Bu işlem çiftine izin yok",
     "SLIPPAGE_UNBOUNDED": "Kayma koruması olmayan işlem",
+    "CONTROLLER_MISMATCH": "Hesabın yönetimi başka bir kontrata devredilmiş",
     "CHANNEL_NOT_FOUND": "Kanal bulunamadı",
     "CHANNEL_CLOSED": "Kanal kapalı",
     "VOUCHER_BAD_SIGNATURE": "Kupon imzası geçersiz",
@@ -598,6 +610,8 @@
     "reserves": "{usdc} USDC / {xlm} XLM · ledger {ledger}",
     "verdictTitle": "Zincir bu işlemi kabul eder mi?",
     "verdictHint": "Hesabın kendi kurallarıyla, zincire gitmeden ve ücret ödemeden",
+    "evaluatedTitle": "Karar bu hesabın zincirdeki politikasına göre veriliyor",
+    "exampleBadge": "örnek",
     "allowed": "Kabul eder",
     "allowedBody": "Politikanın içinde: çift izinli, kayma koruması var, tavanlara sığıyor.",
     "rejected": "Reddeder",
@@ -616,6 +630,7 @@
     "youOwn": "sahibi sizsiniz",
     "delegated": "Bu hesabın yönetimi {controller} kontratına devredilmiş (kredi hattı). Sınırları artık sahip değil, o kontrat değiştirebilir; hat kapanana kadar buradan düzenlenemez.",
     "ownerOnly": "Bu hesabın sınırlarını yalnızca sahibi değiştirebilir: {owner}. Sahip cüzdanını bağladığınızda düzenleme burada açılır.",
+    "exampleOwner": "Örnek hesabın sahibi Reinkey'dir; sınırlarını buradan değiştiremezsiniz. Aşağıdaki karttan kendi hesabınızı kurduğunuzda bu bölüm sizin için açılır.",
     "ownerUnknown": "Hesabın sahibi okunamadı; sınırlar yalnızca sahip anahtarıyla değiştirilebilir.",
     "wrongWallet": "Bağlı cüzdan ({address}) bu hesabın sahibi değil.",
     "connectOwner": "Sahip cüzdanını bağla",
@@ -625,8 +640,12 @@
     "capOrder": "Tek işlem tavanı günlük tavandan büyük olamaz.",
     "payees": "İzinli alıcılar",
     "payeesHint": "Her satıra bir adres (G… ya da C…). Ajan yalnızca bu adreslere ödeme yapabilir.",
+    "payeesPlaceholder": "G… ya da C… · her satıra bir adres",
+    "useExampleSeller": "örnek satıcıyı ekle",
     "badAddress": "Geçersiz adres: {address}",
     "needPayee": "En az bir alıcı gerekli; yoksa ajan hiçbir yere ödeme yapamaz.",
+    "badDays": "Gün sayısı 3650'yi aşmayan bir tam sayı olmalı.",
+    "unconfirmed": "Gönderildi, henüz kesinleştiği görülmedi — işlemi explorer'dan kontrol edin.",
     "extend": "Süreyi uzat (gün)",
     "extendHint": "Şu anki bitiş: ledger {ledger}. Boş bırakırsanız değişmez.",
     "dex": "Borsada işlem izni",

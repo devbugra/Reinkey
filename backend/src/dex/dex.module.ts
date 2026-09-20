@@ -2,6 +2,7 @@ import { Controller, Get, Module, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ReinkeyError } from '../common/errors';
 import { DexService, type Side } from './dex.service';
+import { addressParam, amountParam, intParam } from '../common/params';
 
 const SIDES: Side[] = ['USDC_XLM', 'XLM_USDC'];
 
@@ -30,14 +31,14 @@ export class DexController {
     @Query('account') account?: string,
     @Query('slippageBps') slippageBps?: string,
   ) {
-    if (!amountIn || !/^\d+$/.test(amountIn))
-      throw new ReinkeyError('BAD_REQUEST', 'amountIn taban birim tamsayı olmalı');
     const s = (side ?? 'USDC_XLM') as Side;
     if (!SIDES.includes(s)) throw new ReinkeyError('BAD_REQUEST', 'side: USDC_XLM | XLM_USDC');
-    const bps = slippageBps ? BigInt(slippageBps) : undefined;
-    if (bps !== undefined && (bps < 0n || bps > 5000n))
-      throw new ReinkeyError('BAD_REQUEST', 'slippageBps 0–5000 arası olmalı');
-    return this.dex.quote({ side: s, amountIn: BigInt(amountIn), slippageBps: bps, account: account || undefined });
+    return this.dex.quote({
+      side: s,
+      amountIn: amountParam(amountIn, 'amountIn'),
+      slippageBps: BigInt(intParam(slippageBps, 100, 0, 5000, 'slippageBps')),
+      account: account ? addressParam(account, 'contract', 'account') : undefined,
+    });
   }
 }
 

@@ -31,8 +31,8 @@ step(`exact: ${N} ödeme = ${N} zincir işlemi`);
 const e0 = performance.now();
 for (let i = 1; i <= N; i++) {
   const t0 = performance.now();
-  const r = await account.transfer(req.payTo, req.amount);
-  good(`ödeme ${i}/${N} · ${((performance.now() - t0) / 1000).toFixed(1)} sn · ${tx(r.tx)}`);
+  const hash = await account.transfer(req.payTo, req.amount);
+  good(`ödeme ${i}/${N} · ${((performance.now() - t0) / 1000).toFixed(1)} sn · ${tx(hash)}`);
 }
 const exactMs = performance.now() - e0;
 

@@ -1,0 +1,84 @@
+import { routes } from "@/content/site";
+import { docsMeta } from "@/content/docs";
+
+export const metadata = docsMeta(
+  "/docs/limits",
+  "Limits",
+  "Rate limits, stream session limits, settlement thresholds and page sizes on the hosted Reinkey facilitator, with the defaults a self-hosted one uses.",
+);
+
+# Limits
+
+These are the numbers a facilitator enforces. They are configuration, not protocol: if you run your own (`backend/` in the repository) you set your own. The values below are the defaults in `backend/src/config/config.ts` and the constants compiled into the controllers; where the hosted testnet facilitator at <code>{routes.api}</code> differs, both are given.
+
+A rejection for any of these is `RATE_LIMITED` (HTTP 429, with `Retry-After`), except where noted. See [Reason codes](/docs/reason-codes).
+
+## Rate limits
+
+| | Limit | |
+|---|---|---|
+| Per IP, general | **3000 / minute** | Fixed 60-second window. The payment path counts against it, so it is deliberately loose. `GET /events` and `GET /health` are exempt. |
+| Per IP, costly | **30 / minute** | Endpoints that make the server pay a chain fee or write an unverified record: `POST /channels/:id/claim`, `POST /receipts/:id/attest`, `POST /v1/report`, `POST /demo/agent/run`, `POST /demo/owner/freeze`. |
+| Per channel, vouchers | **1200 / minute** | Counted per channel, in a one-minute window, **after** the signature verifies — a forged voucher can't burn someone else's budget. |
+| Open SSE connections, per IP | **8** | `GET /events`. A ninth connection is refused with `RATE_LIMITED`. |
+| Open SSE connections, total | **200** | Across all clients. |
+
+Set `IP_RATE_LIMIT_PER_MINUTE=0` to turn the IP limiter off entirely when self-hosting.
+
+## Stream sessions
+
+Used by `@reinkey/meter`'s `rk.stream()` and the `/streams` endpoints.
+
+| | Limit |
+|---|---|
+| Open sessions per channel | **4** |
+| Open sessions, total | **1000** |
+| Idle timeout | **90 seconds** without a `/wait` or a voucher → the session ends with `ABORTED` |
+| `POST /streams/:id/wait` long poll | default **10 s**, minimum **1 s**, maximum **30 s** (`timeoutMs`) |
+| Voucher timeout in `rk.stream()` | default **10 s** (`voucherTimeoutMs`), then the stream ends with `TIMEOUT` |
+
+A `/wait` on a channel whose remaining deposit can't cover the next slice returns `exhausted` immediately rather than waiting.
+
+## Settlement
+
+The facilitator claims on the seller's behalf; these decide when.
+
+| | Default | Hosted facilitator |
+|---|---|---|
+| Claim threshold (unclaimed amount that triggers a claim) | `1000000` base units (0.1 USDC) | `250000` (0.025 USDC) |
+| Claim scheduler interval | 30 s | 30 s |
+| Expiry margin — always claim this many ledgers before a channel expires | 120 ledgers (≈10 min) | same |
+| Voucher safety margin — a voucher is refused this close to expiry, with `CHANNEL_EXPIRING` | 60 ledgers (≈5 min) | same |
+| Manual claim (`POST /channels/:id/claim`) minimum | `1000` base units | same |
+| Manual claim cooldown, per channel | 30 s | same |
+
+## Page sizes
+
+| Endpoint | Default | Maximum |
+|---|---|---|
+| `GET /accounts/:addr/ledger` | 50 | 200 |
+| `GET /receipts` | 50 | 200 |
+| `GET /float?history=` | 200 samples | 500 |
+| `GET /sellers/:payTo/revenue?days=` | 30 days | 365 |
+| `GET /events` backlog before the live stream | last 200 events | — |
+
+`GET /channels` returns every known channel, newest first, and is not paginated.
+
+## Demo seller prices
+
+The facilitator hosts a metered seller so you can try the flow without writing one. Prices are in USDC base units (7 decimals).
+
+| Resource | Price | Slice |
+|---|---|---|
+| `GET /demo/book` | `5000` per request (0.0005 USDC) | — |
+| `GET /demo/ticker/stream` | `1000` per second (0.0001 USDC) | 1 second on the hosted facilitator (default 10) |
+| `POST /demo/chat` | `200` per token (0.00002 USDC) | 50 tokens |
+
+The live values are in `GET /demo/info` and `GET /llms.txt`; read them rather than hard-coding these.
+
+## Protocol limits that are not configuration
+
+- **Amounts are `i128` base units.** USDC on Stellar has 7 decimals. Use `bigint`; never floats.
+- **A channel's deposit is the buyer's maximum loss**, and one slice is the seller's.
+- **One contract call per transaction** on Soroban. That is why `openChannelWith` (swap, then open) is two transactions.
+- **A voucher's cumulative amount only increases** and may never exceed the deposit.

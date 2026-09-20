@@ -29,10 +29,13 @@ export function Hero({
   totals,
   dataSeconds,
   onShowAll,
+  networkWide = false,
 }: {
   totals: Totals | null;
   dataSeconds: number;
   onShowAll: () => void;
+  /** Bir adres seçiliyken sayaçlar yine ağ genelidir; bunu söylemeden göstermek yanıltır. */
+  networkWide?: boolean;
 }) {
   const t = useTranslations("summary");
   const payments = useAnimatedNumber(totals?.payments ?? 0);
@@ -46,6 +49,7 @@ export function Hero({
       <div>
         <p className="flex flex-wrap items-center gap-x-3 text-xs font-medium uppercase tracking-[0.14em] text-fg-subtle">
           {totals?.scoped ? t("thisRun") : t("soFar")}
+          {networkWide && <span className="normal-case tracking-normal text-fg-subtle">· {t("networkWide")}</span>}
           {totals?.scoped && (
             <button
               type="button"

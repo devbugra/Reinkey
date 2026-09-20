@@ -1,0 +1,96 @@
+import { routes } from "@/content/site";
+import { docsMeta } from "@/content/docs";
+
+export const metadata = docsMeta(
+  "/docs/console",
+  "Console guide",
+  "Create an agent account with your own wallet, edit its limits, freeze it, watch a seller's revenue and verify a receipt in the browser.",
+);
+
+# Console guide
+
+The console is at <a href={routes.panel}>{routes.panel.replace(/^https?:\/\//, "")}</a>. It is a read-and-sign surface: everything it shows comes from the facilitator's public HTTP API, and everything it writes is signed by **your** wallet and sent straight to Stellar. It holds no keys and has no accounts to sign up for.
+
+Connect a wallet through [Stellar Wallets Kit](https://github.com/Creit-Tech/Stellar-Wallets-Kit): Freighter, xBull, Albedo, Lobstr, Rabet or Hana.
+
+> Owner actions (`set_policy`, `freeze`, `unfreeze`) ask your wallet to sign an **auth entry**, not just a transaction. Not every wallet implements `signAuthEntry`; Freighter does. If the second prompt never appears, try Freighter.
+
+## Views
+
+| View | |
+|---|---|
+| **Live feed** | Every event the facilitator publishes, streaming over SSE: channels opened, vouchers accepted and rejected, claims, streams, swaps, freezes. |
+| **Meter** | The seller's side: revenue, channels and receipts for one `payTo` address. |
+| **Reins** | One agent account: policy, today's spend, balances, open channels — and account creation. |
+| **Float** | The credit pool: size, share price, utilization, credit lines with health, and your position. |
+| **Exchange** | A USDC/XLM quote with the policy verdict beside it. |
+
+Each view is a shareable URL: `?view=meter&seller=G…`, `?view=reins&account=C…`, `?view=float`.
+
+## Create an agent account
+
+**Reins → Create your own agent account.** One transaction; you sign it with the connected wallet.
+
+What happens:
+
+1. The console generates an **agent keypair in your browser** (`Keypair.random()`). The secret never leaves the page and is never sent to any server.
+2. It reads the deployed account code hash from the facilitator (`GET /demo/info` → `accountWasm`) and deploys a new instance of that same contract with `createCustomContract`, passing **your wallet address as the owner** and the policy you filled in as the constructor argument.
+3. Your wallet signs one transaction. The console polls for up to 60 seconds for confirmation.
+4. You get the account address (`C…`) and the agent secret, **shown once**. Copy the secret now; refreshing the page loses it.
+
+The form sets:
+
+| Field | Default | |
+|---|---|---|
+| Per-transaction cap | `1` USDC | Must be greater than 0 and not above the daily cap. |
+| Daily cap | `5` USDC | Counted per ledger-derived day, in the contract. |
+| Valid for | `30` days | Converted to `expires_ledger` (latest ledger + days × 17280). |
+| Allowed payees | — | One or more `G…` / `C…` addresses, one per line. At least one is required. |
+| Allow exchange trades | off | Only selectable when the facilitator has a DEX router and factory configured. |
+
+Everything else is filled in for you and is not editable here: `asset` (USDC), `channel` (the channel contract), `agent_key` (the key just generated), `dex_router` / `dex_factory`, and the allowed pairs (`USDC↔XLM`) when trades are on. See [Policy & rejections](/docs/reins/policy) for what each field means on-chain.
+
+Your wallet must be a `G…` ed25519 account: the owner is stored as raw ed25519 bytes.
+
+## Edit limits, freeze, unfreeze
+
+**Reins → the policy editor**, visible only when the connected wallet is the account's `owner`. Two wallet prompts per write: one `Sig::Owner` authorization of the contract call, one for the transaction fee.
+
+| Action | Contract call | |
+|---|---|---|
+| Save limits | `set_policy(policy)` | Per-transaction cap, daily cap, payees, extra validity in days, exchange permission. The agent key, asset and channel are carried over unchanged. |
+| Freeze / Unfreeze | `freeze()` / `unfreeze()` | While frozen, every agent authorization fails with `ACCOUNT_FROZEN`, and the facilitator stops accepting vouchers from the account's channels. |
+
+If the account has a **controller** (it was handed to Float), the editor is replaced by a notice: the owner signature no longer authorizes anything until the credit line closes. That is `CONTROLLER_LOCKED`, and it is the property Float is built on.
+
+`recall` and `set_controller` are **not** in the console today. They are contract calls; use the SDK or the Stellar CLI.
+
+## Watch a seller
+
+**Meter**, with your payout address. Before your first channel it shows the three-step integration guide instead of empty charts; after that:
+
+- claimed, pending, open channels and claim count;
+- earned / settled / receivable, a per-hour or per-day chart of earned against settled, a breakdown by resource and a receivables aging list (`GET /sellers/:payTo/revenue`);
+- a CSV of every on-chain settlement (`GET /sellers/:payTo/settlements.csv`);
+- a **Claim** button per channel with a pending balance. It calls `POST /channels/:id/claim`, which is permissionless and can only pay that channel's payee — so the facilitator submits it and you sign nothing.
+
+## Verify a receipt
+
+**Meter → Receipts**, or any receipt link. Every accepted payment produces a receipt signed by the facilitator's key, committing to the request hash and — once the seller attests it — the response hash.
+
+Press **verify** and the check runs **in your browser**: the console rebuilds the canonical string (`reinkey-receipt/1` plus the receipt's fields), decodes the signer's public key and calls WebCrypto's Ed25519 `verify`. Nothing is asked of the server.
+
+If your browser has no Ed25519 in WebCrypto, it falls back to `GET /receipts/:id/verify` and labels the result differently, so you always know whose word you are taking. The raw receipt is one link away at <code>{routes.api}/receipts/:id</code>, and the signer's public key is in the panel header — you can verify it offline, with any ed25519 library.
+
+## Float
+
+**Float** shows the pool and, when you connect a wallet, your own position.
+
+- **Deposit** and **Withdraw** are real, wallet-signed contract calls (`deposit(from, amount)` and `withdraw(from, shares)` — the console converts the USDC amount you type into shares at the current share price). A withdrawal larger than the pool's idle USDC is flagged before you sign.
+- Credit lines are **display only**: address, health against the liquidation threshold, debt, value, holdings, beneficiary. `open_line`, `close_line` and `liquidate` are not in the console.
+
+## Exchange
+
+A quote, not a trade. Pick a side and an amount and the console calls `GET /dex/quote`: output, `minOut`, execution price, pool price, the conservative price the credit pool uses, and price impact. Beside it sits the **policy verdict** — the same checks `__check_auth` would run — with the reason code and the caps breakdown if the answer is no. Below, a read-only preview of the router call that would be signed.
+
+There is no swap button in the console. Trades are made by the agent, through `@reinkey/sdk` or [`@reinkey/mcp`](/docs/mcp).

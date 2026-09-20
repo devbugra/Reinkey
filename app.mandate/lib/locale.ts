@@ -39,8 +39,9 @@ function detect(): Locale {
   } catch {
     /* depolama kapalı: seçim yalnızca bu sekmede yaşar */
   }
+  // Yalnızca Türkçe konuşan tarayıcı Türkçe açılır; geri kalan herkes için ortak dil İngilizce.
   const nav = typeof navigator === "undefined" ? "" : navigator.language.toLowerCase();
-  return LOCALES.find((l) => nav.startsWith(l)) ?? "en";
+  return nav.startsWith("tr") ? "tr" : "en";
 }
 
 function snapshot(): Locale {

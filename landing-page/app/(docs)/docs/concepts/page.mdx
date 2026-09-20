@@ -1,4 +1,11 @@
-export const metadata = { title: "How it works" };
+import { external } from "@/content/site";
+import { docsMeta } from "@/content/docs";
+
+export const metadata = docsMeta(
+  "/docs/concepts",
+  "How it works",
+  "Why one transaction per payment doesn't work on Stellar, what the channel scheme does instead, and how an agent's budget is enforced on-chain.",
+);
 
 # How it works
 
@@ -15,7 +22,9 @@ Reinkey adds a second x402 scheme, `channel`:
 3. **Claim.** The seller (or anyone, on the seller's behalf) submits the latest voucher to the contract. The contract pays the seller the difference since the last claim. One transaction, however many payments it covers.
 4. **Close.** After expiry the buyer closes the channel and the unused deposit is refunded.
 
-A thousand payments cost two or three transactions.
+A thousand payments cost two or three transactions. Measured on testnet: 468 payments settled in 3 chain transactions.
+
+The wire format — payment requirements, the payload, the exact voucher bytes and every verification rule — is written down as an open specification, so a second implementation can interoperate without reading this code: <a href={`${external.repo}/blob/main/docs/spec/scheme_channel_stellar.md`}>x402 scheme `channel` on Stellar</a>.
 
 ### Why the facilitator can't steal
 
@@ -40,8 +49,10 @@ An agent shouldn't hold an unrestricted wallet. A **Reinkey account** is a Sorob
 - a per-transaction cap and a daily cap,
 - an allow-list of payees,
 - the one channel contract it may open channels on,
-- optionally a DEX router and the asset pairs it may trade,
+- optionally a DEX router and factory plus the asset pairs it may trade — and a trade without a minimum output is always rejected,
 - an expiry ledger.
+
+You create one from the [console](/docs/console) with your own wallet as owner; the agent key is generated in your browser and shown once.
 
 The agent signs with its own key, but the network rejects anything outside the policy, with a transaction hash and a [reason code](/docs/reason-codes). The owner can `freeze` the account or `recall` its funds in a single transaction.
 

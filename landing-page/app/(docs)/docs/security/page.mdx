@@ -1,0 +1,90 @@
+import { external } from "@/content/site";
+import { docsMeta } from "@/content/docs";
+
+export const metadata = docsMeta(
+  "/docs/security",
+  "Security model",
+  "Who can move money, what a stolen agent key can and cannot do, what the facilitator can and cannot do, and what has not been audited.",
+);
+
+# Security model
+
+Read this before you point anything at it that matters. Short version: **testnet, unaudited.** Don't send mainnet funds.
+
+## Nobody here holds your money
+
+There is no custody anywhere in this system.
+
+- A **session deposit** sits in the `channel` contract, locked to one payer, one payee and one asset. Nothing can move it except the contract's own rules.
+- An **agent's balance** sits in its own Soroban account contract, which only the account's policy and its owner can move.
+- **Float deposits** sit in the `credit-pool` contract.
+- The **facilitator holds no keys to any of it.** It has one key, and that key signs receipts and submits `claim` transactions — both of which can only pay the channel's payee.
+
+## Who may call what
+
+| Call | Who | Where the money can go |
+|---|---|---|
+| `claim(id, cumulative, sig)` | **anyone** | Only to that channel's `payee`, and only up to a cumulative amount the payer signed. |
+| `close(id, caller)` | the payee at any time; the payer after `expiry_ledger + 120 ledgers` | Claimed part to the payee, remainder back to the payer. |
+| `top_up(id, amount)` | the payer (`require_auth`) | Into the channel. |
+| `open(...)` | the payer (`require_auth`) | Into the channel, naming the payee up front. |
+
+`claim` being permissionless is the point, not an oversight. It is what makes the facilitator **replaceable**: it needs no authorization from you to pay you, and if it disappears the seller claims the last voucher it holds, from any machine. A hostile facilitator can refuse service. It cannot redirect a cent.
+
+## What a stolen agent key can do
+
+The agent key is the one you put in an `.env` file or an MCP config. Assume it will leak.
+
+**It can**, within the account's policy:
+
+- pay the addresses in `payees`, up to `per_tx_cap` per authorization and `daily_cap` per day;
+- open payment channels on the one `channel` contract named in the policy, to those same payees;
+- swap the allowed `pairs` on the allowed `dex_router`, and only with a non-zero `amount_out_min`.
+
+**It cannot**, at all:
+
+- send funds to any other address — `PAYEE_NOT_ALLOWED`;
+- exceed the caps — `PER_TX_CAP_EXCEEDED`, `DAILY_CAP_EXCEEDED`;
+- trade a pair you didn't allow, or trade without slippage protection — `PAIR_NOT_ALLOWED`, `SLIPPAGE_UNBOUNDED`;
+- raise its own limits, change the payee list, unfreeze the account, or recall funds — those need the **owner** signature;
+- keep working after the policy's `expires_ledger` — `POLICY_EXPIRED`;
+- keep working after you freeze the account — `ACCOUNT_FROZEN`.
+
+Every one of those is a rejection from Stellar with a transaction hash, not a screen that said no. Most surface during simulation, so a well-behaved agent doesn't even pay a fee to be told no.
+
+**The worst case is real, though:** a leaked agent key can spend the daily cap, every day, to an allowed payee, until you freeze the account. Size the caps for that, and freeze from the [console](/docs/console) the moment you suspect anything.
+
+A **voucher key** is weaker still: it is per channel, and a voucher it signs can only ever pay that one channel's payee.
+
+## What the facilitator can do
+
+| It can | It cannot |
+|---|---|
+| Refuse to verify a voucher, so your call fails | Move funds anywhere but the channel's payee |
+| Delay or skip a `claim`, leaving revenue unsettled until expiry | Change a policy, a cap or a payee list |
+| See the resources you buy, the amounts and the addresses | Sign as your agent, your owner or your voucher key |
+| Publish an event that didn't happen in the audit feed | Forge a receipt (they're signed; verify offline) or fake a chain event you can't check |
+
+**The seller's real exposure** is timing: between a voucher being accepted and the `claim` landing, your revenue exists as a voucher in the facilitator's store. You are trusting it to keep that voucher and to claim before the channel expires. If you'd rather not, claim yourself — `POST /channels/:id/claim` is open to anyone, or call the contract directly.
+
+`POST /verify` is **unauthenticated** and rate-limited per channel, not per seller. There is no seller authentication on the facilitator today.
+
+## Receipts
+
+Every accepted payment produces a receipt signed by the facilitator's key, committing to the request hash and — when the seller attests it — the response hash. Verification needs the signer's public key and nothing else: it runs in the browser, or offline with any ed25519 library. `GET /receipts/:id/verify` exists for convenience; you never have to take the server's word.
+
+## What has **not** been audited
+
+Everything. Specifically:
+
+- The three Soroban contracts (`channel`, `reinkey-account`, `credit-pool`) have had **no third-party security audit**. They have unit tests (7, 18 and 9) and are exercised end-to-end on testnet; that is not the same thing.
+- The packages are pre-1.0 and interfaces may change.
+- **Float is testnet-only and admin-gated.** There is no permissionless borrowing: only the pool admin opens a credit line. Its pricing is the lower of the Reflector oracle and the Soroswap pool, which on a thin testnet pool is manipulable — a single large trade can move the price and trigger a liquidation that is unfair to the borrower. Mainnet would need the oracle plus a TWAP. Don't treat the current parameters as a design.
+- The `exact` scheme's client path exists but is **not enabled** on the hosted facilitator, so it is untested.
+- The hosted testnet facilitator runs as a single instance: channel cache, stream sessions and rate-limit counters are in memory.
+
+The source is public — [github.com/devbugra/Reinkey](https://github.com/devbugra/Reinkey) — and the wire format is written down in the <a href={`${external.repo}/blob/main/docs/spec/scheme_channel_stellar.md`}>open scheme specification</a>. Read them rather than trusting this page.
+
+## If something is wrong
+
+Open an issue on <a href={external.repo}>the repository</a>. There is no bug bounty and no production deployment to protect: this is testnet.

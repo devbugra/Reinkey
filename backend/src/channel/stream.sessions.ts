@@ -95,6 +95,9 @@ export class StreamSessions {
     if (!s) return Promise.resolve({ kind: 'aborted' });
     const early = s.prepaid.shift();
     if (early) return Promise.resolve({ kind: 'paid', receipt: early });
+    // Aynı akış için ikinci bir bekleyen gelirse ilki sonsuza dek asılı kalmasın.
+    clearTimeout(s.timer);
+    s.waiter?.({ kind: 'aborted' });
     return new Promise((resolve) => {
       s.waiter = (o) => {
         clearTimeout(s.timer);

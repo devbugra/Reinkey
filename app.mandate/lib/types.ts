@@ -190,6 +190,8 @@ export type DemoInfo = {
   accountWasm?: string | null;
   /** Backend'de DEMO_CONTROLS açık mı (ajan başlatma, dondurma). */
   demoControls?: boolean;
+  /** Kontroller `x-demo-key` başlığı istiyor mu; anahtar `?key=` ile bir kez verilir. */
+  demoKeyRequired?: boolean;
   prices: { bookPerRequest: string; tickerPerSecond: string; chatPerToken: string };
 };
 

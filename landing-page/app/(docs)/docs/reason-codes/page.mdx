@@ -1,4 +1,10 @@
-export const metadata = { title: "Reason codes" };
+import { docsMeta } from "@/content/docs";
+
+export const metadata = docsMeta(
+  "/docs/reason-codes",
+  "Reason codes",
+  "Every stable rejection code Reinkey can return: the account, channel and credit-pool contract errors, and the off-chain codes with their HTTP statuses.",
+);
 
 # Reason codes
 
@@ -10,23 +16,31 @@ Every rejection carries a stable, upper-case code. Error bodies have one shape:
 
 `source` tells you who said no: `chain` (a contract on Stellar), `facilitator` (voucher verification) or `gateway` (the seller's middleware). `tx` is present when there is a transaction to look at.
 
+**`error` is the contract; `message` is not.** Codes are stable identifiers you may branch on. The `message` next to them is informational, may be reworded at any time, and is currently written in Turkish by the hosted facilitator. Never parse it.
+
+The authoritative list is [`backend/src/common/reason-codes.ts`](https://github.com/devbugra/Reinkey/blob/main/backend/src/common/reason-codes.ts); the contract numbers come from each contract's `Error` enum. A chain error the facilitator doesn't recognise is passed through as `CONTRACT_ERROR_<n>`.
+
 ## From the account contract
 
-Enforced by `reinkey-account` in `__check_auth`.
+Numbers 1–11, enforced by `reinkey-account` in `__check_auth`.
 
 | # | Code | Meaning |
 |---|---|---|
-| 1 | `BAD_SIGNATURE` | The signature doesn't match the agent or owner key. |
+| 1 | `BAD_SIGNATURE` | The signature doesn't match the agent or owner key. Reserved: the host usually stops an invalid ed25519 signature before the contract runs. |
 | 2 | `POLICY_EXPIRED` | The ledger is past `expires_ledger`. |
 | 3 | `ACCOUNT_FROZEN` | The owner froze the account. |
-| 4 | `CONTEXT_NOT_ALLOWED` | The agent tried to call something the policy doesn't cover. |
+| 4 | `CONTEXT_NOT_ALLOWED` | The agent tried to call something the policy doesn't cover — including a swap when no `dex_router` / `dex_factory` is set. |
 | 5 | `PAYEE_NOT_ALLOWED` | The recipient is not in `payees`. |
 | 6 | `PER_TX_CAP_EXCEEDED` | The amount is above `per_tx_cap`. |
 | 7 | `DAILY_CAP_EXCEEDED` | The amount would take today's total above `daily_cap`. |
-| 8 | `PAIR_NOT_ALLOWED` | The swap's asset pair is not in `pairs`. |
-| 9 | `SLIPPAGE_UNBOUNDED` | The swap has no minimum output. |
+| 8 | `PAIR_NOT_ALLOWED` | The swap's asset pair is not in `pairs`, or the route has more than one hop. |
+| 9 | `SLIPPAGE_UNBOUNDED` | The swap has no minimum output (`amount_out_min == 0`). |
+| 10 | `CONTROLLER_LOCKED` | The account was handed to a controller (Float), so the owner signature no longer authorizes anything. |
+| 11 | `CONTROLLER_MISMATCH` | A controller is already set, or the caller is not the controller. |
 
 ## From the channel contract
+
+Numbers 20–27.
 
 | # | Code | Meaning |
 |---|---|---|
@@ -39,22 +53,55 @@ Enforced by `reinkey-account` in `__check_auth`.
 | 26 | `NOT_AUTHORIZED` | The caller may not perform this action. |
 | 27 | `INVALID_ARGUMENT` | A parameter is out of range. |
 
+## From the credit pool contract (Float)
+
+Numbers 40–49. You only meet these if you call `credit-pool` directly — depositing, withdrawing, opening or closing a line, or liquidating.
+
+| # | Code | Meaning |
+|---|---|---|
+| 40 | `INVALID_AMOUNT` | Amount is zero or negative. |
+| 41 | `INSUFFICIENT_SHARES` | The holder does not have that many shares. |
+| 42 | `INSUFFICIENT_LIQUIDITY` | A withdrawal is larger than the pool's idle USDC; lent-out capital can't be pulled back. |
+| 43 | `LINE_EXISTS` | That account already has an open credit line. |
+| 44 | `LINE_NOT_FOUND` | No line for that account. |
+| 45 | `NOT_CONTROLLER` | The account's controller is not this pool, so the pool can't lend to it. |
+| 46 | `NOT_LIQUIDATABLE` | `liquidate` was called while the line is still healthy. |
+| 47 | `PRICE_UNAVAILABLE` | No usable price: the oracle is stale and the pool price is missing. |
+| 48 | `INSUFFICIENT_USDC` | Closing a line needs the debt in USDC in the account; sell XLM first. |
+| 49 | `POOL_NOT_AUTHORIZED` | The caller is neither the admin nor the line's beneficiary. |
+
 ## Off-chain
 
-Returned by the facilitator or the seller's middleware, always with HTTP 402 unless noted.
+Returned by the facilitator or the seller's middleware. The HTTP status is fixed per code.
 
-| Code | Meaning | What the buyer should do |
+| Code | HTTP | Meaning | What the caller should do |
+|---|---|---|---|
+| `PAYMENT_REQUIRED` | 402 | No payment header. | Read `accepts`, pay, retry. |
+| `PAYMENT_MALFORMED` | 400 | The header isn't base64 JSON, or the scheme, network or fields are wrong. | Fix the payload. |
+| `CHANNEL_NOT_FOUND` | 402 | The facilitator can't find the channel on-chain. | Open a session. |
+| `CHANNEL_CLOSED` | 402 | The channel is closed. | Open a new one. |
+| `CHANNEL_EXPIRING` | 402 | Too close to expiry to be claimed safely. | Open a new session. |
+| `WRONG_PAYEE` | 402 | The channel pays someone other than this seller. | Open a channel to this seller. |
+| `WRONG_ASSET` | 402 | The channel holds a different asset. | Use the asset in `accepts`. |
+| `VOUCHER_BAD_SIGNATURE` | 402 | Signature check failed. | Sign with the channel's voucher key. |
+| `VOUCHER_NOT_INCREASING` | 402 | Cumulative is not above the last accepted voucher. | Sign a higher cumulative. |
+| `VOUCHER_UNDERPAID` | 402 | The increase is smaller than the price. | Pay at least `amount`. |
+| `CHANNEL_EXHAUSTED` | 402 | The deposit can't cover the price. | Top up, or open a new session. |
+| `ACCOUNT_FROZEN` | 402 | The paying account is frozen, so no further voucher will be accepted. | Ask the owner to unfreeze. |
+| `RATE_LIMITED` | 429 | Too many requests from this channel or IP, or the open-stream limit is full. | Back off; `Retry-After` is set. |
+| `STREAM_NOT_FOUND` | 404 | The stream session is unknown, already ended, or timed out while idle. | Open a new session. |
+| `NOT_FOUND` | 404 | No such account, channel, receipt or resource. | Check the identifier. |
+| `BAD_REQUEST` | 400 | A parameter failed validation. | Fix the request. |
+| `CHAIN_UNAVAILABLE` | 503 | The facilitator could not read Stellar. | Retry; nothing was charged. |
+| `PRICE_SOURCE_UNAVAILABLE` | 503 | No usable price source for a quote or a Float valuation. | Retry later. |
+| `REPORT_NOT_VERIFIED` | 422 | `POST /v1/report` named a transaction that does not exist, did not fail, or does not involve that account. | Only report real failures. |
+| `AGENT_BUSY` | 409 | A demo agent run is already in progress. | Wait for it to finish. |
+| `NOT_SUPPORTED` | 400 | The feature is not configured on this facilitator: Float with no credit pool, the exchange layer with no XLM contract, the demo controls when they are off. | Read `GET /supported` and `GET /demo/info` first. |
+| `INTERNAL` | 500 | Unexpected server error. | Retry, then report it. |
+| `TIMEOUT` | — | On a stream: the next voucher didn't arrive in time. Delivered as a stream event, not an HTTP status. | Reconnect. |
+
+### Only from `@reinkey/meter`
+
+| Code | HTTP | Meaning |
 |---|---|---|
-| `PAYMENT_REQUIRED` | No payment header. | Read `accepts`, pay, retry. |
-| `PAYMENT_MALFORMED` (400) | The header isn't base64 JSON, or fields are missing. | Fix the payload. |
-| `CHANNEL_NOT_FOUND` | The facilitator can't find the channel on-chain. | Open a channel. |
-| `CHANNEL_CLOSED` | The channel is closed. | Open a new one. |
-| `CHANNEL_EXPIRING` | Too close to expiry to be claimed safely. | Open a new channel. |
-| `WRONG_PAYEE` | The channel pays someone other than this seller. | Open a channel to this seller. |
-| `WRONG_ASSET` | The channel holds a different asset. | Use the asset in `accepts`. |
-| `VOUCHER_BAD_SIGNATURE` | Signature check failed. | Sign with the channel's voucher key. |
-| `VOUCHER_NOT_INCREASING` | Cumulative is not above the last accepted voucher. | Sign a higher cumulative. |
-| `VOUCHER_UNDERPAID` | The increase is smaller than the price. | Pay at least `amount`. |
-| `CHANNEL_EXHAUSTED` | The deposit can't cover the price. | Top up, or open a new channel. |
-| `RATE_LIMITED` (429) | Too many requests. | Back off. |
-| `TIMEOUT` | On a stream: the next voucher didn't arrive in time. | Reconnect. |
+| `FACILITATOR_UNAVAILABLE` | 503 | The middleware could not reach the facilitator over HTTP. Your endpoint is unavailable — never free. |

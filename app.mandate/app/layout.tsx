@@ -20,12 +20,13 @@ export const metadata: Metadata = {
 };
 
 /**
- * `lang` varsayılan dille başlar ve panel açılınca tarayıcıda güncellenir
- * (bkz. components/DashboardLoader.tsx).
+ * `lang` varsayılan dille ("en") başlar ve panel açılınca tarayıcıda
+ * güncellenir (bkz. components/DashboardLoader.tsx). Varsayılan, dil seçimiyle
+ * aynı olmalı: `lib/locale.ts` de Türkçe olmayan her tarayıcıda "en" döner.
  */
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="tr" className={`${display.variable} ${body.variable} ${code.variable} h-full antialiased`}>
+    <html lang="en" className={`${display.variable} ${body.variable} ${code.variable} h-full antialiased`}>
       <body className="min-h-full">{children}</body>
     </html>
   );

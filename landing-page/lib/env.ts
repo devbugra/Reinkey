@@ -14,9 +14,26 @@ function required(name: string, value: string | undefined): string {
       `${name} tanımlı değil. .env.example dosyasını .env.local olarak kopyalayıp doldurun.`,
     );
   }
-  // Canlıya localhost adresiyle çıkmak: bağlantılar ziyaretçinin kendi makinesine gider.
-  if (process.env.NODE_ENV === "production" && process.env.VERCEL && /localhost|127\.0\.0\.1/.test(value)) {
-    throw new Error(`${name} üretimde localhost olamaz: ${value}`);
+  /*
+   * Canlıya localhost adresiyle çıkmak: bağlantılar ziyaretçinin kendi
+   * makinesine gider ve sitede hiçbir şey görünürde bozulmaz. Bu yüzden
+   * ÜRETİM derlemesi durdurulur — barındırıcıya (Vercel, Render, Docker)
+   * bakılmaksızın, çünkü hangi platformda derlendiğini bilmek gerekmiyor:
+   * NODE_ENV=production + localhost her durumda hatadır.
+   *
+   * Yerel makinede üretim derlemesi denemek isteyen (ör. `next build` ile
+   * paket boyutuna bakmak) ya gerçek adresleri verir ya da bilerek
+   * ALLOW_LOCALHOST_URLS=1 der. Sessizce geçmez.
+   */
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.ALLOW_LOCALHOST_URLS !== "1" &&
+    /localhost|127\.0\.0\.1/.test(value)
+  ) {
+    throw new Error(
+      `${name} üretimde localhost olamaz: ${value}. ` +
+        "Gerçek adresi verin (bkz. .env.example) ya da yerel bir üretim derlemesi için ALLOW_LOCALHOST_URLS=1.",
+    );
   }
   return value.replace(/\/$/, "");
 }

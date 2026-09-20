@@ -15,6 +15,8 @@ import { canonical, receiptId, sha256Hex, type ReceiptBody, type SignedReceipt }
  */
 const FLUSH_MS = 250;
 const MAX_PAGE = 200;
+/** Taahhüt penceresi: satıcı yanıtı gönderdikten hemen sonra çağırır. */
+const ATTEST_WINDOW_MS = 60_000;
 
 export interface ReceiptInput {
   channelId: bigint;
@@ -189,6 +191,11 @@ export class ReceiptsService implements OnModuleInit, OnApplicationShutdown {
     if (!/^[0-9a-f]{64}$/.test(responseHash))
       throw new ReinkeyError('BAD_REQUEST', 'responseHash 64 karakter hex olmalı');
     const current = await this.get(id);
+    // SINIR: taahhüt kimliksizdir (@reinkey/meter yanıtı gönderir göndermez, imzasız
+    // çağırır). Makbuz kimliği alıcıya da gittiği için pencereyi dar tutuyoruz: yalnızca
+    // makbuz kesildikten kısa süre sonra ve bir kez. Satıcı imzası bir sonraki sürümde.
+    if (!current.responseHash && Date.now() - Date.parse(current.ts) > ATTEST_WINDOW_MS)
+      throw new ReinkeyError('BAD_REQUEST', 'Taahhüt penceresi kapandı (makbuz kesildikten sonra 60 sn)');
     if (current.responseHash && current.responseHash !== responseHash)
       throw new ReinkeyError('BAD_REQUEST', 'Bu makbuz için farklı bir yanıt özeti zaten taahhüt edilmiş');
     if (current.responseHash) return current;

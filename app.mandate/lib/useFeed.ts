@@ -52,6 +52,34 @@ const OFFLINE_AFTER_MS = 20_000;
 // tutulur ki uzun oturumda eski kimlikler düşüp olaylar iki kez sayılmasın.
 const MAX_SEEN = 50_000;
 const CUT_KEY = "reinkey.cut";
+const DEMO_KEY = "reinkey.demoKey";
+
+/**
+ * Örnek akış kontrollerinin anahtarı: sunucu ister, jüri bağlantısı `?key=` ile
+ * taşır. Bir kez okunup sekmede saklanır; adres çubuğunda kalmaz, paylaşılan
+ * bağlantıya girmez. Sunucuya yalnızca o iki POST'ta gider.
+ */
+const demoHeaders = (): Record<string, string> | undefined => {
+  const k = demoKey();
+  return k ? { "x-demo-key": k } : undefined;
+};
+
+export function demoKey(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const url = new URL(window.location.href);
+    const q = url.searchParams.get("key");
+    if (q) {
+      sessionStorage.setItem(DEMO_KEY, q);
+      url.searchParams.delete("key");
+      window.history.replaceState(null, "", url.toString());
+      return q;
+    }
+    return sessionStorage.getItem(DEMO_KEY);
+  } catch {
+    return null;
+  }
+}
 
 /** Kesim noktası: bu andan (sunucu saatiyle) eski olaylar gösterilmez. */
 type Cut = { ts: string; base: Stats };
@@ -268,10 +296,10 @@ export function useFeed(accountOverride: string | null = null) {
   }, [epoch, accountOverride]);
 
   /** Demo kontrolleri: gerçek ajan sürecini başlatır / hesabı zincirde dondurur. */
-  const act = useCallback(async (name: string, path: string, body: unknown) => {
+  const act = useCallback(async (name: string, path: string, body: unknown, headers?: Record<string, string>) => {
     setPending(name);
     setActionError(null);
-    const res = await postJson<{ runId?: string; tx?: string } & ClaimResult>(path, body);
+    const res = await postJson<{ runId?: string; tx?: string } & ClaimResult>(path, body, headers);
     setPending(null);
     if (!res.ok) setActionError(res.error);
     else if (res.data.claimed === false) setActionError(res.data.reason ?? t()("errors.nothingToClaim"));
@@ -279,11 +307,11 @@ export function useFeed(accountOverride: string | null = null) {
   }, []);
 
   const runAgent = useCallback(
-    (scenario: Scenario) => act(scenario, "/demo/agent/run", { scenario }),
+    (scenario: Scenario) => act(scenario, "/demo/agent/run", { scenario }, demoHeaders()),
     [act],
   );
   const setFrozen = useCallback(
-    (frozen: boolean) => act(frozen ? "freeze" : "unfreeze", "/demo/owner/freeze", { frozen }),
+    (frozen: boolean) => act(frozen ? "freeze" : "unfreeze", "/demo/owner/freeze", { frozen }, demoHeaders()),
     [act],
   );
 

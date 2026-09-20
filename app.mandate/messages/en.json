@@ -2,6 +2,7 @@
   "common": {
     "loading": "Loading…",
     "refresh": "Refresh",
+    "retry": "Try again",
     "close": "Dismiss",
     "show": "Show",
     "older": "Older records",
@@ -30,17 +31,20 @@
   "shell": {
     "siteLabel": "Reinkey website",
     "badge": "Console",
-    "footer": "Data from {api} · transaction links open stellar.expert · Stellar testnet, non-custodial."
+    "footer": "Data from {api} · transaction links open stellar.expert · {network}, non-custodial."
   },
   "status": {
     "live": "Live",
     "connecting": "Connecting…",
     "offline": "Backend unreachable",
-    "network": "Stellar testnet · non-custodial"
+    "network": "{network} · non-custodial",
+    "testnet": "Stellar testnet",
+    "mainnet": "Stellar mainnet"
   },
   "offline": {
     "title": "Backend unreachable: {api}",
-    "body": "The console reads its data from the backend. To start it:"
+    "body": "The console reads its data from the backend. To start it:",
+    "bodyRemote": "Reconnecting. The service may be waking up; that can take up to half a minute."
   },
   "onboarding": {
     "eyebrow": "Reinkey Console",
@@ -56,7 +60,7 @@
       "title": "I run an agent",
       "body": "The agent's policy as written on-chain: caps, allowed payees, allowed pairs. Every rejection shows its reason.",
       "placeholder": "Reinkey account: C…",
-      "hint": "The account contract that holds the agent's spending authority. If you have none yet, the script below deploys one."
+      "hint": "The account contract that holds the agent's spending authority. If you have none yet, the \"Create your own agent account\" card on the Reins screen creates one in a single transaction."
     },
     "float": {
       "title": "I provide capital",
@@ -79,7 +83,7 @@
   },
   "workspace": {
     "example": "Example account",
-    "exampleSub": "Stellar testnet · read-only",
+    "exampleSub": "Stellar testnet · shared sandbox",
     "unsavedSub": "{role} · not saved",
     "save": "Save this address",
     "add": "Add an address",
@@ -117,6 +121,7 @@
   "summary": {
     "thisRun": "This run",
     "soFar": "So far",
+    "networkWide": "counters are network-wide",
     "showAll": "show all",
     "payments": "{count, plural, one {payment} other {payments}}",
     "chainTxs": "{count, plural, one {chain transaction} other {chain transactions}}",
@@ -311,6 +316,7 @@
     "signer": "signer {address}",
     "signerTitle": "The key that signs receipts; the same key that submits claim on-chain",
     "loading": "Reading receipts…",
+    "failed": "Could not read the receipts. Is the backend running?",
     "empty": "Nothing has been paid to this address yet.",
     "idTitle": "Receipt id (sha256 of the body)",
     "requestTitle": "Request digest: what was asked for",
@@ -329,6 +335,7 @@
   "revenue": {
     "title": "Revenue report",
     "loading": "Computing the report from the ledger…",
+    "failed": "Could not read the report. Is the backend running?",
     "noSeller": "Reading the seller address…",
     "hint": "Last {days} days · from the audit ledger · {payments} payments, {buyers} buyers",
     "rangeAria": "Time range",
@@ -375,6 +382,7 @@
     "channelsTitle": "Channels",
     "channelsHint": "One channel per buyer paying you · purple: settled · blue: awaiting settlement",
     "channelsEmpty": "No channel pays this address.",
+    "loadingChannels": "Reading the channels…",
     "reading": "Reading the seller address…",
     "colChannel": "Channel",
     "colBuyer": "Buyer",
@@ -434,6 +442,7 @@
     "payees": "Allowed payees",
     "pairs": "Allowed trading pairs",
     "reading": "Reading the account from the chain…",
+    "readFailed": "Could not read the account. The backend may be unreachable; it is retried every few seconds.",
     "channels": "The account's channels",
     "channelsHint": "Each channel is the most the account set aside for one seller",
     "channelsEmpty": "No known channel for this account.",
@@ -443,7 +452,7 @@
     "noAccountHint": "The address could not be read on-chain, or it is not an account contract",
     "noAccountBody": "A Reinkey account is a Soroban contract holding an agent's spending authority: caps, allowed payees and allowed trading pairs live inside it. The address you entered ({address}) is not one.",
     "howTo": "How to deploy an account",
-    "howToNote": "The script deploys the contracts, funds the account with testnet USDC and writes the ids to deployments/testnet.json. One-click setup from the console is on the roadmap.",
+    "howToNote": "You can create one from the \"Create your own agent account\" card just above: your wallet becomes the owner, you write the limits, and the agent key is generated in your browser. One chain transaction; no script to run.",
     "more": "More:",
     "quickstart": "Reins quickstart",
     "policyDocs": "Policy and rejections"
@@ -509,12 +518,14 @@
     "tooMuchWithdraw": "You do not hold that many shares.",
     "shortLiquidity": "The pool does not hold that much idle USDC; the withdrawal would be rejected on-chain.",
     "done": "The transaction settled on-chain.",
+    "unconfirmed": "Submitted, not yet confirmed — check the transaction in the explorer.",
     "signing": "Sign in your wallet…",
     "note": "The transaction is signed in your wallet and goes straight to Stellar testnet. Testnet: do not deposit real funds."
   },
   "errors": {
     "backend": "Could not reach the backend",
     "nothingToClaim": "No voucher to settle",
+    "contractRejected": "The contract rejected the call (error #{code})",
     "liquidity": "Not enough idle USDC in the pool",
     "trustline": "No USDC trustline: your wallet does not hold the USDC asset",
     "balance": "Insufficient balance",
@@ -530,6 +541,7 @@
     "DAILY_CAP_EXCEEDED": "Daily cap exceeded",
     "PAIR_NOT_ALLOWED": "This trading pair is not allowed",
     "SLIPPAGE_UNBOUNDED": "Trade without slippage protection",
+    "CONTROLLER_MISMATCH": "The account is managed by another contract",
     "CHANNEL_NOT_FOUND": "Channel not found",
     "CHANNEL_CLOSED": "The channel is closed",
     "VOUCHER_BAD_SIGNATURE": "Invalid voucher signature",
@@ -598,6 +610,8 @@
     "reserves": "{usdc} USDC / {xlm} XLM · ledger {ledger}",
     "verdictTitle": "Would the chain accept this?",
     "verdictHint": "Using the account's own rules, without touching the chain or paying a fee",
+    "evaluatedTitle": "The verdict is evaluated against this account's on-chain policy",
+    "exampleBadge": "example",
     "allowed": "Accepted",
     "allowedBody": "Inside the policy: the pair is allowed, slippage protection is set, the caps hold.",
     "rejected": "Rejected",
@@ -616,6 +630,7 @@
     "youOwn": "you own this",
     "delegated": "Management of this account is delegated to contract {controller} (credit line). Limits can now be changed by that contract, not the owner; they cannot be edited here until the line is closed.",
     "ownerOnly": "Only the owner can change this account's limits: {owner}. Connect the owner wallet and editing opens here.",
+    "exampleOwner": "Reinkey owns the example account, so its limits cannot be changed here. Create your own account from the card below and this section opens for you.",
     "ownerUnknown": "The owner could not be read; limits can only be changed with the owner key.",
     "wrongWallet": "The connected wallet ({address}) is not this account's owner.",
     "connectOwner": "Connect owner wallet",
@@ -625,8 +640,12 @@
     "capOrder": "The per-transaction cap cannot exceed the daily cap.",
     "payees": "Allowed payees",
     "payeesHint": "One address per line (G… or C…). The agent can only pay these addresses.",
+    "payeesPlaceholder": "G… or C… · one address per line",
+    "useExampleSeller": "use the example seller",
     "badAddress": "Invalid address: {address}",
     "needPayee": "At least one payee is required; otherwise the agent cannot pay anyone.",
+    "badDays": "The number of days must be a whole number no greater than 3650.",
+    "unconfirmed": "Submitted, not yet confirmed — check the transaction in the explorer.",
     "extend": "Extend validity (days)",
     "extendHint": "Current expiry: ledger {ledger}. Leave empty to keep it.",
     "dex": "Allow exchange trades",

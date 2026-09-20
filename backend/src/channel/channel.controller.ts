@@ -36,6 +36,10 @@ export function channelView(ch: CachedChannel) {
   };
 }
 
+const CLAIM_COOLDOWN_MS = 20_000;
+/** Kanal başına son elle tahsilat anı. Tek örnek çalışıyoruz; bellekte tutmak yeterli. */
+const lastClaim = new Map<string, number>();
+
 @ApiTags('channels')
 @Controller('channels')
 export class ChannelController {
@@ -92,7 +96,18 @@ export class ChannelController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Elle tahsilat' })
   async claim(@Param('id') id: string) {
-    const r = await this.claims.manualClaim(parseChannelId(id));
+    const channelId = parseChannelId(id);
+    // Tahsilatın zincir ücretini facilitator öder ve işlemler tek kuyruktan geçer:
+    // art arda çağrı hem ücret harcatır hem gerçek tahsilatların önüne geçerdi.
+    const key = channelId.toString();
+    const wait = (lastClaim.get(key) ?? 0) + CLAIM_COOLDOWN_MS - Date.now();
+    if (wait > 0)
+      throw new ReinkeyError(
+        'RATE_LIMITED',
+        `Bu kanal için tahsilat çok sık: ${Math.ceil(wait / 1000)} sn sonra yeniden deneyin`,
+      );
+    lastClaim.set(key, Date.now());
+    const r = await this.claims.manualClaim(channelId);
     return r ?? { claimed: false, reason: 'Tahsil edilecek kupon yok' };
   }
 }

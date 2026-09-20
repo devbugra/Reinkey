@@ -23,9 +23,19 @@ import { StreamSessions } from '../channel/stream.sessions';
 import { APP_CONFIG, type AppConfig } from '../config/config';
 import type { PaidRequest } from '../x402/meter';
 import { fallbackTokens } from './fallback-text';
+import { ReinkeyError } from '../common/errors';
 
 const VOUCHER_TIMEOUT_MS = 10_000;
 const CHARS_PER_TOKEN = 4;
+
+/** İstem ücretlendirilmiyor (yalnızca çıktı dilimleri); bu yüzden uzunluğu sınırlı. */
+const MAX_PROMPT = 2000;
+function promptOf(body: { prompt?: string } | undefined): string {
+  const p = (body?.prompt ?? '').toString();
+  if (p.length > MAX_PROMPT)
+    throw new ReinkeyError('BAD_REQUEST', `prompt en fazla ${MAX_PROMPT} karakter olabilir`);
+  return p;
+}
 
 @ApiTags('demo')
 @Controller('demo')
@@ -133,7 +143,7 @@ export class ChatController {
           code: 'LLM_UNAVAILABLE',
           message: 'LLM unavailable; streaming fallback text instead',
         });
-      for await (const text of this.tokens(body?.prompt ?? '', onFallback)) {
+      for await (const text of this.tokens(promptOf(body), onFallback)) {
         if (closed) break;
         if (tokens >= paidThrough) {
           const cached = this.store.peek(channelId);

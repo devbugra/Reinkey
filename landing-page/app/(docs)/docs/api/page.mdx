@@ -1,12 +1,26 @@
-import { routes } from "@/content/site";
+import { routes, external } from "@/content/site";
+import { docsMeta } from "@/content/docs";
 
-export const metadata = { title: "Facilitator API" };
+export const metadata = docsMeta(
+  "/docs/api",
+  "Facilitator API",
+  "A map of the facilitator's HTTP surface: verify and settle, channels, streams, accounts, receipts, seller revenue, the DEX quote, Float and discovery.",
+);
 
 # Facilitator API
 
 The facilitator is a plain HTTP service. The live, always-current reference is its OpenAPI document: <a href={routes.openapi}>openapi.json</a>. Agents can start from <a href={routes.llms}>llms.txt</a>. This page is a map.
 
-Amounts are decimal strings in base units. Errors use the shape described in [Reason codes](/docs/reason-codes).
+The wire format itself — payment requirements, the payload, the voucher bytes, the verification rules — is written down separately in the <a href={`${external.repo}/blob/main/docs/spec/scheme_channel_stellar.md`}>open `channel` scheme specification</a>, so another implementation can interoperate without reading this code.
+
+Amounts are decimal strings in base units. Errors use the shape described in [Reason codes](/docs/reason-codes): `error` is a stable identifier you may branch on, `message` is informational text you must not parse.
+
+## Service
+
+| | |
+|---|---|
+| `GET /health` | `{ ok, chainMode, latestLedger, db, demoControls }` plus the price source's state. Never rate-limited, so it is safe as a liveness probe. |
+| `GET /demo/info` | **The only source of contract identifiers.** Network and passphrase, `rpcUrl`, `explorerTxBase`, `channelContract`, `usdc`, `xlm`, `dexRouter`, `dexFactory`, `dexPair`, `accountWasm` (the hash of the deployed account code, which the console deploys for you), `seller`, the demo account, and the demo seller's `prices`. Read this at startup instead of hard-coding ids. |
 
 ## x402 facilitator
 
@@ -46,11 +60,24 @@ The facilitator holds stream sessions so a seller can wait for the next voucher 
 
 | | |
 |---|---|
-| `GET /accounts/:address` | Policy, today's spend, frozen flag, balances, open channels. |
-| `GET /accounts/:address/ledger` | The account's events, newest first, cursor-paginated. |
+| `GET /accounts/:address` | `owner` (the `G…` key that may change the policy), the `policy` — `agentKey`, `asset`, `perTxCap`, `dailyCap`, `payees`, `channel`, `expiresLedger`, `dexRouter`, `dexFactory`, `pairs` as readable names, `pairIds` as the contract addresses behind them, and `controller` — plus `spentToday`, `day`, `frozen`, the USDC and XLM balances and the open channels. |
+| `GET /accounts/:address/ledger` | The account's events, newest first, cursor-paginated (`?cursor=`, `?limit=` up to 200). |
 | `GET /events` | Server-sent events: the last 200 events, then live. Filter with `?account=` or `?channelId=`. |
 | `GET /stats` | Totals: vouchers, on-chain transactions, volume, median verification latency. |
-| `POST /v1/report` | Report an on-chain transaction; verified against the chain before it is published. |
+| `POST /v1/report` | Report an on-chain transaction; verified against the chain before it is published. An unverifiable report is `REPORT_NOT_VERIFIED`. |
+
+`pairIds` exists because `pairs` is for reading and `pairIds` is for writing: rewriting a policy needs the contract addresses, not "USDC→XLM".
+
+## Receipts
+
+A receipt is the proof of what a payment bought. It is signed by the facilitator's key and commits to the request hash and, once the seller attests it, the response hash. Verification needs only the signer's public key — the same check runs in the browser or offline.
+
+| | |
+|---|---|
+| `GET /receipts` | Receipts, newest first. `?payee=`, `?channelId=`, `?limit=` (default 50, max 200). |
+| `GET /receipts/:id` | One receipt with its signature. |
+| `GET /receipts/:id/verify` | `{ valid, signer, receipt }`. A convenience: you never have to take the server's word for its own signature. |
+| `POST /receipts/:id/attest` | The seller commits to the hash of the response it delivered: `{ "responseHash": "<64 hex>" }`. The facilitator never sees the response; it only records the hash and refuses to let it change. |
 
 ## Exchange
 
@@ -69,11 +96,15 @@ applies in `__check_auth` (`check_swap` plus the caps), evaluated before anythin
 "policy": {
   "allowed": false,
   "code": "PER_TX_CAP_EXCEEDED",
-  "message": "Tek işlem tavanı aşılıyor (10000000 taban birim)",
+  "message": "Above the per-transaction cap (10000000 base units)",
   "caps": { "perTxCap": "10000000", "dailyCap": "50000000", "spentToday": "20000000",
             "remainingToday": "30000000", "counted": "20000000" }
 }
 ```
+
+**Branch on `code`, never on `message`.** Codes are stable identifiers; the message beside them is
+informational, may be reworded at any time, and is currently written in Turkish by the hosted
+facilitator. The same rule applies to every `error` / `message` pair on this page.
 
 The verdict is a preview; the chain is what decides. It exists so an agent can find out it would be
 rejected without paying a fee to learn it. Prices are reported from two sources: the Soroswap pool
@@ -91,7 +122,7 @@ Derived from the audit ledger, so the report and the ledger can't disagree. Thre
 
 ## Float (credit pool)
 
-Read-only; nothing here submits a transaction. See [Float](/docs/float).
+**The HTTP API is read-only:** these endpoints read the contract by simulation and never submit a transaction. Depositing and withdrawing are wallet-signed contract calls in the [console](/docs/console). See [Float](/docs/float).
 
 | | |
 |---|---|
@@ -106,7 +137,7 @@ Read-only; nothing here submits a transaction. See [Float](/docs/float).
 | `GET /discovery/resources` | **x402 Bazaar catalog.** Every resource that has received at least one verified payment through this facilitator, with its 402 terms (`accepts`) and `extensions.bazaar` input/output metadata. Query: `payTo`, `limit`, `offset`. Response: `{ x402Version, items[], pagination }`. There is no registration endpoint: a verified payment is the listing. |
 | `GET /openapi.json` | OpenAPI 3 document. |
 | `GET /llms.txt` | Plain-text guide for language models. |
-| `POST /mcp` | Model Context Protocol endpoint. Tools include `reinkey_list_resources` (the catalog), `reinkey_price_list`, `reinkey_get_channel`, `reinkey_get_account`, `reinkey_stats`, `reinkey_supported`. |
+| `POST /mcp` | Model Context Protocol endpoint, read-only: `reinkey_list_resources` (the catalog), `reinkey_price_list`, `reinkey_get_channel`, `reinkey_get_account`, `reinkey_stats`, `reinkey_supported`. For tools that actually **pay**, run [`@reinkey/mcp`](/docs/mcp) beside your assistant. |
 
 ## Events
 

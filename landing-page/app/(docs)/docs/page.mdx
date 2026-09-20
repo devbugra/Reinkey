@@ -1,10 +1,19 @@
-import { routes } from "@/content/site";
+import { routes, external } from "@/content/site";
+import { docsMeta } from "@/content/docs";
 
-export const metadata = { title: "Introduction" };
+export const metadata = docsMeta(
+  "/docs",
+  "Introduction",
+  "Reinkey is the session layer for machine payments on Stellar: one transaction opens a session, every call after that is a signed voucher, one transaction settles hundreds of them.",
+);
 
 # Reinkey documentation
 
-Reinkey is payment infrastructure for APIs and AI agents on Stellar. It extends [x402](https://github.com/x402-foundation/x402) with a **payment channel scheme**, so a payment is a signed voucher verified in about a millisecond instead of an on-chain transaction that takes five seconds.
+Reinkey is the **session layer for machine payments on Stellar.** It extends [x402](https://github.com/x402-foundation/x402) with a payment scheme called `channel`: one transaction opens a session, every call after that is a signed cumulative voucher verified off-chain in about 0.2 ms, and the seller settles hundreds of payments with one `claim`. Measured on testnet: **468 payments, 3 chain transactions.**
+
+That matters because on Stellar every `exact` payment is its own transaction — about five seconds each — which can carry neither agent traffic nor per-second or per-token pricing.
+
+A session carries a budget that lives in the agent's own Soroban account, metering by request, second or token, a signed receipt per payment, and funding with any asset. Read [How it works](/docs/concepts) for the mechanism, or the <a href={`${external.repo}/blob/main/docs/spec/scheme_channel_stellar.md`}>open scheme specification</a> for the wire format.
 
 There are three products. Use one, or all.
 
@@ -16,6 +25,12 @@ There are three products. Use one, or all.
 | **Start here** | [Meter quickstart](/docs/meter/quickstart) | [Reins quickstart](/docs/reins/quickstart) |
 
 **Reinkey Float** is the finance layer on top: a lending pool where agents work on uncollateralized credit, because funds in a Reins account handed to the pool cannot leave its policy. [Read about Float](/docs/float).
+
+**Using an AI assistant instead of writing code?** [`@reinkey/mcp`](/docs/mcp) is an MCP server that gives any MCP client — Claude among them — tools that discover, call and stream paid resources, inside the same on-chain budget.
+
+## Create an account, no sign-up
+
+Connect a wallet in the <a href={routes.panel}>console</a> → **Reins** → *Create your own agent account*. One transaction deploys the same account code with your wallet as owner; the agent key is generated in your browser and shown once. From then on you change caps, payees, expiry and exchange permission, or freeze the account, from the console — each write authorized by your wallet and sent straight to Stellar. See the [Console guide](/docs/console).
 
 ## Try it without installing anything
 
@@ -30,16 +45,16 @@ HTTP/1.1 402 Payment Required
 PAYMENT-REQUIRED: eyJ4NDAyVmVyc2lvbiI6Mi…
 ```
 
-The current testnet endpoint is <code>{routes.api}</code>. Examples in these docs refer to it as `$REINKEY_API`.
+The current testnet endpoint is <code>{routes.api}</code>. Examples in these docs refer to it as `$REINKEY_API`. Contract identifiers come from `GET /demo/info`; never hard-code them.
 
 ## What runs where
 
-- **On-chain (Soroban contracts):** the `channel` contract that holds deposits and pays sellers, and the `reinkey-account` contract that enforces an agent's policy in `__check_auth`.
-- **Off-chain (the facilitator):** verifies vouchers, keeps the highest accepted voucher per channel, and submits `claim` transactions. It never holds funds and cannot redirect them.
-- **In your server:** `meter()` middleware. **In your agent:** the SDK.
+- **On-chain (Soroban contracts):** the `channel` contract that holds session deposits and pays sellers, and the `reinkey-account` contract that enforces an agent's policy in `__check_auth`.
+- **Off-chain (the facilitator):** verifies vouchers, keeps the highest accepted voucher per session, signs receipts and submits `claim` transactions. It never holds funds and cannot redirect them.
+- **In your server:** `rk.meter()` middleware. **In your agent:** the SDK, or the MCP server.
 
-Read [How it works](/docs/concepts) for the full picture.
+Read [How it works](/docs/concepts) for the full picture, and [the security model](/docs/security) before you trust it with anything.
 
 ## Status
 
-> **Testnet, unaudited.** Everything here runs on Stellar testnet. The contracts have not been audited and the packages are pre-1.0. Interfaces may change.
+> **Testnet, unaudited.** Everything here runs on Stellar testnet. The contracts have not been audited and the packages are pre-1.0 and not yet on npm — build them from <a href={external.repo}>the monorepo</a> until they are. Interfaces may change.

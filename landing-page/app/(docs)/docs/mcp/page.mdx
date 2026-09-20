@@ -1,0 +1,77 @@
+import { routes, external } from "@/content/site";
+import { docsMeta } from "@/content/docs";
+
+export const metadata = docsMeta(
+  "/docs/mcp",
+  "Paid MCP tool calls",
+  "@reinkey/mcp gives any MCP client — Claude and others — tool calls that pay per request, per second or per token, inside a budget written on-chain.",
+);
+
+# Paid MCP tool calls
+
+`@reinkey/mcp` is an MCP server. It gives any MCP client — Claude among them — tools that **buy things**: one paid HTTP request, one paid stream, one trade. The assistant spends real USDC on Stellar testnet, inside a budget that lives in a contract rather than in a prompt.
+
+MCP has no payments. x402 has payments, but one chain transaction per call. This server joins them with a **session**: the first call to a seller opens an x402 `channel` with one Stellar transaction; every call after that is a signed voucher verified in well under a millisecond; the seller settles them all with one `claim`.
+
+```
+assistant ──MCP──▶ reinkey-mcp ──HTTP + voucher──▶ any x402 seller
+                        │
+                        └─ Reinkey account (Soroban): per-tx cap, daily cap,
+                           allowed payees, allowed pairs — enforced by Stellar
+```
+
+## Tools
+
+| Tool | Cost | What it does |
+|---|---|---|
+| `reinkey_discover` | free | Lists paid resources from the facilitator's [Bazaar catalog](/docs/api#discovery). Optional text filter. |
+| `reinkey_call` | the resource's price | One paid HTTP request; returns the body, the amount paid and a verifiable receipt link. |
+| `reinkey_stream` | per second / per token | Consumes a paid stream for a bounded time; pays only for what was delivered. |
+| `reinkey_quote` | free | USDC/XLM quote with the account's policy pre-verdict. |
+| `reinkey_swap` | one transaction | Trade with mandatory slippage protection. |
+| `reinkey_budget` | free | On-chain limits, what is left today, open sessions, payments vs. chain transactions. |
+
+A policy rejection comes back as a **result, not an error**: `{ ok: false, code: "PER_TX_CAP_EXCEEDED", … }`. The assistant can read it and explain it; it cannot argue its way around it, because the rejection came from `__check_auth` on Stellar. See [Reason codes](/docs/reason-codes).
+
+## Setup
+
+1. Create an agent account in the <a href={routes.panel}>console</a> → **Reins** → *Create your own agent account*. Your wallet is the owner; the agent secret is shown once. See the [Console guide](/docs/console).
+2. Send the account some testnet USDC and fund a relayer with friendbot. See [Testnet setup](/docs/testnet).
+3. Point your MCP client at the server:
+
+```json
+{
+  "mcpServers": {
+    "reinkey": {
+      "command": "npx",
+      "args": ["tsx", "/path/to/Reinkey/packages/mcp/src/index.ts"],
+      "env": {
+        "REINKEY_API": "https://reinkey.onrender.com",
+        "REINKEY_ACCOUNT": "C…",
+        "AGENT_SECRET": "S…",
+        "RELAYER_SECRET": "S…"
+      }
+    }
+  }
+}
+```
+
+| Variable | |
+|---|---|
+| `REINKEY_API` | Facilitator base URL. The hosted testnet one is <code>{routes.api}</code>. |
+| `REINKEY_ACCOUNT` | The Reinkey account (`C…`) the assistant spends from. |
+| `AGENT_SECRET` | The agent key from account creation. It can only do what the policy allows. |
+| `RELAYER_SECRET` | A funded `G…` account that pays the transaction fees. The agent key holds no XLM. |
+| `REINKEY_SESSION_DEPOSIT` | Optional. Default deposit per session in base units; default `100000` (0.01 USDC). |
+
+> **Pre-release.** `@reinkey/mcp` is not on npm yet. Run it from the monorepo: clone <a href={external.repo}>github.com/devbugra/Reinkey</a>, `pnpm install` at the root, then point `args` at `packages/mcp/src/index.ts` as above.
+
+## What the agent key can do
+
+Only what the account's policy allows. The secret in that config can pay the allowed payees within the per-transaction and daily caps, and trade the allowed pairs with slippage protection. It cannot move funds anywhere else, raise its own limits, or unfreeze the account — those need the owner wallet. A prompt injection that talks the assistant into paying an attacker fails on-chain with `PAYEE_NOT_ALLOWED`.
+
+Read [the trust model](/docs/security) for what a stolen agent key can and cannot do.
+
+## Verified
+
+`pnpm --filter @reinkey/mcp exec tsx check.ts` starts the server from a real MCP client over stdio and, on testnet: opens a session in one transaction, makes three paid calls and a five-slice per-second stream with vouchers only, and gets `PER_TX_CAP_EXCEEDED` for a trade above the cap. On 20 Sep 2026 that run produced sessions #17 (`4cac65d6…`) and #18 (`57510316…`): **8 payments, 2 chain transactions.**

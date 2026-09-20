@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { FloatService } from './float.service';
+import { addressParam, intParam } from '../common/params';
 
 /** Reinkey Float: kredi havuzu, kredi hatları ve yatırımcı pozisyonları. Salt okunur. */
 @ApiTags('float')
@@ -18,7 +19,7 @@ export class FloatController {
     const [{ pool, lines }, positions, samples] = await Promise.all([
       this.float.snapshot(),
       this.float.positions(),
-      this.float.history(history ? Number(history) : 200),
+      this.float.history(intParam(history, 200, 1, 500, 'history')),
     ]);
     return { enabled: true, pool, lines, positions, history: samples };
   }
@@ -26,12 +27,12 @@ export class FloatController {
   @Get('lines/:account')
   @ApiOperation({ summary: 'Bir Reinkey hesabının kredi hattı ve sağlığı (değer, borç, tasfiye edilebilir mi)' })
   line(@Param('account') account: string) {
-    return this.float.lineFor(account);
+    return this.float.lineFor(addressParam(account, 'contract', 'account'));
   }
 
   @Get('positions/:address')
   @ApiOperation({ summary: 'Bir yatırımcının payı ve bugünkü USDC karşılığı' })
   position(@Param('address') address: string) {
-    return this.float.position(address);
+    return this.float.position(addressParam(address, 'any', 'address'));
   }
 }

@@ -1,6 +1,7 @@
 import { Controller, Get, Header, Module, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { RevenueService, type Bucket } from './revenue.service';
+import { addressParam, intParam } from '../common/params';
 
 /** Reinkey Meter · satıcı finansı: gelir, alacak yaşlandırma, tahsilatlar, CSV. Salt okunur. */
 @ApiTags('sellers')
@@ -13,14 +14,14 @@ export class SellersController {
   @ApiQuery({ name: 'days', required: false, description: 'pencere (1–365, varsayılan 30)' })
   @ApiQuery({ name: 'bucket', required: false, description: 'hour | day (varsayılan day)' })
   report(@Param('payTo') payTo: string, @Query('days') days?: string, @Query('bucket') bucket?: string) {
-    return this.revenue.report(payTo, days ? Number(days) : 30, (bucket === 'hour' ? 'hour' : 'day') as Bucket);
+    return this.revenue.report(addressParam(payTo, 'any', 'payTo'), intParam(days, 30, 1, 365, 'days'), (bucket === 'hour' ? 'hour' : 'day') as Bucket);
   }
 
   @Get(':payTo/settlements.csv')
   @Header('Content-Type', 'text/csv; charset=utf-8')
   @ApiOperation({ summary: 'Muhasebe dışa aktarımı: tahsilat başına bir satır (CSV)' })
   csv(@Param('payTo') payTo: string, @Query('days') days?: string) {
-    return this.revenue.settlementsCsv(payTo, days ? Number(days) : 30);
+    return this.revenue.settlementsCsv(addressParam(payTo, 'any', 'payTo'), intParam(days, 30, 1, 365, 'days'));
   }
 }
 

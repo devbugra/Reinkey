@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { PlugZap } from "lucide-react";
 import { env } from "@/lib/env";
 import { big } from "@/lib/format";
-import { useFeed } from "@/lib/useFeed";
+import { demoKey, useFeed } from "@/lib/useFeed";
 import { useFloat } from "@/lib/useFloat";
 import { useWallet } from "@/lib/wallet";
 import { useWorkspaces, type Profile, type Role } from "@/lib/workspace";
@@ -32,14 +32,21 @@ import { ReinsView } from "./views/ReinsView";
 
 function Offline() {
   const t = useTranslations("offline");
+  // Geliştirme komutu yalnızca yerelde anlamlı; canlıda servis uyuyor olabilir, yeniden bağlanıyoruz.
+  const local = /localhost|127\.0\.0\.1/.test(env.apiUrl);
   return (
     <div className="flex items-start gap-3 rounded-lg border border-danger/30 bg-danger-bg px-5 py-4 text-sm" role="alert">
       <PlugZap className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden="true" />
       <div>
         <p className="font-medium text-fg">{t("title", { api: env.apiUrl })}</p>
         <p className="mt-1 text-fg-muted">
-          {t("body")}{" "}
-          <code className="rounded-sm bg-bg px-1.5 py-0.5 font-mono text-xs">cd backend &amp;&amp; npm run start:dev</code>
+          {local ? (
+            <>
+              {t("body")} <code className="rounded-sm bg-bg px-1.5 py-0.5 font-mono text-xs">cd backend &amp;&amp; npm run start:dev</code>
+            </>
+          ) : (
+            t("bodyRemote")
+          )}
         </p>
       </div>
     </div>
@@ -55,6 +62,8 @@ export default function Dashboard() {
   const { state } = f;
   const float = useFloat(nav.view === "float");
   const [adding, setAdding] = useState(false);
+  // Anahtar bir kez okunur: `demoKey()` adres çubuğundan `?key=` değerini alıp sekmeye taşır.
+  const [hasDemoKey] = useState(() => !!demoKey());
 
   /**
    * Adres çözümü: URL > örnek hesap. URL tek gerçek kaynaktır, böylece her
@@ -64,6 +73,24 @@ export default function Dashboard() {
   const accountAddr = nav.account ?? state.info?.account ?? null;
   const sellerAddr = nav.seller ?? state.info?.seller ?? null;
   const isExample = nav.account === null || nav.account === state.info?.account;
+  // Örnek akış (adımlar, kontroller, terminal) yalnızca hiçbir adres seçili değilken: bir satıcı
+  // alanında da bu düğmeler anlamsız. Sunucu kontrolleri kapalıysa ya da anahtar isteyip yoksa çizilmez.
+  const isExampleLive = nav.account === null && nav.seller === null;
+  const controlsOn = !!state.info?.demoControls && (!state.info.demoKeyRequired || hasDemoKey);
+  /**
+   * Bir adres seçiliyse canlı görünüm o adrese daralır: kanallar ödeyen/alıcıya, olaylar o
+   * kanallara ve o hesaba göre süzülür. Toplam sayaçlar ağ geneline aittir ve öyle etiketlenir.
+   */
+  const focus = nav.account ?? nav.seller;
+  const liveChannels = focus
+    ? Object.fromEntries(Object.entries(state.channels).filter(([, c]) => c.payer === focus || c.payee === focus))
+    : state.channels;
+  const liveIds = new Set(Object.keys(liveChannels));
+  const liveRows = focus ? state.rows.filter((r) => (r.channelId ? liveIds.has(r.channelId) : r.text === focus)) : state.rows;
+  // Redlerde kanal kimliği ayrı bir alan değil: konusu ya "#<kanal>" ya da bir adrestir (bkz. lib/store.ts).
+  const liveRejections = focus
+    ? state.rejections.filter((r) => (r.subject.startsWith("#") ? liveIds.has(r.subject.slice(1)) : r.subject === focus))
+    : state.rejections;
   const activeProfile =
     ws.profiles.find((p) => (p.role === "agent" ? p.address === nav.account : p.address === nav.seller)) ?? null;
   /** URL'den gelen ama kayıtlı olmayan adres: seçicide "kaydet" olarak sunulur. */
@@ -109,6 +136,7 @@ export default function Dashboard() {
       view={nav.view}
       onView={(view) => setNav({ view })}
       connection={f.connection}
+      navKey={`${nav.view}|${nav.account ?? ""}|${nav.seller ?? ""}|${welcome ? "w" : ""}`}
       workspace={
         <WorkspaceSwitcher
           profiles={ws.profiles}
@@ -164,6 +192,8 @@ export default function Dashboard() {
                   claims={state.claims}
                   canClaim={live}
                   claiming={f.pending === "claim"}
+                  claimingId={f.pendingId}
+                  loaded={f.channelsLoaded}
                   onClaim={(id) => void f.claim(id)}
                   onSeller={(seller) => setNav({ seller })}
                 />
@@ -174,7 +204,7 @@ export default function Dashboard() {
           {nav.view === "dex" && (
             <>
               <PageHeader eyebrow={t("dex.eyebrow")} title={t("dex.title")} lead={t("dex.lead")} />
-              <DexView account={accountAddr} />
+              <DexView account={accountAddr} isExample={isExample} />
             </>
           )}
 
@@ -195,6 +225,7 @@ export default function Dashboard() {
                   address={accountAddr}
                   isExample={isExample}
                   account={state.account}
+                  status={f.accountStatus}
                   channels={state.channels}
                   rejections={state.rejections}
                   rows={state.rows}
@@ -212,14 +243,14 @@ export default function Dashboard() {
               <PageHeader eyebrow={t("live.eyebrow")} title={t("live.title")} lead={t("live.lead")} />
 
               <Section index={1} title={t("live.summary")} hint={t("live.summaryHint")}>
-                <Hero totals={f.totals} dataSeconds={state.local.dataSeconds} onShowAll={f.showAll} />
+                <Hero totals={f.totals} dataSeconds={state.local.dataSeconds} onShowAll={f.showAll} networkWide={!!focus} />
                 {/*
-                 * Örnek akış kontrolleri YALNIZCA örnek hesapta. Kendi adresini
-                 * bağlayan biri için bu düğmeler hem çalışmaz (backend onları
-                 * yalnızca örnek hesap için kabul eder) hem de anlamsızdır:
-                 * konsol onun verisini izler, senaryo oynatmaz.
+                 * Örnek akış kontrolleri YALNIZCA hiçbir adres seçili değilken ve sunucu
+                 * onları açmışsa. Kendi adresini bağlayan biri için bu düğmeler hem
+                 * çalışmaz (backend onları yalnızca örnek hesap için kabul eder) hem
+                 * de anlamsızdır: konsol onun verisini izler, senaryo oynatmaz.
                  */}
-                {isExample && (
+                {isExampleLive && controlsOn && (
                   <>
                     <Steps state={state} />
                     <Controls
@@ -242,11 +273,11 @@ export default function Dashboard() {
               <Section index={2} title={t("live.flow")} hint={t("live.flowHint")}>
                 <Flow
                   account={state.account}
-                  channels={state.channels}
+                  channels={liveChannels}
                   streams={state.streams}
                   claims={state.claims}
                   dataSeconds={state.local.dataSeconds}
-                  rejection={state.rejections.find((r) => r.source === "chain")}
+                  rejection={liveRejections.find((r) => r.source === "chain")}
                   canClaim={live}
                   claiming={f.pending === "claim"}
                   onClaim={(id) => void f.claim(id)}
@@ -266,13 +297,13 @@ export default function Dashboard() {
 
               <Section index={4} title={t("live.events")} hint={t("live.eventsHint")}>
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-                  <Timeline rows={state.rows} perSecond={perSecond} account={accountAddr} />
+                  <Timeline rows={liveRows} perSecond={perSecond} account={accountAddr} />
                   <div className="grid content-start gap-4">
-                    <Blocked items={state.rejections} />
-                    {isExample && <Terminal logs={state.logs} running={state.agent.running} />}
+                    <Blocked items={liveRejections} />
+                    {isExampleLive && controlsOn && <Terminal logs={state.logs} running={state.agent.running} />}
                   </div>
                 </div>
-                <Channels channels={state.channels} />
+                <Channels channels={liveChannels} />
               </Section>
             </>
           )}

@@ -1,6 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CatalogService } from './catalog.service';
+import { intParam } from '../common/params';
 
 /** x402 Bazaar: bu facilitator üzerinden ödeme alan kaynakların kataloğu. */
 @ApiTags('discovery')
@@ -27,8 +28,8 @@ export class BazaarController {
       return { x402Version: 2, items: [], pagination: { limit: 0, offset: 0, total: 0 } };
     return this.catalog.list({
       payTo: payTo || undefined,
-      limit: limit ? Number(limit) : undefined,
-      offset: offset ? Number(offset) : undefined,
+      limit: intParam(limit, 50, 1, 200, 'limit'),
+      offset: intParam(offset, 0, 0, 100_000, 'offset'),
     });
   }
 }
